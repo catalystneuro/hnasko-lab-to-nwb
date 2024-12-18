@@ -1,0 +1,15 @@
+Stimulus:
+ OptogeneticStimulusSite:
+   - name: optogenetic_stimulus_site
+     description: The site where the optogenetic stimulation was applied.
+     excitation_lambda: 635 # Excitation wavelength in nanometers.
+ OptogeneticSeries:
+   name: optogenetic_series
+   site: optogenetic_stimulus_site
+   description: The reconstructed timeseries for the optogenetic stimulation.
+ OptogeneticStimulusInterval:
+   name: optogenetic_stimulus_interval
+   description: Optogenetic stimulus events from TDT epochs.
+TDTEvents:
+ stream_names: ["sms_","s1s_","s4s_"]
+ stimuli_frequencies: [40.0, 40.0, 40.0]

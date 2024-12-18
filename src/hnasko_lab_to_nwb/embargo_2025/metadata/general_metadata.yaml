@@ -74,14 +74,14 @@ Ophys:
         label: AAV1-fDIO-Ef1a-Gcamp6f
         injection_location: SNr
         injection_coordinates_in_mm: [-3.3, 1.3, -4.6]
-#      - name: Tdtomato
-#        description: "Mice were unilaterally injected with 150nl or 200nl AAV5-DIO-Syn-ChrimsonR-Tdtomato (4e12 vg/mL or 8.5e12 vg/mL, Addgene 62723) in the STN (AP -2.00, ML 1.6, DV -4.5)."
-#        manufacturer: Addgene 62723
-#        label: AAV5-DIO-Syn-ChrimsonR-Tdtomato
-#        injection_location: STN
-#        injection_coordinates_in_mm: [-2.00, 1.6, -4.5]
       - name: Tdtomato
-        description: "Mice were unilaterally injected with 150nl or 200nl AAV5-DIO-Syn-ChrimsonR-Tdtomato (4e12 vg/mL or 8.5e12 vg/mL, Addgene 62723) in the PPN (AP -4.48, ML 1.1, DV -3.75)."
+        description: "Mice were unilaterally injected with 150nl or 200nl AAV5-DIO-Syn-ChrimsonR-Tdtomato (4e12 vg/mL or 8.5e12 vg/mL, Addgene 62723) in the STN (AP -2.00, ML 1.6, DV -4.5)."
+        manufacturer: Addgene 62723
+        label: AAV5-DIO-Syn-ChrimsonR-Tdtomato
+        injection_location: STN
+        injection_coordinates_in_mm: [-2.00, 1.6, -4.5]
+      - name: Tdtomato
+        description: "Mice were unilaterally injected with 150nl or 200nl AAV5-DIO-Syn-ChrimsonR-Tdtomato (4e12 vg/mL or 8.5e12 vg/mL, Addgene 62723)."
         manufacturer: Addgene 62723
         label: AAV5-DIO-Syn-ChrimsonR-Tdtomato
         injection_location: PPN
