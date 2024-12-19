@@ -72,12 +72,27 @@ def session_to_nwb(
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
 
+    if "Ophys" in metadata and "FiberPhotometry" in metadata["Ophys"]:
+        fiber_photometry = metadata["Ophys"]["FiberPhotometry"]
+        if "Indicators" in fiber_photometry:
+            indicators = fiber_photometry["Indicators"]
+
+            # Filter the indicators based on ogen_stimulus_location
+            filtered_indicators = [
+                indicator
+                for indicator in indicators
+                if not (
+                    (ogen_stimulus_location == "STN" and indicator.get("injection_location") == "PPN")
+                    or (ogen_stimulus_location == "PPN" and indicator.get("injection_location") == "STN")
+                )
+            ]
+
+            # Update the Indicators section
+            fiber_photometry["Indicators"] = filtered_indicators
+
     # Add stimulus metadata
     metadata = dict_deep_update(metadata, stimulus_metadata)
     metadata["Stimulus"]["OptogeneticStimulusSite"][0]["location"] = ogen_stimulus_location
-
-    # TODO remove indicator located in the PPN if ogen_stimulus_location is STN,
-    #  or remove indicator located in the STN if ogen_stimulus_location is PPN
 
     # Run conversion
     converter.run_conversion(
@@ -92,7 +107,7 @@ if __name__ == "__main__":
     output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
     from neuroconv.tools.path_expansion import LocalPathExpander
 
-    data_dir_path = "D:/Hnasko-CN-data-share/SN pan GABA recordings/PPN/"
+    data_dir_path = "D:/Hnasko-CN-data-share/SN pan GABA recordings/"
     # Specify source data
     source_data_spec = {
         "FiberPhotometry": {
@@ -104,7 +119,7 @@ if __name__ == "__main__":
     path_expander = LocalPathExpander()
     # Expand paths and extract metadata
     metadata_list = path_expander.expand_paths(source_data_spec)
-    for metadata in metadata_list:
+    for metadata in metadata_list[-5:]:
         session_to_nwb(
             output_dir_path=output_dir_path,
             subject_id=metadata["metadata"]["Subject"]["subject_id"],

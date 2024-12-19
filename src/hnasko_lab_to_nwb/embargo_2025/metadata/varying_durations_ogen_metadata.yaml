@@ -2,7 +2,7 @@ Stimulus:
  OptogeneticStimulusSite:
    - name: optogenetic_stimulus_site
      description: The site where the optogenetic stimulation was applied.
-     excitation_lambda: 635 # Excitation wavelength in nanometers.
+     excitation_lambda: 635.0 # Excitation wavelength in nanometers.
  OptogeneticSeries:
    name: optogenetic_series
    site: optogenetic_stimulus_site

@@ -40,16 +40,14 @@ def create_optogenetic_timeseries(stimulus_intervals_df: pd.DataFrame):
         # Calculate the period of the square wave
         period = 1 / frequency
 
-        # Get the indices of the time array corresponding to this interval
-        start_idx = np.searchsorted(timestamps, start_time)
-        stop_idx = np.searchsorted(timestamps, stop_time)
+        # Generate stimulus onset within the interval
+        stimulus_on = np.arange(start_time, stop_time, period)
 
-        # Generate the square wave for this interval
-        interval_time = timestamps[start_idx:stop_idx]
-        square_wave = ((interval_time % period) < (period / 2)).astype(int)
+        # Find the indices of the timestamps closest to the spike times
+        indices = np.searchsorted(timestamps[:-1], stimulus_on)
 
-        # Set the TTL signal to the square wave in this interval
-        data[start_idx:stop_idx] = square_wave
+        # Set the TTL signal to 1 at the spike indices
+        data[indices] = 1
 
     return timestamps, data
 
@@ -119,7 +117,9 @@ def add_optogenetic_stimulation(nwbfile: NWBFile, metadata: dict, tdt_events: di
 
     nwbfile.add_ogen_site(ogen_stim_site)
 
-    timestamps, data = create_optogenetic_timeseries(metadata=metadata, tdt_events=tdt_events)
+    stimulus_intervals_df = get_stimulus_intervals_df(metadata=metadata, tdt_events=tdt_events)
+
+    timestamps, data = create_optogenetic_timeseries(stimulus_intervals_df=stimulus_intervals_df)
 
     optogenetic_series = OptogeneticSeries(
         name=optogenetic_series_metadata["name"],
@@ -132,22 +132,18 @@ def add_optogenetic_stimulation(nwbfile: NWBFile, metadata: dict, tdt_events: di
     nwbfile.add_stimulus(optogenetic_series)
 
     optogenetic_stimulus_intervals_metadata = optogenetics_metadata["OptogeneticStimulusInterval"]
-    tdt_events_metadata = optogenetics_metadata["TDTEvents"]
 
     optogenetic_stimulus_intervals = TimeIntervals(
         name=optogenetic_stimulus_intervals_metadata["name"],
         description=optogenetic_stimulus_intervals_metadata["description"],
     )
     optogenetic_stimulus_intervals.add_column(name="stimulus_frequency", description="Frequency of stimulus")
-    for tdt_event_name in tdt_events.keys():
-        stimulus_frequency = tdt_events_metadata["stimuli_frequencies"][
-            tdt_events_metadata["stream_names"] == tdt_event_name
-        ]
+    for _, row in stimulus_intervals_df.iterrows():
         optogenetic_stimulus_intervals.add_interval(
-            start_time=tdt_events[tdt_event_name]["onset"],
-            end_time=tdt_events[tdt_event_name]["offset"],
-            timeseries=data,
-            stimulus_frequency=stimulus_frequency,
+            start_time=row["start_time"],
+            stop_time=row["stop_time"],
+            timeseries=optogenetic_series,
+            stimulus_frequency=row["stimulus_frequency"],
         )
 
     nwbfile.add_stimulus(optogenetic_stimulus_intervals)
