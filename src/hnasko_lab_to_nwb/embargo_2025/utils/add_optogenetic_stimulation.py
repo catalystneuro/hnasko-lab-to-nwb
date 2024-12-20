@@ -59,6 +59,8 @@ def get_stimulus_intervals_df(tdt_events: dict, metadata: dict):
     stimuli_frequencies = tdt_events_metadata["stimuli_frequencies"]
     rows = []
     for stream_name, stimulus_frequency in zip(stream_names, stimuli_frequencies):
+        if stream_name == "sms_" and stream_name not in tdt_events.keys():
+            stream_name = "ssm_"  # fix typo
         for start_time, stop_time in zip(tdt_events[stream_name]["onset"], tdt_events[stream_name]["offset"]):
             rows.append(
                 {
