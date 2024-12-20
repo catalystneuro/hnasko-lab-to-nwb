@@ -35,15 +35,21 @@ Gcamp6f was excited by amplitude modulated signals from two light-emitting diode
 Stimulation and shock timestamps were digitized in Synapse software by respectively AnyMaze and MedPC.
 Optogenetic stimulation metadata:
 ```yaml
-OptogeneticStimulusSite:
- - name: optogenetic_stimulus_site
-   description: The site where the optogenetic stimulation was applied.
-   excitation_lambda: 635 # Excitation wavelength in nanometers.
-   location: PPN # or STN # The brain area where the stimulation was applied.
-OptogeneticSeries:
- name: optogenetic_series
- site: optogenetic_stimulus_site
- description: Notes on the optogenetic stimulation.
+Stimulus:
+ OptogeneticStimulusSite:
+   - name: optogenetic_stimulus_site
+     description: The site where the optogenetic stimulation was applied.
+     excitation_lambda: 635.0 # Excitation wavelength in nanometers.
+ OptogeneticSeries:
+   name: optogenetic_series
+   site: optogenetic_stimulus_site
+   description: The reconstructed timeseries for the optogenetic stimulation.
+ OptogeneticStimulusInterval:
+   name: optogenetic_stimulus_interval
+   description: Optogenetic stimulus events from TDT epochs.
+TDTEvents:
+ stream_names: ["sms_","s1s_","s4s_"] #
+ stimuli_frequencies: [40.0, 40.0, 40.0]
 ```
 ## TDT data structure
 
