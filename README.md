@@ -14,8 +14,8 @@ pip install hnasko-lab-to-nwb
 
 We recommend that you install the package inside a [virtual environment](https://docs.python.org/3/tutorial/venv.
 html). A simple way of doing this is to use a [conda environment](https://docs.conda.
-io/projects/conda/en/latest/user-guide/concepts/environments.html) from the `conda` package manager ([installation 
-instructions](https://docs.conda.io/en/latest/miniconda.html)). Detailed instructions on how to use conda 
+io/projects/conda/en/latest/user-guide/concepts/environments.html) from the `conda` package manager ([installation
+instructions](https://docs.conda.io/en/latest/miniconda.html)). Detailed instructions on how to use conda
 environments can be found in their [documentation](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).
 
 ### Running a specific conversion
@@ -30,10 +30,10 @@ python convert_session.py
 ```
 
 ## Installation from GitHub
-Another option is to install the package directly from GitHub. This option has the advantage that the source code 
-can be modified if you need to amend some of the code we originally provided to adapt to future experimental 
-differences. To install the conversion from GitHub you will need to use `git` ([installation instructions] (https://github.com/git-guides/install-git)). 
-We also recommend the installation of `conda` ([installation instructions](https://docs.conda.io/en/latest/miniconda.html)) as it contains all the required 
+Another option is to install the package directly from GitHub. This option has the advantage that the source code
+can be modified if you need to amend some of the code we originally provided to adapt to future experimental
+differences. To install the conversion from GitHub you will need to use `git` ([installation instructions] (https://github.com/git-guides/install-git)).
+We also recommend the installation of `conda` ([installation instructions](https://docs.conda.io/en/latest/miniconda.html)) as it contains all the required
 machinery in a single and simple install.
 
 From a terminal (note that conda should install one in your system) you can do the following:
@@ -47,7 +47,7 @@ conda activate hnasko-lab-to-nwb-env
 
 This creates a [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) which isolates the conversion code from your system libraries.  We recommend that you run all your conversion related tasks and analysis from the created environment in order to minimize issues related to package dependencies.
 
-Alternatively, if you want to avoid conda altogether (for example if you use another virtual environment tool) you 
+Alternatively, if you want to avoid conda altogether (for example if you use another virtual environment tool) you
 can install the repository with the following commands using only pip:
 
 ```
@@ -94,11 +94,11 @@ Each conversion is organized in a directory of its own in the `src` directory:
 
         └── __init__.py
 
-For example, for the conversion `embargo_2025` you can find a directory located in `src/hnasko-lab-to-nwb/embargo_2025`. 
+For example, for the conversion `embargo_2025` you can find a directory located in `src/hnasko-lab-to-nwb/embargo_2025`.
 Inside each conversion directory you can find the following files:
 
 
-* `convert_sesion.py`: this script defines the function to convert one full session of the conversion. 
+* `convert_sesion.py`: this script defines the function to convert one full session of the conversion.
 * `metadata.yml`: metadata in yaml format for this specific conversion.
 * `behaviorinterface.py`: the behavior interface. Usually ad-hoc for each conversion.
 * `nwbconverter.py`: the place where the `NWBConverter` class is defined.
