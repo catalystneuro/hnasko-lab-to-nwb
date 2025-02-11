@@ -1,7 +1,8 @@
 """Primary script to run to convert an entire session for of data using the NWBConverter."""
 
+import warnings
 from pathlib import Path
-from typing import Union
+from typing import List, Union
 
 from nwbconverter import Embargo2025NWBConverter
 
@@ -13,6 +14,7 @@ def session_to_nwb(
     subject_id: str,
     session_id: str,
     tdt_folder_path: Union[str, Path],
+    video_file_paths: List[Union[str, Path]],
     protocol_type: str,
     ogen_stimulus_location: str,
     stub_test: bool = False,
@@ -58,9 +60,16 @@ def session_to_nwb(
     conversion_options = dict()
 
     # Add FiberPhotometry
-
     source_data.update(dict(FiberPhotometry=dict(folder_path=tdt_folder_path)))
     conversion_options.update(dict(FiberPhotometry=dict()))
+
+    # Add Video
+    if not video_file_paths:
+        warnings.warn("No video file paths found. Skipping video data addition.")
+    else:
+        # TODO converted video does not timestamps as the original video
+        source_data.update(dict(Video=dict(file_paths=video_file_paths)))
+        conversion_options.update(dict(Video=dict(stub_test=stub_test, external_mode=True)))
 
     converter = Embargo2025NWBConverter(source_data=source_data)
 
@@ -110,7 +119,7 @@ if __name__ == "__main__":
     output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
     from neuroconv.tools.path_expansion import LocalPathExpander
 
-    data_dir_path = "D:/Hnasko-CN-data-share/SN pan GABA recordings/"
+    # data_dir_path = "D:/Hnasko-CN-data-share/SN pan GABA recordings/"
     # Specify source data
     source_data_spec = {
         "FiberPhotometry": {
@@ -122,15 +131,23 @@ if __name__ == "__main__":
     path_expander = LocalPathExpander()
     # Expand paths and extract metadata
     metadata_list = path_expander.expand_paths(source_data_spec)
+    for metadata in metadata_list[-5:]:
+        ogen_stimulus_location = metadata["metadata"]["extras"]["ogen_stimulus_location"]
+        protocol_type = metadata["metadata"]["extras"]["protocol_type"]
+        subject_id = metadata["metadata"]["Subject"]["subject_id"]
+        video_folder_path = (
+            data_dir_path / ogen_stimulus_location / "AnyMaze videos_slk/converted_video" / protocol_type
+        )
 
-    for metadata in metadata_list[:5]:
+        video_file_paths = list(video_folder_path.glob(f"{subject_id}*.mp4"))
         session_to_nwb(
             output_dir_path=output_dir_path,
             subject_id=metadata["metadata"]["Subject"]["subject_id"],
             session_id=metadata["metadata"]["NWBFile"]["session_id"],
             tdt_folder_path=metadata["source_data"]["FiberPhotometry"]["folder_path"],
-            protocol_type=metadata["metadata"]["extras"]["protocol_type"],
-            ogen_stimulus_location=metadata["metadata"]["extras"]["ogen_stimulus_location"],
+            video_file_paths=video_file_paths,
+            protocol_type=protocol_type,
+            ogen_stimulus_location=ogen_stimulus_location,
             stub_test=True,
             overwrite=True,
         )

@@ -6,7 +6,7 @@ from pynwb import NWBFile
 from utils import add_optogenetic_stimulation, add_shock_stimuli
 
 from neuroconv import NWBConverter
-from neuroconv.datainterfaces import TDTFiberPhotometryInterface
+from neuroconv.datainterfaces import TDTFiberPhotometryInterface, VideoInterface
 
 
 class Embargo2025NWBConverter(NWBConverter):
@@ -14,6 +14,7 @@ class Embargo2025NWBConverter(NWBConverter):
 
     data_interface_classes = dict(
         FiberPhotometry=TDTFiberPhotometryInterface,
+        Video=VideoInterface,
     )
 
     def add_to_nwbfile(self, nwbfile: NWBFile, metadata, conversion_options: Optional[dict] = None) -> None:
