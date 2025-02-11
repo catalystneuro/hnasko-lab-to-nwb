@@ -1,0 +1,8 @@
+Stimulus:
+  ShockStimulusInterval:
+    name: shock_stimulus_interval
+    description: Shock stimulus events from TDT epochs.
+TDTEvents:
+  stream_names: ["CSm_", "CSp_", "sms_", "s1s_", "s4s_"]
+  stimulus_amplitude: [0.3, 0.3, 0.3, 0.3, 0.3]
+  paired_auditory_cue: [false, true, false, false, false]
