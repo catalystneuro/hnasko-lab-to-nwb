@@ -16,6 +16,7 @@ def session_to_nwb(
     protocol_type: str,
     ogen_stimulus_location: str,
     stub_test: bool = False,
+    overwrite: bool = False,
 ):
     output_dir_path = Path(output_dir_path)
     if stub_test:
@@ -50,7 +51,8 @@ def session_to_nwb(
             "Uncued shocks (0.3 mA) at various durations (250ms, 1s and 4s, 5 times for each duration) "
             "are delivered in a randomized order and ISI."
         )
-        stimulus_metadata = {}
+        stimulus_metadata_path = Path(__file__).parent / "metadata/shock_stimulus_metadata.yaml"
+        stimulus_metadata = load_dict_from_file(stimulus_metadata_path)
 
     source_data = dict()
     conversion_options = dict()
@@ -92,11 +94,12 @@ def session_to_nwb(
 
     # Add stimulus metadata
     metadata = dict_deep_update(metadata, stimulus_metadata)
-    metadata["Stimulus"]["OptogeneticStimulusSite"][0]["location"] = ogen_stimulus_location
+    if "OptogeneticStimulusSite" in metadata["Stimulus"]:
+        metadata["Stimulus"]["OptogeneticStimulusSite"][0]["location"] = ogen_stimulus_location
 
     # Run conversion
     converter.run_conversion(
-        metadata=metadata, nwbfile_path=nwbfile_path, conversion_options=conversion_options, overwrite=True
+        metadata=metadata, nwbfile_path=nwbfile_path, conversion_options=conversion_options, overwrite=overwrite
     )
 
 
@@ -119,7 +122,8 @@ if __name__ == "__main__":
     path_expander = LocalPathExpander()
     # Expand paths and extract metadata
     metadata_list = path_expander.expand_paths(source_data_spec)
-    for metadata in metadata_list[-5:]:
+
+    for metadata in metadata_list[:5]:
         session_to_nwb(
             output_dir_path=output_dir_path,
             subject_id=metadata["metadata"]["Subject"]["subject_id"],
@@ -128,4 +132,5 @@ if __name__ == "__main__":
             protocol_type=metadata["metadata"]["extras"]["protocol_type"],
             ogen_stimulus_location=metadata["metadata"]["extras"]["ogen_stimulus_location"],
             stub_test=True,
+            overwrite=True,
         )
