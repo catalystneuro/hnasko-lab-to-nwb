@@ -66,8 +66,12 @@ def session_to_nwb(
     # Add Video
     if not video_file_paths:
         warnings.warn("No video file paths found. Skipping video data addition.")
+    elif len(video_file_paths) > 1:
+        warnings.warn(
+            "Multiple video file paths found. Conversion of multiple video files into NWB format has not been implemented yet. Skipping video data addition."
+            "Adding multiple video files will trigger: ValueError: No timing information is specified and there are 3 total video files! Please specify the temporal alignment of each video."
+        )
     else:
-        # TODO converted video does not timestamps as the original video
         source_data.update(dict(Video=dict(file_paths=video_file_paths)))
         conversion_options.update(dict(Video=dict(stub_test=stub_test, external_mode=True)))
 
@@ -131,7 +135,7 @@ if __name__ == "__main__":
     path_expander = LocalPathExpander()
     # Expand paths and extract metadata
     metadata_list = path_expander.expand_paths(source_data_spec)
-    for metadata in metadata_list[-5:]:
+    for metadata in metadata_list:
         ogen_stimulus_location = metadata["metadata"]["extras"]["ogen_stimulus_location"]
         protocol_type = metadata["metadata"]["extras"]["protocol_type"]
         subject_id = metadata["metadata"]["Subject"]["subject_id"]
@@ -148,6 +152,6 @@ if __name__ == "__main__":
             video_file_paths=video_file_paths,
             protocol_type=protocol_type,
             ogen_stimulus_location=ogen_stimulus_location,
-            stub_test=True,
+            stub_test=False,
             overwrite=True,
         )
