@@ -48,8 +48,7 @@ def session_to_nwb(
     elif protocol_type == "Shocks":
         session_description = (
             "The subject is placed in a shock chamber and recorded for 6 minutes. "
-            "Uncued shocks (0.3 mA) at various durations (250ms, 1s and 4s, 5 times for each duration) "
-            "are delivered in a randomized order and ISI."
+            "Auditory cues of 8 sec not paired or paired with shock are delivered during the session."
         )
         stimulus_metadata_path = Path(__file__).parent / "metadata/shock_stimulus_metadata.yaml"
         stimulus_metadata = load_dict_from_file(stimulus_metadata_path)
