@@ -10,4 +10,4 @@ Stimulus:
     description: Auditory stimulus events from TDT epochs.
   AuditoryTDTEvents:
     stream_names: ["CSm_", "CSp_"]
-    paired_shock: [false, true]
+    paired_shock: ["no shock", "shock"]
