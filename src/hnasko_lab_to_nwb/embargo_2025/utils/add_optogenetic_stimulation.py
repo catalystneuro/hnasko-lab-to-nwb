@@ -67,6 +67,7 @@ def get_stimulus_intervals_df(tdt_events: dict, metadata: dict):
                     "start_time": start_time,
                     "stop_time": stop_time,
                     "stimulus_frequency": stimulus_frequency,
+                    "stream_name": stream_name,
                 }
             )
     return pd.DataFrame(rows)
@@ -140,12 +141,16 @@ def add_optogenetic_stimulation(nwbfile: NWBFile, metadata: dict, tdt_events: di
         description=optogenetic_stimulus_intervals_metadata["description"],
     )
     optogenetic_stimulus_intervals.add_column(name="stimulus_frequency", description="Frequency of stimulus")
+    optogenetic_stimulus_intervals.add_column(
+        name="stream_name", description="Name of the TDT system stream used for the stimulus"
+    )
     for _, row in stimulus_intervals_df.iterrows():
         optogenetic_stimulus_intervals.add_interval(
             start_time=row["start_time"],
             stop_time=row["stop_time"],
             timeseries=optogenetic_series,
             stimulus_frequency=row["stimulus_frequency"],
+            stream_name=row["stream_name"],
         )
 
     nwbfile.add_stimulus(optogenetic_stimulus_intervals)

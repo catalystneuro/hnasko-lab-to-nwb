@@ -3,7 +3,7 @@
 from typing import Optional
 
 from pynwb import NWBFile
-from utils import add_optogenetic_stimulation, add_shock_stimuli
+from utils import add_auditory_stimuli, add_optogenetic_stimulation, add_shock_stimuli
 
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import TDTFiberPhotometryInterface
@@ -25,3 +25,4 @@ class Embargo2025NWBConverter(NWBConverter):
                 add_optogenetic_stimulation(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
             if "ShockStimulusInterval" in metadata["Stimulus"]:
                 add_shock_stimuli(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
+                add_auditory_stimuli(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)

@@ -48,8 +48,7 @@ def session_to_nwb(
     elif protocol_type == "Shocks":
         session_description = (
             "The subject is placed in a shock chamber and recorded for 6 minutes. "
-            "Uncued shocks (0.3 mA) at various durations (250ms, 1s and 4s, 5 times for each duration) "
-            "are delivered in a randomized order and ISI."
+            "Auditory cues of 8 sec not paired or paired with shock are delivered during the session."
         )
         stimulus_metadata_path = Path(__file__).parent / "metadata/shock_stimulus_metadata.yaml"
         stimulus_metadata = load_dict_from_file(stimulus_metadata_path)
@@ -93,7 +92,7 @@ def session_to_nwb(
             fiber_photometry["Indicators"] = filtered_indicators
 
     # Add stimulus metadata
-    metadata = dict_deep_update(metadata, stimulus_metadata)
+    metadata = dict_deep_update(metadata, stimulus_metadata, remove_repeats=False)
     if "OptogeneticStimulusSite" in metadata["Stimulus"]:
         metadata["Stimulus"]["OptogeneticStimulusSite"][0]["location"] = ogen_stimulus_location
 
@@ -123,7 +122,7 @@ if __name__ == "__main__":
     # Expand paths and extract metadata
     metadata_list = path_expander.expand_paths(source_data_spec)
 
-    for metadata in metadata_list[:5]:
+    for metadata in metadata_list:
         session_to_nwb(
             output_dir_path=output_dir_path,
             subject_id=metadata["metadata"]["Subject"]["subject_id"],
@@ -131,6 +130,6 @@ if __name__ == "__main__":
             tdt_folder_path=metadata["source_data"]["FiberPhotometry"]["folder_path"],
             protocol_type=metadata["metadata"]["extras"]["protocol_type"],
             ogen_stimulus_location=metadata["metadata"]["extras"]["ogen_stimulus_location"],
-            stub_test=True,
+            stub_test=False,
             overwrite=True,
         )
