@@ -3,8 +3,7 @@ NWBFile:
     - Keyword1
     - Keyword2
     - Keyword3
-  experiment_description:
-    Mice were freely moving on a plastic tub.
+  experiment_description: Mice were freely moving on a plastic tub.
     Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the first two days.
     Excitatory inputs from either the STN or PPN to SN were stimulated and the activity of SN GABAergic neurons were recorded.
     Then mice underwent uncued electrical shocks and were recorded using fiber photometry.
@@ -13,7 +12,8 @@ NWBFile:
   experimenter:
     - Last, First Middle
     - Last, First Middle
-  surgery: Mice > 6 weeks old were anesthetized with isoflurane (4% for induction; 1-2% for maintenance).
+  surgery:
+    Mice > 6 weeks old were anesthetized with isoflurane (4% for induction; 1-2% for maintenance).
     For fiber photometry experiments, mice were unilaterally injected with 300nl of AAV1-fDIO-Ef1a-Gcamp6f
     (4e12 vg/mL, Addgene 1283125) in SNr (AP -3.3, ML 1.3, DV -4.60) and 150nl or 200nl AAV5-DIO-Syn-ChrimsonR-Tdtomato
     (4e12 vg/mL or 8.5e12 vg/mL, Addgene 62723) in either STN (AP -2.00, ML 1.6, DV -4.50) or PPN (AP -4.48, ML 1.1, DV -3.75).
@@ -22,13 +22,14 @@ NWBFile:
     Mice were allowed to recover for 4 weeks before starting experiments.
 Subject:
   species: Mus musculus
-  description: Male and female were bred at University of California San Diego (UCSD) and group-housed on a 12-hour light/dark cycle,
+  description:
+    Male and female were bred at University of California San Diego (UCSD) and group-housed on a 12-hour light/dark cycle,
     with food and water ad libitum. VGLUT2-IRES-CRE and VGAT-2A-FlpO-D knock-in mice were obtained from the Jackson Laboratory
     Slc17a6tm2(cre)Lowl (RRID:IMSR_JAX:016963) Slc32a1tm1.1(flpo)Hze (RRID:IMSR_JAX:029591) and maintained backcrossed on to C57BL/6J.
     VGlut2-Cre animals were crossed with VGAT-flp animals to generate dual transgenic animals that were VGlut2-Cre/VGAT-flp and used for experiments.
     All experiments were performed on animals of at least 6 weeks of age and in accordance with protocols approved by UCSD Institutional Animal Care and Use Committee.
-  age: P10W  # To ask
-  sex: U  # To ask
+  age: P10W # To ask
+  sex: U # To ask
   strain: C57BL/6J
   genotype: VGLUT2-IRES-CRE;VGAT-2A-FlpO-D # To check with lab point person
   # date_of_birth: 2014-06-22 00:00:00-04:00  # Example
@@ -113,14 +114,20 @@ Ophys:
           dichroic_mirror: dichroic_mirror
     FiberPhotometryResponseSeries:
       - name: calcium_signal
-        description: The raw fiber photometry signal from Tucker David Technologies (TDT) acquisition system.
-        stream_name: _465A
+        description: The demodulated fiber photometry signal from Tucker David Technologies (TDT) acquisition system.
+        stream_name: Fi1r
         unit: a.u.
         fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
       - name: isosbestic_signal
-        description: The raw fiber photometry signal from Tucker David Technologies (TDT) acquisition system.
-        stream_name: _405A
+        description: The demodulated fiber photometry signal from Tucker David Technologies (TDT) acquisition system.
+        stream_name: Fi1r
         unit: a.u.
         fiber_photometry_table_region: [1]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
+      - name: raw_modulated_signal
+        description: The raw fiber photometry signal from Tucker David Technologies (TDT) acquisition system.
+        stream_name: Fi1r
+        unit: a.u.
+        fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
