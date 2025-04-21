@@ -125,7 +125,7 @@ Ophys:
         unit: a.u.
         fiber_photometry_table_region: [1]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
-      - name: raw_modulated_signal
+      - name: raw_modulated_signal #change to fiber_photometry_modulated_signal ? 
         description: The raw fiber photometry signal from Tucker David Technologies (TDT) acquisition system.
         stream_name: Fi1r
         unit: a.u.

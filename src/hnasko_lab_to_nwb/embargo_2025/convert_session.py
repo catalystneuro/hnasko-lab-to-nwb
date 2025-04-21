@@ -3,9 +3,12 @@
 from pathlib import Path
 from typing import Union
 
-from nwbconverter import Embargo2025NWBConverter
+from hnasko_lab_to_nwb.embargo_2025.nwbconverter import Embargo2025NWBConverter
+from .interfaces.demodulated_tdt_interface import DemodulatedTDTInterface
+
 
 from neuroconv.utils import dict_deep_update, load_dict_from_file
+
 
 
 def session_to_nwb(
@@ -63,6 +66,12 @@ def session_to_nwb(
 
     converter = Embargo2025NWBConverter(source_data=source_data)
 
+    # Add DemodulatedFiberPhotometry, no additional parameter
+
+    source_data.update(dict(DemodulatedFiberPhotometry=dict(folder_path=tdt_folder_path)))
+    conversion_options.update(dict(DemodulatedFiberPhotometry=dict()))
+
+
     # Update default metadata with the editable in the corresponding yaml file
     metadata = converter.get_metadata()
     editable_metadata_path = Path(__file__).parent / "metadata/general_metadata.yaml"
@@ -105,16 +114,17 @@ def session_to_nwb(
 if __name__ == "__main__":
 
     # Parameters for conversion
-    data_dir_path = Path("D:/Hnasko-CN-data-share/SN pan GABA recordings/")
-    output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
+    data_dir_path = Path("/Users/daphnedequatrebarbes/Documents/Catalystneuro/hnasko-lab-to-nwb")   
+    output_dir_path = Path("/Users/daphnedequatrebarbes/Documents/Catalystneuro/hnasko-lab-to-nwb/nwb_output")
+
     from neuroconv.tools.path_expansion import LocalPathExpander
 
-    data_dir_path = "D:/Hnasko-CN-data-share/SN pan GABA recordings/"
+    data_dir_path = "/Users/daphnedequatrebarbes/Documents/Catalystneuro/hnasko-lab-to-nwb"
     # Specify source data
     source_data_spec = {
         "FiberPhotometry": {
             "base_directory": data_dir_path,
-            "folder_path": "{ogen_stimulus_location}/Fiber photometry_TDT/{protocol_type}/{subject_id}-{session_id}",
+            "folder_path": "C4561-240117-163347"#"{ogen_stimulus_location}/Fiber photometry_TDT/{protocol_type}/{subject_id}-{session_id}",
         }
     }
     # Instantiate LocalPathExpander
