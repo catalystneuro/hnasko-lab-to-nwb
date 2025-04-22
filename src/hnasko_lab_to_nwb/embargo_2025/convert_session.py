@@ -63,15 +63,21 @@ def session_to_nwb(
 
     source_data.update(dict(FiberPhotometry=dict(folder_path=tdt_folder_path)))
     conversion_options.update(dict(FiberPhotometry=dict()))
+    
+    # Add DemodulatedFiberPhotometry for calcium and isosbestic
+
+    source_data.update(dict(
+        DemodulatedFiberPhotometry_Calcium=dict(folder_path=tdt_folder_path),
+        DemodulatedFiberPhotometry_Isosbestic=dict(folder_path=tdt_folder_path),
+    ))
+
+    conversion_options.update(dict(
+        DemodulatedFiberPhotometry_Calcium=dict(driver_freq=330, name="calcium_signal"),
+        DemodulatedFiberPhotometry_Isosbestic=dict(driver_freq=210, name="isosbestic_signal"),
+    ))
 
     converter = Embargo2025NWBConverter(source_data=source_data)
-
-    # Add DemodulatedFiberPhotometry, no additional parameter
-
-    source_data.update(dict(DemodulatedFiberPhotometry=dict(folder_path=tdt_folder_path)))
-    conversion_options.update(dict(DemodulatedFiberPhotometry=dict()))
-
-
+    
     # Update default metadata with the editable in the corresponding yaml file
     metadata = converter.get_metadata()
     editable_metadata_path = Path(__file__).parent / "metadata/general_metadata.yaml"
@@ -114,19 +120,20 @@ def session_to_nwb(
 if __name__ == "__main__":
 
     # Parameters for conversion
-    data_dir_path = Path("/Users/daphnedequatrebarbes/Documents/Catalystneuro/hnasko-lab-to-nwb")   
-    output_dir_path = Path("/Users/daphnedequatrebarbes/Documents/Catalystneuro/hnasko-lab-to-nwb/nwb_output")
+    data_dir_path = Path("D:/Hnasko-CN-data-share/SN pan GABA recordings/")
+    output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
 
     from neuroconv.tools.path_expansion import LocalPathExpander
 
-    data_dir_path = "/Users/daphnedequatrebarbes/Documents/Catalystneuro/hnasko-lab-to-nwb"
+    data_dir_path = "D:/Hnasko-CN-data-share/SN pan GABA recordings/"
     # Specify source data
     source_data_spec = {
         "FiberPhotometry": {
             "base_directory": data_dir_path,
-            "folder_path": "C4561-240117-163347"#"{ogen_stimulus_location}/Fiber photometry_TDT/{protocol_type}/{subject_id}-{session_id}",
+            "folder_path": "{ogen_stimulus_location}/Fiber photometry_TDT/{protocol_type}/{subject_id}-{session_id}",
         }
     }
+
     # Instantiate LocalPathExpander
     path_expander = LocalPathExpander()
     # Expand paths and extract metadata

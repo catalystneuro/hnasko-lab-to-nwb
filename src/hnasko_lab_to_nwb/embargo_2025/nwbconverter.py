@@ -1,8 +1,8 @@
 """Primary NWBConverter class for this dataset."""
 
 from typing import Optional
-import pynwb
 from pynwb import NWBFile
+
 from hnasko_lab_to_nwb.embargo_2025.utils import add_auditory_stimuli, add_optogenetic_stimulation, add_shock_stimuli
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import TDTFiberPhotometryInterface
@@ -13,7 +13,8 @@ class Embargo2025NWBConverter(NWBConverter):
 
     data_interface_classes = dict(
         FiberPhotometry=TDTFiberPhotometryInterface, 
-        DemodulatedFiberPhotometry = DemodulatedTDTInterface
+        DemodulatedFiberPhotometry_Calcium=DemodulatedTDTInterface,
+        DemodulatedFiberPhotometry_Isosbestic=DemodulatedTDTInterface,
     )
 
     def add_to_nwbfile(self, nwbfile: NWBFile, metadata, conversion_options: Optional[dict] = None) -> None:
