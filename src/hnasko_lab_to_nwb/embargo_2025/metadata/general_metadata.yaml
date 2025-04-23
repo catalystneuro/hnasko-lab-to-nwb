@@ -112,7 +112,14 @@ Ophys:
           excitation_source: excitation_source_isosbestic
           photodetector: photodetector
           dichroic_mirror: dichroic_mirror
-    FiberPhotometryResponseSeries:
+    FiberPhotometryResponseSeries: 
+      - name: raw_modulated_signal 
+        description: The raw fiber photometry signal from Tucker David Technologies (TDT) acquisition system.
+        stream_name: Fi1r
+        unit: a.u.
+        fiber_photometry_table_region: [0]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
+    DemodulatedFiberphotometryResponseSeries:
       - name: calcium_signal
         description: The demodulated fiber photometry signal from Tucker David Technologies (TDT) acquisition system.
         stream_name: Fi1r
@@ -124,10 +131,4 @@ Ophys:
         stream_name: Fi1r
         unit: a.u.
         fiber_photometry_table_region: [1]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
-      - name: raw_modulated_signal 
-        description: The raw fiber photometry signal from Tucker David Technologies (TDT) acquisition system.
-        stream_name: Fi1r
-        unit: a.u.
-        fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
