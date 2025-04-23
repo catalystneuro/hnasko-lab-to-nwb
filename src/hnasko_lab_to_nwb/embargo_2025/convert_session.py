@@ -106,6 +106,7 @@ def session_to_nwb(
             # Update the Indicators section
             fiber_photometry["Indicators"] = filtered_indicators
 
+
     # Add stimulus metadata
     metadata = dict_deep_update(metadata, stimulus_metadata, remove_repeats=False)
     if "OptogeneticStimulusSite" in metadata["Stimulus"]:
@@ -115,7 +116,6 @@ def session_to_nwb(
     converter.run_conversion(
         metadata=metadata, nwbfile_path=nwbfile_path, conversion_options=conversion_options, overwrite=overwrite
     )
-
 
 if __name__ == "__main__":
 

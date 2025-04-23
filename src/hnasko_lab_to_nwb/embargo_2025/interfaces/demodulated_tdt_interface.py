@@ -1,4 +1,5 @@
 from typing import Literal
+from collections.abc import MutableMapping
 
 from ndx_fiber_photometry import FiberPhotometryResponseSeries
 from ..utils.demodulate_fp_signal import demodulate_signal
@@ -30,7 +31,7 @@ class DemodulatedTDTInterface(TDTFiberPhotometryInterface):
         tdt_photometry = self.load(t1=t1, t2=t2)
 
         # Find the metadata for the raw modulated signal
-        all_series_metadata = metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"]
+        all_series_metadata = metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"] 
         raw_signal_metadata = next(
             series_md for series_md in all_series_metadata
             if series_md["name"] == "raw_modulated_signal"
@@ -65,7 +66,7 @@ class DemodulatedTDTInterface(TDTFiberPhotometryInterface):
 
         # Find the metadata for the demodulated signal
         response_metadata = next(
-            series_md for series_md in metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"]
+            series_md for series_md in metadata["Ophys"]["FiberPhotometry"]["DemodulatedFiberphotometryResponseSeries"]
             if series_md["name"] == signal_name
         )
 
