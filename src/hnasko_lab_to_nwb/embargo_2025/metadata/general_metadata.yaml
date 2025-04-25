@@ -119,7 +119,7 @@ Ophys:
         unit: a.u.
         fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
-    DemodulatedFiberphotometryResponseSeries:
+    DemodulatedFiberPhotometryResponseSeries:
       - name: calcium_signal
         description: The demodulated fiber photometry signal from Tucker David Technologies (TDT) acquisition system.
         stream_name: Fi1r
