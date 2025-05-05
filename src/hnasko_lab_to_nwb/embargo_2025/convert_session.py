@@ -4,9 +4,6 @@ from pathlib import Path
 from typing import Union
 
 from hnasko_lab_to_nwb.embargo_2025.nwbconverter import Embargo2025NWBConverter
-from .interfaces.demodulated_tdt_interface import DemodulatedTDTInterface
-
-
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 

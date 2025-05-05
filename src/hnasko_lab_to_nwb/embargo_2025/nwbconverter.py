@@ -3,18 +3,19 @@
 from typing import Optional
 from pynwb import NWBFile
 
-from hnasko_lab_to_nwb.embargo_2025.utils import add_auditory_stimuli, add_optogenetic_stimulation, add_shock_stimuli
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import TDTFiberPhotometryInterface
-from .interfaces.demodulated_tdt_interface import DemodulatedTDTInterface
+
+from interfaces import TDTDemodulatedFiberPhotometryInterface
+from hnasko_lab_to_nwb.embargo_2025.utils import add_auditory_stimuli, add_optogenetic_stimulation, add_shock_stimuli
 
 class Embargo2025NWBConverter(NWBConverter):
     """Primary conversion class for my extracellular electrophysiology dataset."""
 
     data_interface_classes = dict(
         FiberPhotometry=TDTFiberPhotometryInterface, 
-        DemodulatedFiberPhotometry_Calcium=DemodulatedTDTInterface,
-        DemodulatedFiberPhotometry_Isosbestic=DemodulatedTDTInterface,
+        DemodulatedFiberPhotometry_Calcium=TDTDemodulatedFiberPhotometryInterface,
+        DemodulatedFiberPhotometry_Isosbestic=TDTDemodulatedFiberPhotometryInterface,
     )
 
     def add_to_nwbfile(self, nwbfile: NWBFile, metadata, conversion_options: Optional[dict] = None) -> None:

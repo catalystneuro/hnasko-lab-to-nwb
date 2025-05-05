@@ -6,7 +6,7 @@ from ..utils.demodulate_fp_signal import demodulate_signal
 from neuroconv.datainterfaces import TDTFiberPhotometryInterface
 
 
-class DemodulatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
+class TDTDemodulatedFiberPhotometryInterface(TDTFiberPhotometryInterface):
     """Interface for adding demodulated fiber photometry data from TDT files to NWB files.
     
     This interface extends TDTFiberPhotometryInterface with functionality to demodulate 
