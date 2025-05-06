@@ -3,9 +3,9 @@
 from pathlib import Path
 from typing import Union
 
-from nwbconverter import Embargo2025NWBConverter
-
+from hnasko_lab_to_nwb.embargo_2025.nwbconverter import Embargo2025NWBConverter
 from neuroconv.utils import dict_deep_update, load_dict_from_file
+
 
 
 def session_to_nwb(
@@ -60,9 +60,21 @@ def session_to_nwb(
 
     source_data.update(dict(FiberPhotometry=dict(folder_path=tdt_folder_path)))
     conversion_options.update(dict(FiberPhotometry=dict()))
+    
+    # Add DemodulatedFiberPhotometry for calcium and isosbestic
+
+    source_data.update(dict(
+        DemodulatedFiberPhotometry_Calcium=dict(folder_path=tdt_folder_path),
+        DemodulatedFiberPhotometry_Isosbestic=dict(folder_path=tdt_folder_path),
+    ))
+
+    conversion_options.update(dict(
+        DemodulatedFiberPhotometry_Calcium=dict(driver_freq=330, name="calcium_signal"),
+        DemodulatedFiberPhotometry_Isosbestic=dict(driver_freq=210, name="isosbestic_signal"),
+    ))
 
     converter = Embargo2025NWBConverter(source_data=source_data)
-
+    
     # Update default metadata with the editable in the corresponding yaml file
     metadata = converter.get_metadata()
     editable_metadata_path = Path(__file__).parent / "metadata/general_metadata.yaml"
@@ -91,6 +103,7 @@ def session_to_nwb(
             # Update the Indicators section
             fiber_photometry["Indicators"] = filtered_indicators
 
+
     # Add stimulus metadata
     metadata = dict_deep_update(metadata, stimulus_metadata, remove_repeats=False)
     if "OptogeneticStimulusSite" in metadata["Stimulus"]:
@@ -101,12 +114,12 @@ def session_to_nwb(
         metadata=metadata, nwbfile_path=nwbfile_path, conversion_options=conversion_options, overwrite=overwrite
     )
 
-
 if __name__ == "__main__":
 
     # Parameters for conversion
     data_dir_path = Path("D:/Hnasko-CN-data-share/SN pan GABA recordings/")
     output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
+
     from neuroconv.tools.path_expansion import LocalPathExpander
 
     data_dir_path = "D:/Hnasko-CN-data-share/SN pan GABA recordings/"
@@ -117,6 +130,7 @@ if __name__ == "__main__":
             "folder_path": "{ogen_stimulus_location}/Fiber photometry_TDT/{protocol_type}/{subject_id}-{session_id}",
         }
     }
+
     # Instantiate LocalPathExpander
     path_expander = LocalPathExpander()
     # Expand paths and extract metadata
