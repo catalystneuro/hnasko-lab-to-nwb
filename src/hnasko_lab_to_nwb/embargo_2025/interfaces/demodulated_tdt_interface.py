@@ -2,9 +2,8 @@ from typing import Literal
 
 from ndx_fiber_photometry import FiberPhotometryResponseSeries
 
+from hnasko_lab_to_nwb.embargo_2025.utils.demodulate_fp_signal import demodulate_signal
 from neuroconv.datainterfaces import TDTFiberPhotometryInterface
-
-from ..utils.demodulate_fp_signal import demodulate_signal
 
 
 class TDTDemodulatedFiberPhotometryInterface(TDTFiberPhotometryInterface):
@@ -31,8 +30,8 @@ class TDTDemodulatedFiberPhotometryInterface(TDTFiberPhotometryInterface):
         t1: float = 0.0,
         t2: float = 0.0,
         timing_source: Literal["original", "aligned_timestamps", "aligned_starting_time_and_rate"] = "original",
-        driver_freq: float = None,
-        name: str = None,
+        driver_freq: None | float = None,
+        name: None | str = None,
     ):
         """
         Add demodulated fiber photometry data to an NWB file.

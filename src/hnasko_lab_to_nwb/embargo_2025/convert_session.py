@@ -69,6 +69,12 @@ def session_to_nwb(
             DemodulatedFiberPhotometry_Isosbestic=dict(folder_path=tdt_folder_path),
         )
     )
+    source_data.update(
+        dict(
+            DemodulatedFiberPhotometry_Calcium=dict(folder_path=tdt_folder_path),
+            DemodulatedFiberPhotometry_Isosbestic=dict(folder_path=tdt_folder_path),
+        )
+    )
 
     conversion_options.update(
         dict(
@@ -76,18 +82,6 @@ def session_to_nwb(
             DemodulatedFiberPhotometry_Isosbestic=dict(driver_freq=210, name="isosbestic_signal"),
         )
     )
-
-    # Add Video
-    if not video_file_paths:
-        warnings.warn("No video file paths found. Skipping video data addition.")
-    elif len(video_file_paths) > 1:
-        warnings.warn(
-            "Multiple video file paths found. Conversion of multiple video files into NWB format has not been implemented yet. Skipping video data addition."
-            "Adding multiple video files will trigger: ValueError: No timing information is specified and there are 3 total video files! Please specify the temporal alignment of each video."
-        )
-    else:
-        source_data.update(dict(Video=dict(file_paths=video_file_paths)))
-        conversion_options.update(dict(Video=dict(stub_test=stub_test, external_mode=True)))
 
     # Add Video
     if not video_file_paths:
