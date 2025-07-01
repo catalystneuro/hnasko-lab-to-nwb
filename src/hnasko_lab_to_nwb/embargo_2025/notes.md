@@ -55,9 +55,9 @@ TDTEvents:
 
 ### TDT stream
 For all subjects and all session types:
-- From stream '_405A' --> isosbestic signal
-- From stream '_465A' --> calcium signal
-- Stream 'Fi1r' --> TODO: ask point person
+- From stream '_405A' --> isosbestic signal # ignore --> 6Hz filtered
+- From stream '_465A' --> calcium signal # ignore --> 6Hz filtered
+- Stream 'Fi1r' --> raw signal
 
 ### TDT events
 For "Varying duration" sessions

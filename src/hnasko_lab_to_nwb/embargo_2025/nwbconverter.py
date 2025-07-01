@@ -3,8 +3,15 @@
 from typing import Optional
 
 from pynwb import NWBFile
-from utils import add_optogenetic_stimulation, add_shock_stimuli
 
+from hnasko_lab_to_nwb.embargo_2025.interfaces import (
+    TDTDemodulatedFiberPhotometryInterface,
+)
+from hnasko_lab_to_nwb.embargo_2025.utils import (
+    add_auditory_stimuli,
+    add_optogenetic_stimulation,
+    add_shock_stimuli,
+)
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import TDTFiberPhotometryInterface, VideoInterface
 
@@ -14,6 +21,8 @@ class Embargo2025NWBConverter(NWBConverter):
 
     data_interface_classes = dict(
         FiberPhotometry=TDTFiberPhotometryInterface,
+        DemodulatedFiberPhotometry_Calcium=TDTDemodulatedFiberPhotometryInterface,
+        DemodulatedFiberPhotometry_Isosbestic=TDTDemodulatedFiberPhotometryInterface,
         Video=VideoInterface,
     )
 
@@ -22,7 +31,9 @@ class Embargo2025NWBConverter(NWBConverter):
         if "FiberPhotometry" in self.data_interface_objects.keys():
             tdt_interface = self.data_interface_objects["FiberPhotometry"]
             tdt_events = tdt_interface.get_events()
+
             if "OptogeneticStimulusInterval" in metadata["Stimulus"]:
                 add_optogenetic_stimulation(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
             if "ShockStimulusInterval" in metadata["Stimulus"]:
                 add_shock_stimuli(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
+                add_auditory_stimuli(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)

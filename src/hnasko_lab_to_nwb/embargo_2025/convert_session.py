@@ -4,8 +4,7 @@ import warnings
 from pathlib import Path
 from typing import List, Union
 
-from nwbconverter import Embargo2025NWBConverter
-
+from hnasko_lab_to_nwb.embargo_2025.nwbconverter import Embargo2025NWBConverter
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 
@@ -50,8 +49,7 @@ def session_to_nwb(
     elif protocol_type == "Shocks":
         session_description = (
             "The subject is placed in a shock chamber and recorded for 6 minutes. "
-            "Uncued shocks (0.3 mA) at various durations (250ms, 1s and 4s, 5 times for each duration) "
-            "are delivered in a randomized order and ISI."
+            "Auditory cues of 8 sec not paired or paired with shock are delivered during the session."
         )
         stimulus_metadata_path = Path(__file__).parent / "metadata/shock_stimulus_metadata.yaml"
         stimulus_metadata = load_dict_from_file(stimulus_metadata_path)
@@ -62,6 +60,34 @@ def session_to_nwb(
     # Add FiberPhotometry
     source_data.update(dict(FiberPhotometry=dict(folder_path=tdt_folder_path)))
     conversion_options.update(dict(FiberPhotometry=dict()))
+
+    # Add DemodulatedFiberPhotometry for calcium and isosbestic
+
+    source_data.update(
+        dict(
+            DemodulatedFiberPhotometry_Calcium=dict(folder_path=tdt_folder_path),
+            DemodulatedFiberPhotometry_Isosbestic=dict(folder_path=tdt_folder_path),
+        )
+    )
+
+    conversion_options.update(
+        dict(
+            DemodulatedFiberPhotometry_Calcium=dict(driver_freq=330, name="calcium_signal"),
+            DemodulatedFiberPhotometry_Isosbestic=dict(driver_freq=210, name="isosbestic_signal"),
+        )
+    )
+
+    # Add Video
+    if not video_file_paths:
+        warnings.warn("No video file paths found. Skipping video data addition.")
+    elif len(video_file_paths) > 1:
+        warnings.warn(
+            "Multiple video file paths found. Conversion of multiple video files into NWB format has not been implemented yet. Skipping video data addition."
+            "Adding multiple video files will trigger: ValueError: No timing information is specified and there are 3 total video files! Please specify the temporal alignment of each video."
+        )
+    else:
+        source_data.update(dict(Video=dict(file_paths=video_file_paths)))
+        conversion_options.update(dict(Video=dict(stub_test=stub_test, external_mode=True)))
 
     # Add Video
     if not video_file_paths:
@@ -106,7 +132,7 @@ def session_to_nwb(
             fiber_photometry["Indicators"] = filtered_indicators
 
     # Add stimulus metadata
-    metadata = dict_deep_update(metadata, stimulus_metadata)
+    metadata = dict_deep_update(metadata, stimulus_metadata, remove_repeats=False)
     if "OptogeneticStimulusSite" in metadata["Stimulus"]:
         metadata["Stimulus"]["OptogeneticStimulusSite"][0]["location"] = ogen_stimulus_location
 
@@ -121,6 +147,7 @@ if __name__ == "__main__":
     # Parameters for conversion
     data_dir_path = Path("D:/Hnasko-CN-data-share/SN pan GABA recordings/")
     output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
+
     from neuroconv.tools.path_expansion import LocalPathExpander
 
     # data_dir_path = "D:/Hnasko-CN-data-share/SN pan GABA recordings/"
@@ -131,6 +158,7 @@ if __name__ == "__main__":
             "folder_path": "{ogen_stimulus_location}/Fiber photometry_TDT/{protocol_type}/{subject_id}-{session_id}",
         }
     }
+
     # Instantiate LocalPathExpander
     path_expander = LocalPathExpander()
     # Expand paths and extract metadata
