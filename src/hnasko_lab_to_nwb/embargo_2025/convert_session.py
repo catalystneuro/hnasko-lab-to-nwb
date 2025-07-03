@@ -88,6 +88,7 @@ def session_to_nwb(
     )
 
     # Add Video
+    video_time_alignment_dict = dict()
     if not video_file_paths:
         warnings.warn("No video file paths found. Skipping video data addition.")
 
@@ -95,10 +96,10 @@ def session_to_nwb(
         source_data.update(dict(Video=dict(file_paths=video_file_paths, video_name="BehavioralVideo")))
         video_starting_time = get_video_aligned_starting_time(
             video_metadata_file_path=video_metadata_file_path,
-            video_file_path=video_file_path,
+            video_file_path=video_file_paths[0],
             session_starting_time=session_starting_time,
         )
-        conversion_options.update(dict(Video=dict(always_write_timestamps=True)))
+        video_time_alignment_dict.update(dict(Video=dict(video_starting_time=video_starting_time)))
 
     elif len(video_file_paths) == 3:
         for video_file_path in video_file_paths:
@@ -111,7 +112,7 @@ def session_to_nwb(
                 video_file_path=video_file_path,
                 session_starting_time=session_starting_time,
             )
-            conversion_options.update({f"Video_{suffix}": dict(always_write_timestamps=True)})
+            video_time_alignment_dict.update({f"Video_{suffix}": dict(video_starting_time=video_starting_time)})
 
     else:
         raise NotImplementedError(
@@ -119,7 +120,9 @@ def session_to_nwb(
             "Currently only 1 or 3 video files are supported."
         )
 
-    converter = Embargo2025NWBConverter(source_data=source_data, verbose=verbose)
+    converter = Embargo2025NWBConverter(
+        source_data=source_data, verbose=verbose, video_time_alignment_dict=video_time_alignment_dict
+    )
 
     # Update default metadata with the editable in the corresponding yaml file
     metadata = converter.get_metadata()
@@ -185,8 +188,6 @@ if __name__ == "__main__":
     metadata_list = path_expander.expand_paths(source_data_spec)
     for metadata in metadata_list:
         protocol_type = metadata["metadata"]["extras"]["protocol_type"]
-        if protocol_type in ["Shocks", "Varying durations"]:
-            continue
         session_starting_time_string = metadata["metadata"]["extras"]["session_starting_time_string"]
         session_starting_time = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
         ogen_stimulus_location = metadata["metadata"]["extras"]["ogen_stimulus_location"]
