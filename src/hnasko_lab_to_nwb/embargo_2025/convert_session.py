@@ -1,20 +1,24 @@
 """Primary script to run to convert an entire session for of data using the NWBConverter."""
 
 import warnings
+from datetime import datetime
 from pathlib import Path
 from typing import List, Union
 
 from hnasko_lab_to_nwb.embargo_2025.nwbconverter import Embargo2025NWBConverter
+from hnasko_lab_to_nwb.embargo_2025.utils import get_video_aligned_starting_time
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 
 def session_to_nwb(
     output_dir_path: Union[str, Path],
+    session_starting_time: datetime,
     subject_id: str,
     tdt_folder_path: Union[str, Path],
     video_file_paths: List[Union[str, Path]],
     protocol_type: str,
     ogen_stimulus_location: str,
+    video_metadata_file_path: None | Union[str, Path] = None,
     stub_test: bool = False,
     overwrite: bool = False,
     verbose: bool = False,
@@ -89,6 +93,11 @@ def session_to_nwb(
 
     elif len(video_file_paths) == 1:
         source_data.update(dict(Video=dict(file_paths=video_file_paths, video_name="BehavioralVideo")))
+        video_starting_time = get_video_aligned_starting_time(
+            video_metadata_file_path=video_metadata_file_path,
+            video_file_path=video_file_path,
+            session_starting_time=session_starting_time,
+        )
         conversion_options.update(dict(Video=dict(always_write_timestamps=True)))
 
     elif len(video_file_paths) == 3:
@@ -96,6 +105,11 @@ def session_to_nwb(
             suffix = video_file_path.name.split("_")[-1].split(".")[0]  # Extract suffix from filename
             source_data.update(
                 {f"Video_{suffix}": dict(file_paths=[video_file_path], video_name=f"BehavioralVideo_{suffix}")}
+            )
+            video_starting_time = get_video_aligned_starting_time(
+                video_metadata_file_path=video_metadata_file_path,
+                video_file_path=video_file_path,
+                session_starting_time=session_starting_time,
             )
             conversion_options.update({f"Video_{suffix}": dict(always_write_timestamps=True)})
 
@@ -161,7 +175,7 @@ if __name__ == "__main__":
     source_data_spec = {
         "FiberPhotometry": {
             "base_directory": data_dir_path,
-            "folder_path": "{ogen_stimulus_location}/Fiber photometry_TDT/{protocol_type}/{subject_id}-{session_id}",
+            "folder_path": "{ogen_stimulus_location}/Fiber photometry_TDT/{protocol_type}/{subject_id}-{session_starting_time_string}",
         }
     }
 
@@ -170,23 +184,28 @@ if __name__ == "__main__":
     # Expand paths and extract metadata
     metadata_list = path_expander.expand_paths(source_data_spec)
     for metadata in metadata_list:
-        ogen_stimulus_location = metadata["metadata"]["extras"]["ogen_stimulus_location"]
         protocol_type = metadata["metadata"]["extras"]["protocol_type"]
         if protocol_type in ["Shocks", "Varying durations"]:
             continue
+        session_starting_time_string = metadata["metadata"]["extras"]["session_starting_time_string"]
+        session_starting_time = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
+        ogen_stimulus_location = metadata["metadata"]["extras"]["ogen_stimulus_location"]
+
         subject_id = metadata["metadata"]["Subject"]["subject_id"]
         video_folder_path = (
             data_dir_path / ogen_stimulus_location / "AnyMaze videos_slk/converted_video" / protocol_type
         )
-
+        video_metadata_file_path = video_folder_path / "video_metadata.xlsx"
         video_file_paths = list(video_folder_path.glob(f"{subject_id}*.mp4"))
         session_to_nwb(
             output_dir_path=output_dir_path,
+            session_starting_time=session_starting_time,
             subject_id=subject_id,
-            tdt_folder_path=metadata["source_data"]["FiberPhotometry"]["folder_path"],
-            video_file_paths=video_file_paths,
             protocol_type=protocol_type,
             ogen_stimulus_location=ogen_stimulus_location,
+            tdt_folder_path=metadata["source_data"]["FiberPhotometry"]["folder_path"],
+            video_file_paths=video_file_paths,
+            video_metadata_file_path=video_metadata_file_path,
             stub_test=False,
             overwrite=True,
             verbose=True,
