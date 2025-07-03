@@ -24,9 +24,9 @@ class Embargo2025NWBConverter(NWBConverter):
         DemodulatedFiberPhotometry_Calcium=TDTDemodulatedFiberPhotometryInterface,
         DemodulatedFiberPhotometry_Isosbestic=TDTDemodulatedFiberPhotometryInterface,
         Video=ExternalVideoInterface,
-        Video1=ExternalVideoInterface,
-        Video2=ExternalVideoInterface,
-        Video3=ExternalVideoInterface,
+        Video_250ms=ExternalVideoInterface,
+        Video_1s=ExternalVideoInterface,
+        Video_4s=ExternalVideoInterface,
     )
 
     def add_to_nwbfile(self, nwbfile: NWBFile, metadata, conversion_options: Optional[dict] = None) -> None:

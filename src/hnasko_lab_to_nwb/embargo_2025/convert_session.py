@@ -86,14 +86,24 @@ def session_to_nwb(
     # Add Video
     if not video_file_paths:
         warnings.warn("No video file paths found. Skipping video data addition.")
-    elif len(video_file_paths) > 1:
-        for i, video_file_path in enumerate(video_file_paths):
-            source_data.update({f"Video{i+1}": dict(file_paths=[video_file_path])})
-            conversion_options.update({f"Video{i+1}": dict(always_write_timestamps=True)})
+
+    elif len(video_file_paths) == 1:
+        source_data.update(dict(Video=dict(file_paths=video_file_paths, video_name="BehavioralVideo")))
+        conversion_options.update(dict(Video=dict(always_write_timestamps=True)))
+
+    elif len(video_file_paths) == 3:
+        for video_file_path in video_file_paths:
+            suffix = video_file_path.name.split("_")[-1].split(".")[0]  # Extract suffix from filename
+            source_data.update(
+                {f"Video_{suffix}": dict(file_paths=[video_file_path], video_name=f"BehavioralVideo_{suffix}")}
+            )
+            conversion_options.update({f"Video_{suffix}": dict(always_write_timestamps=True)})
 
     else:
-        source_data.update(dict(Video=dict(file_paths=video_file_paths)))
-        conversion_options.update(dict(Video=dict(always_write_timestamps=True)))
+        raise NotImplementedError(
+            f"Support for {len(video_file_paths)} video files is not implemented. "
+            "Currently only 1 or 3 video files are supported."
+        )
 
     converter = Embargo2025NWBConverter(source_data=source_data, verbose=verbose)
 
@@ -162,7 +172,7 @@ if __name__ == "__main__":
     for metadata in metadata_list:
         ogen_stimulus_location = metadata["metadata"]["extras"]["ogen_stimulus_location"]
         protocol_type = metadata["metadata"]["extras"]["protocol_type"]
-        if protocol_type == "Shocks":
+        if protocol_type in ["Shocks", "Varying durations"]:
             continue
         subject_id = metadata["metadata"]["Subject"]["subject_id"]
         video_folder_path = (
