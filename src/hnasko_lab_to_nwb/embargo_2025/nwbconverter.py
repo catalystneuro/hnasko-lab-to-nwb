@@ -13,7 +13,7 @@ from hnasko_lab_to_nwb.embargo_2025.utils import (
     add_shock_stimuli,
 )
 from neuroconv import NWBConverter
-from neuroconv.datainterfaces import TDTFiberPhotometryInterface, VideoInterface
+from neuroconv.datainterfaces import ExternalVideoInterface, TDTFiberPhotometryInterface
 
 
 class Embargo2025NWBConverter(NWBConverter):
@@ -23,7 +23,10 @@ class Embargo2025NWBConverter(NWBConverter):
         FiberPhotometry=TDTFiberPhotometryInterface,
         DemodulatedFiberPhotometry_Calcium=TDTDemodulatedFiberPhotometryInterface,
         DemodulatedFiberPhotometry_Isosbestic=TDTDemodulatedFiberPhotometryInterface,
-        Video=VideoInterface,
+        Video=ExternalVideoInterface,
+        Video1=ExternalVideoInterface,
+        Video2=ExternalVideoInterface,
+        Video3=ExternalVideoInterface,
     )
 
     def add_to_nwbfile(self, nwbfile: NWBFile, metadata, conversion_options: Optional[dict] = None) -> None:

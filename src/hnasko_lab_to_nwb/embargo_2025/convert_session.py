@@ -11,19 +11,19 @@ from neuroconv.utils import dict_deep_update, load_dict_from_file
 def session_to_nwb(
     output_dir_path: Union[str, Path],
     subject_id: str,
-    session_id: str,
     tdt_folder_path: Union[str, Path],
     video_file_paths: List[Union[str, Path]],
     protocol_type: str,
     ogen_stimulus_location: str,
     stub_test: bool = False,
     overwrite: bool = False,
+    verbose: bool = False,
 ):
     output_dir_path = Path(output_dir_path)
     if stub_test:
         output_dir_path = output_dir_path / "nwb_stub"
     output_dir_path.mkdir(parents=True, exist_ok=True)
-
+    session_id = protocol_type.replace(" ", "_").lower()
     nwbfile_path = output_dir_path / f"sub-{subject_id}_ses-{session_id}.nwb"
 
     valid_protocols = {"Varying durations", "Varying frequencies", "Shocks"}
@@ -87,15 +87,15 @@ def session_to_nwb(
     if not video_file_paths:
         warnings.warn("No video file paths found. Skipping video data addition.")
     elif len(video_file_paths) > 1:
-        warnings.warn(
-            "Multiple video file paths found. Conversion of multiple video files into NWB format has not been implemented yet. Skipping video data addition."
-            "Adding multiple video files will trigger: ValueError: No timing information is specified and there are 3 total video files! Please specify the temporal alignment of each video."
-        )
+        for i, video_file_path in enumerate(video_file_paths):
+            source_data.update({f"Video{i+1}": dict(file_paths=[video_file_path])})
+            conversion_options.update({f"Video{i+1}": dict(always_write_timestamps=True)})
+
     else:
         source_data.update(dict(Video=dict(file_paths=video_file_paths)))
-        conversion_options.update(dict(Video=dict(stub_test=stub_test, external_mode=True)))
+        conversion_options.update(dict(Video=dict(always_write_timestamps=True)))
 
-    converter = Embargo2025NWBConverter(source_data=source_data)
+    converter = Embargo2025NWBConverter(source_data=source_data, verbose=verbose)
 
     # Update default metadata with the editable in the corresponding yaml file
     metadata = converter.get_metadata()
@@ -134,6 +134,8 @@ def session_to_nwb(
     converter.run_conversion(
         metadata=metadata, nwbfile_path=nwbfile_path, conversion_options=conversion_options, overwrite=overwrite
     )
+    if verbose:
+        print(f"Session {session_id} for subject {subject_id} converted successfully to NWB format at {nwbfile_path}")
 
 
 if __name__ == "__main__":
@@ -160,6 +162,8 @@ if __name__ == "__main__":
     for metadata in metadata_list:
         ogen_stimulus_location = metadata["metadata"]["extras"]["ogen_stimulus_location"]
         protocol_type = metadata["metadata"]["extras"]["protocol_type"]
+        if protocol_type == "Shocks":
+            continue
         subject_id = metadata["metadata"]["Subject"]["subject_id"]
         video_folder_path = (
             data_dir_path / ogen_stimulus_location / "AnyMaze videos_slk/converted_video" / protocol_type
@@ -168,12 +172,12 @@ if __name__ == "__main__":
         video_file_paths = list(video_folder_path.glob(f"{subject_id}*.mp4"))
         session_to_nwb(
             output_dir_path=output_dir_path,
-            subject_id=metadata["metadata"]["Subject"]["subject_id"],
-            session_id=metadata["metadata"]["NWBFile"]["session_id"],
+            subject_id=subject_id,
             tdt_folder_path=metadata["source_data"]["FiberPhotometry"]["folder_path"],
             video_file_paths=video_file_paths,
             protocol_type=protocol_type,
             ogen_stimulus_location=ogen_stimulus_location,
             stub_test=False,
             overwrite=True,
+            verbose=True,
         )
