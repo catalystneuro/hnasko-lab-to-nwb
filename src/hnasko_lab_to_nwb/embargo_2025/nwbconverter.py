@@ -68,3 +68,9 @@ class Embargo2025NWBConverter(NWBConverter):
             if "ShockStimulusInterval" in metadata["Stimulus"]:
                 add_shock_stimuli(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
                 add_auditory_stimuli(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
+
+        for video_interface_name, video_interface in self.data_interface_objects.items():
+            if video_interface_name in ["Video_250ms", "Video_1s", "Video_4s"]:
+                start = video_interface._timestamps[0][0]
+                stop = video_interface._timestamps[0][-1]
+                nwbfile.add_trial(start_time=start, stop_time=stop, tags=video_interface_name.replace("Video_", ""))
