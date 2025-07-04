@@ -20,6 +20,7 @@ dependencies = [
   "ndx-fiber-photometry==0.1.0",
   "openpyxl",
   "opencv-python-headless",
+  "dandi",
 ]
 
 [project.urls]
