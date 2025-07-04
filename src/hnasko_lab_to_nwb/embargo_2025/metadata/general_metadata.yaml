@@ -8,6 +8,7 @@ NWBFile:
     - STN
     - PPN
     - GABAergic neurons
+    - Parkinson's disease
   experiment_description: Mice were freely moving on a plastic tub.
     Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the first two days.
     Excitatory inputs from either the STN or PPN to SN were stimulated and the activity of SN GABAergic neurons were recorded.
@@ -16,6 +17,7 @@ NWBFile:
   lab: Hnasko
   experimenter:
     - Hadjas, Lotfi
+    - Hollon, Nick
   surgery:
     Mice > 6 weeks old were anesthetized with isoflurane (4% for induction; 1-2% for maintenance).
     For fiber photometry experiments, mice were unilaterally injected with 300nl of AAV1-fDIO-Ef1a-Gcamp6f
