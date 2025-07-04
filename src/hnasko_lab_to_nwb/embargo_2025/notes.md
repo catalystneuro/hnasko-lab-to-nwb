@@ -80,5 +80,6 @@ For new "Shock" sessions
 - 's1s_'--> time intervals for uncued shock stimulation delivered for 1s each stimulus,
 - 's4s_'--> time intervals for uncued shock stimulation delivered for 4s each stimulus
 
-## AnyMaze data structure
-TODO: Contact AnyMaze support
+## AnyMaze videos
+Video needs to be converted in  .mp4 format using ANyMaze software dedicated tool.
+The video start timestamp must be stored in an excel file ("video_metadata") two columns: "file_name" and "start_time".
