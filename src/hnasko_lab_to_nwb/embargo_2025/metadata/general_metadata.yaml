@@ -1,8 +1,14 @@
 NWBFile:
+  related_publications:
+    - https://doi.org/10.1101/2025.06.03.657460
   keywords:
-    - Keyword1
-    - Keyword2
-    - Keyword3
+    - optogenetics
+    - fiber photometry
+    - SNr
+    - STN
+    - PPN
+    - GABAergic neurons
+    - Parkinson's disease
   experiment_description: Mice were freely moving on a plastic tub.
     Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the first two days.
     Excitatory inputs from either the STN or PPN to SN were stimulated and the activity of SN GABAergic neurons were recorded.
@@ -10,8 +16,8 @@ NWBFile:
   institution: UC San Diego School of Medicine
   lab: Hnasko
   experimenter:
-    - Last, First Middle
-    - Last, First Middle
+    - Hadjas, Lotfi
+    - Hollon, Nick
   surgery:
     Mice > 6 weeks old were anesthetized with isoflurane (4% for induction; 1-2% for maintenance).
     For fiber photometry experiments, mice were unilaterally injected with 300nl of AAV1-fDIO-Ef1a-Gcamp6f
@@ -28,11 +34,36 @@ Subject:
     Slc17a6tm2(cre)Lowl (RRID:IMSR_JAX:016963) Slc32a1tm1.1(flpo)Hze (RRID:IMSR_JAX:029591) and maintained backcrossed on to C57BL/6J.
     VGlut2-Cre animals were crossed with VGAT-flp animals to generate dual transgenic animals that were VGlut2-Cre/VGAT-flp and used for experiments.
     All experiments were performed on animals of at least 6 weeks of age and in accordance with protocols approved by UCSD Institutional Animal Care and Use Committee.
-  age: P10W # To ask
-  sex: U # To ask
+  age: P6W
+  sex: U
   strain: C57BL/6J
-  genotype: VGLUT2-IRES-CRE;VGAT-2A-FlpO-D # To check with lab point person
-  # date_of_birth: 2014-06-22 00:00:00-04:00  # Example
+  genotype: VGLUT2-IRES-CRE;VGAT-2A-FlpO-D
+Behavior:
+  ExternalVideos:
+    BehavioralVideo:
+      description: |
+        Video recording of the mouse's behavior. Recorded using a camera mounted on the ceiling above the chambers.
+      device:
+        name: BehavioralCamera
+        description: Camera mounted on ceiling above chambers for behavioral recording
+    BehavioralVideo_250ms:
+      description: |
+        Video recording of the mouse's behavior during 250ms long stimulation.
+      device:
+        name: BehavioralCamera
+        description: Camera mounted on ceiling above chambers for behavioral recording
+    BehavioralVideo_1s:
+      description: |
+        Video recording of the mouse's behavior during 1s long stimulation.
+      device:
+        name: BehavioralCamera
+        description: Camera mounted on ceiling above chambers for behavioral recording
+    BehavioralVideo_4s:
+      description: |
+        Video recording of the mouse's behavior during 4s long stimulation.
+      device:
+        name: BehavioralCamera
+        description: Camera mounted on ceiling above chambers for behavioral recording
 Ophys:
   FiberPhotometry:
     OpticalFibers:
@@ -112,8 +143,8 @@ Ophys:
           excitation_source: excitation_source_isosbestic
           photodetector: photodetector
           dichroic_mirror: dichroic_mirror
-    FiberPhotometryResponseSeries: 
-      - name: raw_modulated_signal 
+    FiberPhotometryResponseSeries:
+      - name: raw_modulated_signal
         description: The raw fiber photometry signal from Tucker David Technologies (TDT) acquisition system.
         stream_name: Fi1r
         unit: a.u.
