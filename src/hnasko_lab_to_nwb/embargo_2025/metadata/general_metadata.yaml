@@ -1,4 +1,6 @@
 NWBFile:
+  related_publications:
+    - https://doi.org/10.1101/2025.06.03.657460
   keywords:
     - optogenetics
     - fiber photometry
@@ -13,9 +15,7 @@ NWBFile:
   institution: UC San Diego School of Medicine
   lab: Hnasko
   experimenter:
-    - Hollon, Nick
     - Hadjas, Lotfi
-    - Hnasko, Thomas
   surgery:
     Mice > 6 weeks old were anesthetized with isoflurane (4% for induction; 1-2% for maintenance).
     For fiber photometry experiments, mice were unilaterally injected with 300nl of AAV1-fDIO-Ef1a-Gcamp6f
