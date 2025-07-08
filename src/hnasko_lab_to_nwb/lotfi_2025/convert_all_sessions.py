@@ -1,13 +1,16 @@
 """Primary script to run to convert all sessions in a dataset using session_to_nwb."""
+
 import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from datetime import datetime
 from pathlib import Path
 from pprint import pformat
 from typing import Union
 
 from tqdm import tqdm
 
-from .embargo_2025_convert_session import session_to_nwb
+from hnasko_lab_to_nwb.lotfi_2025.convert_session import session_to_nwb
+from neuroconv.tools.path_expansion import LocalPathExpander
 
 
 def dataset_to_nwb(
@@ -31,6 +34,7 @@ def dataset_to_nwb(
         Whether to print verbose output, by default True
     """
     data_dir_path = Path(data_dir_path)
+    output_dir_path = Path(output_dir_path)
     session_to_nwb_kwargs_per_session = get_session_to_nwb_kwargs_per_session(
         data_dir_path=data_dir_path,
     )
@@ -40,7 +44,12 @@ def dataset_to_nwb(
         for session_to_nwb_kwargs in session_to_nwb_kwargs_per_session:
             session_to_nwb_kwargs["output_dir_path"] = output_dir_path
             session_to_nwb_kwargs["verbose"] = verbose
-            exception_file_path = data_dir_path / f"ERROR_<nwbfile_name>.txt"  # Add error file path here
+
+            # Create meaningful error file name based on session info
+            subject_id = session_to_nwb_kwargs["subject_id"]
+            protocol_type = session_to_nwb_kwargs["protocol_type"].replace(" ", "_").lower()
+            exception_file_path = output_dir_path / f"ERROR_sub-{subject_id}_ses-{protocol_type}.txt"
+
             futures.append(
                 executor.submit(
                     safe_session_to_nwb,
@@ -87,24 +96,66 @@ def get_session_to_nwb_kwargs_per_session(
     list[dict[str, Any]]
         A list of dictionaries containing the kwargs for session_to_nwb for each session.
     """
-    #####
-    # # Implement this function to return the kwargs for session_to_nwb for each session
-    # This can be a specific list with hard-coded sessions, a path expansion or any conversion specific logic that you might need
-    #####
-    raise NotImplementedError
+    data_dir_path = Path(data_dir_path)
+
+    # Specify source data spec for path expansion (adapted from convert_session.py)
+    source_data_spec = {
+        "FiberPhotometry": {
+            "base_directory": data_dir_path,
+            "folder_path": "{ogen_stimulus_location}/Fiber photometry_TDT/{protocol_type}/{subject_id}-{session_starting_time_string}",
+        }
+    }
+
+    # Instantiate LocalPathExpander and expand paths
+    path_expander = LocalPathExpander()
+    metadata_list = path_expander.expand_paths(source_data_spec)
+
+    session_to_nwb_kwargs_per_session = []
+
+    for metadata in metadata_list:
+        # Extract metadata from path expansion
+        protocol_type = metadata["metadata"]["extras"]["protocol_type"]
+        session_starting_time_string = metadata["metadata"]["extras"]["session_starting_time_string"]
+        session_starting_time = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
+        ogen_stimulus_location = metadata["metadata"]["extras"]["ogen_stimulus_location"]
+        subject_id = metadata["metadata"]["Subject"]["subject_id"]
+
+        # Build video file paths
+        video_folder_path = (
+            data_dir_path / ogen_stimulus_location / "AnyMaze videos_slk/converted_video" / protocol_type
+        )
+        video_metadata_file_path = video_folder_path / "video_metadata.xlsx"
+        video_file_paths = list(video_folder_path.glob(f"{subject_id}*.mp4"))
+
+        # Build kwargs dictionary for this session
+        session_kwargs = {
+            "session_starting_time": session_starting_time,
+            "subject_id": subject_id,
+            "protocol_type": protocol_type,
+            "ogen_stimulus_location": ogen_stimulus_location,
+            "tdt_folder_path": metadata["source_data"]["FiberPhotometry"]["folder_path"],
+            "video_file_paths": video_file_paths,
+            "video_metadata_file_path": video_metadata_file_path,
+            "stub_test": False,
+            "overwrite": True,
+        }
+
+        session_to_nwb_kwargs_per_session.append(session_kwargs)
+
+    return session_to_nwb_kwargs_per_session
 
 
 if __name__ == "__main__":
 
     # Parameters for conversion
-    data_dir_path = Path("/Directory/With/Raw/Formats/")
-    output_dir_path = Path("~/conversion_nwb/")
+    data_dir_path = Path("D:/Hnasko-CN-data-share/SN pan GABA recordings/")
+    output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
     max_workers = 1
-    verbose = False
+    verbose = True
 
     dataset_to_nwb(
         data_dir_path=data_dir_path,
         output_dir_path=output_dir_path,
         max_workers=max_workers,
-        verbose=False,
+        verbose=verbose,
     )
