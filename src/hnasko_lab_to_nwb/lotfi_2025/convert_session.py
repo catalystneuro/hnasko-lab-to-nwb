@@ -5,8 +5,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Union
 
-from hnasko_lab_to_nwb.embargo_2025.nwbconverter import Embargo2025NWBConverter
-from hnasko_lab_to_nwb.embargo_2025.utils import get_video_aligned_starting_time
+from hnasko_lab_to_nwb.lotfi_2025.nwbconverter import Lofti2025NWBConverter
+from hnasko_lab_to_nwb.lotfi_2025.utils import get_video_aligned_starting_time
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 
@@ -120,7 +120,7 @@ def session_to_nwb(
             "Currently only 1 or 3 video files are supported."
         )
 
-    converter = Embargo2025NWBConverter(
+    converter = Lofti2025NWBConverter(
         source_data=source_data, verbose=verbose, video_time_alignment_dict=video_time_alignment_dict
     )
 
