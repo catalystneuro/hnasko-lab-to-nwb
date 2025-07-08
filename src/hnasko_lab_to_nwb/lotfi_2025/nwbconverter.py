@@ -4,10 +4,10 @@ from typing import Optional
 
 from pynwb import NWBFile
 
-from hnasko_lab_to_nwb.embargo_2025.interfaces import (
+from hnasko_lab_to_nwb.lotfi_2025.interfaces import (
     TDTDemodulatedFiberPhotometryInterface,
 )
-from hnasko_lab_to_nwb.embargo_2025.utils import (
+from hnasko_lab_to_nwb.lotfi_2025.utils import (
     add_auditory_stimuli,
     add_optogenetic_stimulation,
     add_shock_stimuli,
@@ -16,7 +16,7 @@ from neuroconv import NWBConverter
 from neuroconv.datainterfaces import ExternalVideoInterface, TDTFiberPhotometryInterface
 
 
-class Embargo2025NWBConverter(NWBConverter):
+class Lofti2025NWBConverter(NWBConverter):
     """Primary conversion class for my extracellular electrophysiology dataset."""
 
     data_interface_classes = dict(

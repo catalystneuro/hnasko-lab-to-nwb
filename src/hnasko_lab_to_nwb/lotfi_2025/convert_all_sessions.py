@@ -9,7 +9,7 @@ from typing import Union
 
 from tqdm import tqdm
 
-from hnasko_lab_to_nwb.embargo_2025.convert_session import session_to_nwb
+from hnasko_lab_to_nwb.lotfi_2025.convert_session import session_to_nwb
 from neuroconv.tools.path_expansion import LocalPathExpander
 
 

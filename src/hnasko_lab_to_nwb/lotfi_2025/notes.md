@@ -1,4 +1,4 @@
-# Notes concerning the embargo_2025 conversion
+# Notes concerning the lotfi_2025 conversion
 
 Mice were freely moving on a plastic tub.
 Simultaneous passive optogenetic stimulations and fiber photometry recordings were conducted during the first two days.

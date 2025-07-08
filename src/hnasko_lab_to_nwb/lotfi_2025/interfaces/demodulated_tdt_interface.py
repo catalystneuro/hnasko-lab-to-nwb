@@ -2,7 +2,7 @@ from typing import Literal
 
 from ndx_fiber_photometry import FiberPhotometryResponseSeries
 
-from hnasko_lab_to_nwb.embargo_2025.utils.demodulate_fp_signal import demodulate_signal
+from hnasko_lab_to_nwb.lotfi_2025.utils.demodulate_fp_signal import demodulate_signal
 from neuroconv.datainterfaces import TDTFiberPhotometryInterface
 from neuroconv.tools.nwb_helpers import get_module
 

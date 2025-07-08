@@ -120,7 +120,7 @@ Once you have installed the package, you can run any of the conversion scripts i
 ```python
 from pathlib import Path
 from datetime import datetime
-from hnasko_lab_to_nwb.embargo_2025.convert_session import session_to_nwb
+from hnasko_lab_to_nwb.lotfi_2025.convert_session import session_to_nwb
 
 # Define your data paths
 output_dir_path = Path("./nwb_output")
@@ -148,7 +148,7 @@ session_to_nwb(
 For converting multiple sessions, you can use the batch processing script:
 
 ```bash
-python src/hnasko_lab_to_nwb/embargo_2025/convert_session.py
+python src/hnasko_lab_to_nwb/lotfi_2025/convert_session.py
 ```
 
 This script uses the `LocalPathExpander` to automatically discover and convert all sessions in your data directory. Modify the `data_dir_path` and `output_dir_path` variables in the script to match your setup.
@@ -184,7 +184,7 @@ hnasko-lab-to-nwb/
 ├── README.md
 └── src/
     └── hnasko_lab_to_nwb/
-        └── embargo_2025/
+        └── lotfi_2025/
             ├── __init__.py
             ├── convert_session.py          # Main conversion script
             ├── convert_all_sessions.py     # Batch processing script
@@ -209,7 +209,7 @@ hnasko-lab-to-nwb/
 ### Key Files
 
 - **`convert_session.py`**: Main script that defines the function to convert one full session
-- **`nwbconverter.py`**: Contains the `Embargo2025NWBConverter` class that combines all data interfaces
+- **`nwbconverter.py`**: Contains the `Lofti2025NWBConverter` class that combines all data interfaces
 - **`metadata/`**: YAML files containing experimental metadata for different protocols
 - **`interfaces/`**: Custom data interfaces, including demodulated fiber photometry
 - **`utils/`**: Utility functions for signal processing and stimulus addition
@@ -228,7 +228,7 @@ In neuroconv, a [DataInterface](https://neuroconv.readthedocs.io/en/main/user_gu
 
 ### NWBConverter
 
-In neuroconv, a [NWBConverter](https://neuroconv.readthedocs.io/en/main/user_guide/nwbconverter.html) is a class that combines many data interfaces and specifies the relationships between them, such as temporal alignment. The `Embargo2025NWBConverter` combines:
+In neuroconv, a [NWBConverter](https://neuroconv.readthedocs.io/en/main/user_guide/nwbconverter.html) is a class that combines many data interfaces and specifies the relationships between them, such as temporal alignment. The `Lofti2025NWBConverter` combines:
 
 - Fiber photometry data (raw and demodulated)
 - Behavioral videos with temporal alignment
