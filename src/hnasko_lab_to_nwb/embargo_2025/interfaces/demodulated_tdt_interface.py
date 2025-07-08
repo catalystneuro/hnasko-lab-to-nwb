@@ -4,6 +4,7 @@ from ndx_fiber_photometry import FiberPhotometryResponseSeries
 
 from hnasko_lab_to_nwb.embargo_2025.utils.demodulate_fp_signal import demodulate_signal
 from neuroconv.datainterfaces import TDTFiberPhotometryInterface
+from neuroconv.tools.nwb_helpers import get_module
 
 
 class TDTDemodulatedFiberPhotometryInterface(TDTFiberPhotometryInterface):
@@ -105,12 +106,7 @@ class TDTDemodulatedFiberPhotometryInterface(TDTFiberPhotometryInterface):
             raise ValueError("Fiber photometry metadata not found in NWB file.")
 
         # Create a new processing module for fiber photometry signals if it doesn't exist
-        if "ophys" not in nwbfile.processing:
-            ophys_module = nwbfile.create_processing_module(
-                name="ophys", description="Processed fiber photometry signals"
-            )
-        else:
-            ophys_module = nwbfile.processing["ophys"]
+        get_module(nwbfile=nwbfile, name="ophys", description="Processed fiber photometry signals")
 
         # Retrieve the name of the demodulated signal from the function arguments or Raise an Error
         signal_name = name
