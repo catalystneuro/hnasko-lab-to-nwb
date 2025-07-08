@@ -32,7 +32,33 @@ Subject:
   sex: U # To ask
   strain: C57BL/6J
   genotype: VGLUT2-IRES-CRE;VGAT-2A-FlpO-D # To check with lab point person
-  # date_of_birth: 2014-06-22 00:00:00-04:00  # Example
+  # date_of_birth: 2014-06-22 00:00:00-04:00  # ExampleBehavior:
+Behavior:
+  ExternalVideos:
+    BehavioralVideo:
+      description: |
+        Video recording of the mouse's behavior. Recorded using a camera mounted on the ceiling above the chambers.
+      device:
+        name: BehavioralCamera
+        description: Camera mounted on ceiling above chambers for behavioral recording
+    BehavioralVideo_250ms:
+      description: |
+        Video recording of the mouse's behavior during 250ms long stimulation.
+      device:
+        name: BehavioralCamera
+        description: Camera mounted on ceiling above chambers for behavioral recording
+    BehavioralVideo_1s:
+      description: |
+        Video recording of the mouse's behavior during 1s long stimulation.
+      device:
+        name: BehavioralCamera
+        description: Camera mounted on ceiling above chambers for behavioral recording
+    BehavioralVideo_4s:
+      description: |
+        Video recording of the mouse's behavior during 4s long stimulation.
+      device:
+        name: BehavioralCamera
+        description: Camera mounted on ceiling above chambers for behavioral recording
 Ophys:
   FiberPhotometry:
     OpticalFibers:
@@ -112,8 +138,8 @@ Ophys:
           excitation_source: excitation_source_isosbestic
           photodetector: photodetector
           dichroic_mirror: dichroic_mirror
-    FiberPhotometryResponseSeries: 
-      - name: raw_modulated_signal 
+    FiberPhotometryResponseSeries:
+      - name: raw_modulated_signal
         description: The raw fiber photometry signal from Tucker David Technologies (TDT) acquisition system.
         stream_name: Fi1r
         unit: a.u.
