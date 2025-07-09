@@ -21,6 +21,8 @@ dependencies = [
   "openpyxl",
   "opencv-python-headless",
   "dandi",
+  "remfile",
+  "ipykernel",
 ]
 
 [project.urls]

@@ -161,8 +161,6 @@ def session_to_nwb(
     converter.run_conversion(
         metadata=metadata, nwbfile_path=nwbfile_path, conversion_options=conversion_options, overwrite=overwrite
     )
-    if verbose:
-        print(f"Session {session_id} for subject {subject_id} converted successfully to NWB format at {nwbfile_path}")
 
 
 if __name__ == "__main__":
