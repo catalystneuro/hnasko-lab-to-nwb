@@ -1,4 +1,4 @@
-# Notes concerning the lotfi_2025 conversion
+# Notes concerning the embargo_2025 conversion
 
 Mice were freely moving on a plastic tub.
 Simultaneous passive optogenetic stimulations and fiber photometry recordings were conducted during the first two days.
@@ -6,6 +6,8 @@ Briefly, excitatory inputs from either the STN or PPN to SN were stimulated and 
 Then mice underwent uncued electrical shocks and were recorded using fiber photometry.
 
 Reference paper:  ["Parkinson's Disease-vulnerable and -resilient dopamine neurons display opposite responses to excitatory input"](https://www.biorxiv.org/content/10.1101/2025.06.03.657460v1)
+
+This conversion pipeline convert the "Shock" session, refer to lofti_2025 for converting "Varying duration" and "Varying frequencies" sessions
 
 ## Session description
 
@@ -27,33 +29,29 @@ During day 3, animals were placed in a shock chamber and recorded for 6 minutes.
 Uncued shocks (0.3 mA) at various durations (250ms, 1s and 4s, 5 times for each duration) were delivered
 in a randomized order and ISI.
 
-This conversion pipeline convert only the "Varying duration" and "Varying frequencies" sessions. Refer to embargo_2025 for converting the "Shock" sessions.
-
 ## Fiber photometry data
 The recordings were done using a fiber photometry rig with optical components from Tucker David Technologies (TDT) and
 Doric lenses controlled by a real-time processor from TDT (RZ10x).
 TDT software Synapse was used for data acquisition.
 Gcamp6f was excited by amplitude modulated signals from two light-emitting diodes (465- and 405-nm isosbestic control, TDT).
 
-## Optogenetic stimulation
-
+## Shock stimulus
+Shock timestamps were digitized in Synapse software by respectively AnyMaze and MedPC.
 Optogenetic stimulation metadata:
 ```yaml
 Stimulus:
- OptogeneticStimulusSite:
-   - name: optogenetic_stimulus_site
-     description: The site where the optogenetic stimulation was applied.
-     excitation_lambda: 635.0 # Excitation wavelength in nanometers.
- OptogeneticSeries:
-   name: optogenetic_series
-   site: optogenetic_stimulus_site
-   description: The reconstructed timeseries for the optogenetic stimulation.
- OptogeneticStimulusInterval:
-   name: optogenetic_stimulus_interval
-   description: Optogenetic stimulus events from TDT epochs.
-TDTEvents:
- stream_names: ["sms_","s1s_","s4s_"] #
- stimuli_frequencies: [40.0, 40.0, 40.0]
+  ShockStimulusInterval:
+    name: shock_stimulus_interval
+    description: Shock stimulus events from TDT epochs.
+  ShockTDTEvents:
+    stream_names: ["sms_", "s1s_", "s4s_"]
+    stimulus_amplitude: [0.3, 0.3, 0.3]
+  AuditoryStimulusInterval:
+    name: auditory_stimulus_interval
+    description: Auditory stimulus events from TDT epochs.
+  AuditoryTDTEvents:
+    stream_names: ["CSm_", "CSp_"]
+    paired_shock: ["no shock", "shock"]
 ```
 ## TDT data structure
 
@@ -64,18 +62,11 @@ For all subjects and all session types:
 - Stream 'Fi1r' --> raw signal
 
 ### TDT events
-For "Varying duration" sessions
-- 'ssm_' or 'sms_'--> time intervals for optogenetic stimulation delivered for 250ms each stimulus,
-- 's1s_'--> time intervals for optogenetic stimulation delivered for 1s each stimulus,
-- 's4s_'--> time intervals for optogenetic stimulation delivered for 4s each stimulus
+For "Shock" sessions
+- 'CSm_' --> conditioned stimulus minus (auditory cue not paired with shock)
+- 'CSp_' --> conditioned stimulus plus (auditory cue paired with shock)
 
-For "Varying frequencies" sessions
-- 'H10_'--> time intervals for optogenetic stimulation delivered at 10Hz,
-- 'H20_'--> time intervals for optogenetic stimulation delivered at 20Hz,
-- 'H40_'--> time intervals for optogenetic stimulation delivered at 40Hz,
-- 'H05_'--> time intervals for optogenetic stimulation delivered at 5Hz
-
-## AnyMaze videos
-Video needs to be converted in  .mp4 format using ANyMaze software dedicated tool.
-The video start timestamp must be stored in an excel file ("video_metadata") two columns: "file_name" and "start_time".
-Not all sessions have AnyMaze videos
+For new "Shock" sessions
+- 'sms_'--> time intervals for uncued shock stimulation delivered for 250ms each stimulus,
+- 's1s_'--> time intervals for uncued shock stimulation delivered for 1s each stimulus,
+- 's4s_'--> time intervals for uncued shock stimulation delivered for 4s each stimulus
