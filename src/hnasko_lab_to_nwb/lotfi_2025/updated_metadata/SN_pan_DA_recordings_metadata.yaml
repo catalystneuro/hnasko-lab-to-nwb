@@ -1,65 +1,47 @@
+# Metadata for Lofti 2025 --> 2. SNc pan-DA GCaMP6f recordings, STN & PPN stim
+# TODO add ogen stimulation metadata
 NWBFile:
   related_publications:
     - https://doi.org/10.1101/2025.06.03.657460
   keywords:
-    - optogenetics
     - fiber photometry
-    - SNr
-    - STN
-    - PPN
-    - GABAergic neurons
+    - SNc
+    - dopaminergic neurons
+    - GCaMP6f
+    - calcium imaging
     - Parkinson's disease
   experiment_description: Mice were freely moving on a plastic tub.
     Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the first two days.
-    Excitatory inputs from either the STN or PPN to SN were stimulated and the DA release in striatal subregions (DLS or TS) in VGLUT2-Cre mice were recorded.
+    Excitatory inputs from either the STN or PPN to SN were stimulated.
+    Recordings of GCaMP6f fluorescence signal captured pan-DA activity in the substantia nigra pars compacta in VGLUT2-Cre x DAT-Flp mice.
   institution: UC San Diego School of Medicine
   lab: Hnasko
   experimenter:
     - Hadjas, Lotfi
     - Hollon, Nick
   surgery:
-    Mice > 6 weeks old were anesthetized with isoflurane (4% for induction; 1-2% for maintenance).
-    For monitoring DA release in striatal subregions VGLUT2-Cre mice were injected with AAV5-Syn-FLEX-ChrimsonR-tdTomato in either STN or PPN as above.
-    And 300 nl of AAV9-EF1a-GRABDA2m (2e12 vg/mL, Addgene 140553) was injected in either DLS (AP +0.5, ML +/-2.25, DV -2.95) or TS (AP -1.25, ML +/-2.9, DV -3.45).
-    A fiber was implanted in SNc (200-um core, 0.39 NA, L = 6 mm, 1.25-mm diameter white ceramic ferrule, RWD) and
-    a second fiber (400-um core, 0.39 NA, L = 4 mm, 1.25-mm black ceramic ferrule, RWD) was implanted in DLS (AP +0.5, ML +/- 2.25, DV -2.75)
-    or TS (AP -1.25, ML +/2.9, DV -3.25).
-    Mice were allowed to recover for 4 weeks before starting experiments.
+    Mice > 6 weeks old were anesthetized with isofluorane (4% for induction and 1-2% for maintenance), and provided with pre- and post-surgical analgesic carprofen (5 mg/kg i.p).
+    For calcium recordings in VGLUT2-Cre x DAT-Flp mice were injected with 300 nl of AAV1-Ef1a-fDIO-GCaMP6f (4e12 vg/mL, Addgene 1283125) in SNc (AP -3.2, ML +/-1.3, DV 4.3).
+    For optogenetic stimulation, 150-200 nl of AAV5-Syn-FLEX-ChrimsonR-tdTomato (4 - 8.5e12 vg/ml, Addgene 62723) was injected in either STN (AP -2.00, ML +/-1.6, DV -4.5) or PPN (AP -4.48, ML +/- 1.1, DV -3.75).
+    A fiber (400-um core, 0.39 NA, 6-mm length, 1.25-mm diameter black ceramic ferrule, RWD) was implanted in SNc (AP -3.2, ML +/-1.4, DV -4.1).
 Subject:
   species: Mus musculus
   description:
-    Male and female were bred at University of California San Diego (UCSD) and group-housed on a 12-hour light/dark cycle,
-    with food and water ad libitum. VGLUT2-IRES-CRE and VGAT-2A-FlpO-D knock-in mice were obtained from the Jackson Laboratory
-    Slc17a6tm2(cre)Lowl (RRID:IMSR_JAX:016963) Slc32a1tm1.1(flpo)Hze (RRID:IMSR_JAX:029591) and maintained backcrossed on to C57BL/6J.
-    VGlut2-Cre animals were crossed with VGAT-flp animals to generate dual transgenic animals that were VGlut2-Cre/VGAT-flp and used for experiments.
-    All experiments were performed on animals of at least 6 weeks of age and in accordance with protocols approved by UCSD Institutional Animal Care and Use Committee.
+    All mouse experiments were performed in accordance with protocols approved by UCSD Institutional Animal Care and Use Committee.
+    Male and female mice were bred at UCSD and group-housed on a 12-hour light/dark cycle, with food and water ad libitum.
+    VGLUT2-Cre (Slc17a6tm2(cre)Lowl, RRID:IMSR_JAX:016963) and VGAT-Flp (Slc32a1tm1.1(flpo)Hze, RRID:IMSR_JAX:029591) mice were obtained from the Jackson Laboratory and maintained backcrossed on to C57BL/6J (RRID:IMSR_JAX:000664).
+    The DAT-Flp (Slc6a3em1(flpo)Hbat, RRID:IMSR_JAX:035436) were generously provided by Dr. Helen Bateup (UC Berkeley).
+    VGLUT2-PhiC31 (Jeong et al. 2024) mice were generously provided by Dr. Lim (UC San Diego).
+    DAT-Flp (Slc6a3em1(flpo)NW Jax and RRID) and Anxa1-Cre (RRID:MMRRC_069931-MU) were generously provided by Dr.Awatramani (Northwestern).
   age: P6W
   sex: U
   strain: C57BL/6J
-  genotype: VGLUT2-IRES-CRE
+  genotype: VGLUT2-IRES-CRE/DAT-flp
 Behavior:
   ExternalVideos:
     BehavioralVideo:
       description: |
         Video recording of the mouse's behavior. Recorded using a camera mounted on the ceiling above the chambers.
-      device:
-        name: BehavioralCamera
-        description: Camera mounted on ceiling above chambers for behavioral recording
-    BehavioralVideo_250ms:
-      description: |
-        Video recording of the mouse's behavior during 250ms long stimulation.
-      device:
-        name: BehavioralCamera
-        description: Camera mounted on ceiling above chambers for behavioral recording
-    BehavioralVideo_1s:
-      description: |
-        Video recording of the mouse's behavior during 1s long stimulation.
-      device:
-        name: BehavioralCamera
-        description: Camera mounted on ceiling above chambers for behavioral recording
-    BehavioralVideo_4s:
-      description: |
-        Video recording of the mouse's behavior during 4s long stimulation.
       device:
         name: BehavioralCamera
         description: Camera mounted on ceiling above chambers for behavioral recording
@@ -69,82 +51,23 @@ Ophys:
       - name: optical_fiber_model_1
         description: Chronically implantable optic fiber.
         manufacturer: RWD
-        model_number: <model of the optical fiber>
-        numerical_aperture: 0.39
-        core_diameter_in_um: 200.0
-        active_length_in_mm: 6.0
-        ferrule_diameter_in_mm: 1.25
-        ferrule_name: white ceramic ferrule
-      - name: optical_fiber_model_2
-        description: Chronically implantable optic fiber.
-        manufacturer: RWD
-        model_number: <model of the optical fiber>
+        model_number: <model of the optical fiber> # TODO add model number
         numerical_aperture: 0.39
         core_diameter_in_um: 400.0
-        active_length_in_mm: 4.0
+        active_length_in_mm: 6.0
         ferrule_diameter_in_mm: 1.25
         ferrule_name: black ceramic ferrule
     OpticalFibers:
-      - name: optical_fiber_SNc_right
+      - name: optical_fiber_SNc
         description: Chronically implanted optic fiber.
         model: optical_fiber_model_1
-        serial_number: <serial number of the optical fiber>
+        serial_number: <serial number of the optical fiber> # TODO add serial number
         fiber_insertion:
           insertion_position_ap_in_mm: -3.2
           insertion_position_ml_in_mm: 1.4
-          insertion_position_dv_in_mm: 4.1
+          insertion_position_dv_in_mm: -4.1
           position_reference: bregma
           hemisphere: right
-      - name: optical_fiber_SNc_left
-        description: Chronically implanted optic fiber.
-        model: optical_fiber_model_1
-        serial_number: <serial number of the optical fiber>
-        fiber_insertion:
-          insertion_position_ap_in_mm: -3.2
-          insertion_position_ml_in_mm: -1.4
-          insertion_position_dv_in_mm: 4.1
-          position_reference: bregma
-          hemisphere: left
-      - name: optical_fiber_DLS_right
-        description: Chronically implanted optic fiber.
-        model: optical_fiber_model_2
-        serial_number: <serial number of the optical fiber>
-        fiber_insertion:
-          insertion_position_ap_in_mm: 0.5
-          insertion_position_ml_in_mm: 2.25
-          insertion_position_dv_in_mm: -2.75
-          position_reference: bregma
-          hemisphere: right
-      - name: optical_fiber_DLS_left
-        description: Chronically implanted optic fiber.
-        model: optical_fiber_model_2
-        serial_number: <serial number of the optical fiber>
-        fiber_insertion:
-          insertion_position_ap_in_mm: 0.5
-          insertion_position_ml_in_mm: -2.25
-          insertion_position_dv_in_mm: -2.75
-          position_reference: bregma
-          hemisphere: left
-      - name: optical_fiber_TS_right
-        description: Chronically implanted optic fiber.
-        model: optical_fiber_model_2
-        serial_number: <serial number of the optical fiber>
-        fiber_insertion:
-          insertion_position_ap_in_mm: -1.25
-          insertion_position_ml_in_mm: 2.9
-          insertion_position_dv_in_mm: -3.25
-          position_reference: bregma
-          hemisphere: right
-      - name: optical_fiber_TS_left
-        description: Chronically implanted optic fiber.
-        model: optical_fiber_model_2
-        serial_number: <serial number of the optical fiber>
-        fiber_insertion:
-          insertion_position_ap_in_mm: -1.25
-          insertion_position_ml_in_mm: -2.9
-          insertion_position_dv_in_mm: -3.25
-          position_reference: bregma
-          hemisphere: left
 
     ExcitationSourceModels:
       - name: excitation_source_model_calcium
@@ -161,7 +84,6 @@ Ophys:
         source_type: LED
         excitation_mode: one-photon
         wavelength_range_in_nm: [400, 410]
-
     ExcitationSources:
       - name: excitation_source_calcium_signal
         description: excitation source for the sensor's fluorescence signal (465nm) modulated at 210 Hz.
@@ -174,135 +96,77 @@ Ophys:
 
     PhotodetectorModels:
       - name: photodetector_model
-        description: <description of the photodetector model>
-        manufacturer: <manufacturer of the photodetector>
-        model_number: <model of the photodetector>
-        detector_type: photodiode
-        wavelength_range_in_nm: [400, 700]
+        description: <description of the photodetector model> # TODO add description
+        manufacturer: <manufacturer of the photodetector> # TODO add manufacturer
+        model_number: <model of the photodetector> # TODO add model number
+        detector_type: photodiode # TODO check detector type
+        wavelength_range_in_nm: [500, 550] #TODO check wavelength range
         gain: -1.0
         gain_unit: V/W
-
     Photodetectors:
       - name: photodetector
-        description: <description of the photodetector>
+        description: <description of the photodetector> # TODO add description
         model: photodetector_model
-        serial_number: <serial number of the photodetector>
+        serial_number: <serial number of the photodetector> # TODO add serial number
 
     FiberPhotometryViruses:
-      - name: vta_virus
-        description: <description of the viral vector for VTA>
-        manufacturer: <manufacturer of the viral vector>
-        construct_name: <construct name>
-        titer_in_vg_per_ml: -1.0
-
+      - name: viral_vector_gcamp6f
+        description: AAV1 viral vector expressing GCaMP6f calcium sensor under EF1a promoter for fiber photometry recording in SNc
+        manufacturer: Addgene (catalog number 1283125)
+        construct_name: AAV1-Ef1a-fDIO-GCaMP6f
+        titer_in_vg_per_ml: 4.0e12
     FiberPhotometryVirusInjections:
-      - name: vta_virus_injection
-        description: <description of viral injection for VTA>
-        viral_vector: vta_virus
-        location: <injection location>
-        hemisphere: <hemisphere>
+      - name: viral_vector_injection_SNc
+        description: Viral injection of GCaMP6f in SNc.
+        viral_vector: viral_vector_gcamp6f
+        location: Substantia Nigra pars compacta (SNc)
+        hemisphere: right
         reference: bregma at the cortical surface
-        ap_in_mm: -1.0
-        ml_in_mm: -1.0
-        dv_in_mm: -1.0
-        volume_in_uL: -1.0
-      - name: pfc_virus_injection
-        description: <description of viral injection for PFC>
-        viral_vector: pfc_virus
-        location: <injection location>
-        hemisphere: <hemisphere>
-        reference: bregma at the cortical surface
-        ap_in_mm: -1.0
-        ml_in_mm: -1.0
-        dv_in_mm: -1.0
-        volume_in_uL: -1.0
+        ap_in_mm: -3.2
+        ml_in_mm: 1.3
+        dv_in_mm: -4.3
+        volume_in_uL: 0.3
 
     FiberPhotometryIndicators:
-      - name: GRABDA2m
-        description: <description of the indicator for VTA>
-        manufacturer: <manufacturer of the indicator>
-        label: <label of the indicator>
-        viral_vector_injection: vta_virus_injection
+      - name: GCaMP6f
+        description: GCaMP6f calcium sensor in SNc dopaminergic neurons
+        manufacturer: Addgene
+        label: GCaMP6f
+        viral_vector_injection: viral_vector_injection_SNc
 
     FiberPhotometryTable:
       name: fiber_photometry_table
-      description: <description of the fiber photometry setup as a whole>
+      description: For monitoring calcium dynamics in SNc dopaminergic neurons, a fiber was implanted in SNc.
       rows:
         - name: 0
-          location: Ventral Tegmental Area (VTA)
+          location: SNc
           excitation_wavelength_in_nm: 465.0
-          emission_wavelength_in_nm: -1.0
-          indicator: vta_indicator
-          optical_fiber: optical_fiber1
+          emission_wavelength_in_nm: 515.0 #TODO check emission wavelength
+          indicator: GCaMP6f
+          optical_fiber: optical_fiber_SNc
           excitation_source: excitation_source_calcium_signal
-
           photodetector: photodetector
-          dichroic_mirror: dichroic_mirror
-          emission_filter: emission_filter
-          excitation_filter: excitation_filter
         - name: 1
-          location: Ventral Tegmental Area (VTA)
+          location: SNc
           excitation_wavelength_in_nm: 405.0
-          emission_wavelength_in_nm: -1.0
-          indicator: vta_indicator
-          optical_fiber: optical_fiber1
+          emission_wavelength_in_nm: 515.0 #TODO check emission wavelength
+          indicator: GCaMP6f
+          optical_fiber: optical_fiber_SNc
           excitation_source: excitation_source_isosbestic_control
-
           photodetector: photodetector
-          dichroic_mirror: dichroic_mirror
-          emission_filter: emission_filter
-          excitation_filter: excitation_filter
-        - name: 2
-          location: Prefrontal Cortex (PFC)
-          excitation_wavelength_in_nm: 465.0
-          emission_wavelength_in_nm: -1.0
-          indicator: pfc_indicator
-          optical_fiber: optical_fiber2
-          excitation_source: excitation_source_calcium_signal
-
-          photodetector: photodetector
-          dichroic_mirror: dichroic_mirror
-          emission_filter: emission_filter
-          excitation_filter: excitation_filter
-        - name: 3
-          location: Prefrontal Cortex (PFC)
-          excitation_wavelength_in_nm: 405.0
-          emission_wavelength_in_nm: -1.0
-          indicator: pfc_indicator
-          optical_fiber: optical_fiber2
-          excitation_source: excitation_source_isosbestic_control
-
-          photodetector: photodetector
-          dichroic_mirror: dichroic_mirror
-          emission_filter: emission_filter
-          excitation_filter: excitation_filter
 
     FiberPhotometryResponseSeries:
-      - name: calcium_signalVTA
-        description: The fluorescence from the calcium signal from VTA.
-        stream_name: _465B
+      - name: calcium_signal_SNc
+        description: The fluorescence from the calcium signal from SNc.
+        stream_name: _465A # TODO check stream name
         stream_indices: null
         unit: a.u.
         fiber_photometry_table_region: [0]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of VTA.
-      - name: isosbestic_controlVTA
-        description: The fluorescence from the isosbestic control from VTA.
-        stream_name: _405B
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of SNc.
+      - name: isosbestic_control_SNc
+        description: The fluorescence from the isosbestic control from SNc.
+        stream_name: _405A # TODO check stream name
         stream_indices: null
         unit: a.u.
         fiber_photometry_table_region: [1]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of VTA.
-      - name: calcium_signalPFC
-        description: The fluorescence from the calcium signal from PFC.
-        stream_name: _465C
-        stream_indices: null
-        unit: a.u.
-        fiber_photometry_table_region: [2]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of PFC.
-      - name: isosbestic_controlPFC
-        description: The fluorescence from the isosbestic control from PFC.
-        stream_name: _405C
-        stream_indices: null
-        unit: a.u.
-        fiber_photometry_table_region: [3]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of PFC.
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNc.
