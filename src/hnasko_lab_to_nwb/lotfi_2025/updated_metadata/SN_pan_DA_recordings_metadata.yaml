@@ -170,3 +170,67 @@ Ophys:
         unit: a.u.
         fiber_photometry_table_region: [1]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNc.
+Optogenetics:
+  stimulation_software: TDT Synapse
+  excitation_wavelength_in_nm: 635.0 # LED wavelength for ChrimsonR
+  OptogeneticViruses:
+    - name: viral_vector_ogen
+      description: pAAV-Syn-FLEX-rc[ChrimsonR-tdTomato] (AAV5) viral vector was used for optogenetic experiments.
+      manufacturer: Addgene (catalog number 62723)
+      construct_name: pAAV-Syn-FLEX-rc[ChrimsonR-tdTomato] (AAV5)
+      titer_in_vg_per_ml: 4.0e+12 # TODO check titer, a range of 4 - 8.5e12 is reported in the paper.
+  OptogeneticVirusInjections:
+    - name: viral_vector_injection_STN
+      description: Viral injection into the Subthalamic Nucleus (STN).
+      viral_vector: viral_vector_ogen
+      location: STN
+      hemisphere: right # TODO: get hemisphere from a subject-wise map
+      reference: bregma at the cortical surface
+      ap_in_mm: -2.00
+      ml_in_mm: 1.6 # TODO: get ML coordinate from a subject-wise map (depends on hemisphere)
+      dv_in_mm: -4.5
+      volume_in_uL: 0.150 # TODO check volume, a range of 150 - 200 nl is reported in the paper.
+    - name: viral_vector_injection_PPN
+      description: Viral injection into the Pedunculopontine Nucleus (PPN).
+      viral_vector: viral_vector_ogen
+      location: PPN
+      hemisphere: right # TODO: get hemisphere from a subject-wise map
+      reference: bregma at the cortical surface
+      ap_in_mm: -4.48
+      ml_in_mm: 1.1 # TODO: get ML coordinate from a subject-wise map (depends on hemisphere)
+      dv_in_mm: -3.75
+      volume_in_uL: 0.150 # TODO check volume, a range of 150 - 200 nl is reported in the paper.
+  OptogeneticEffectors:
+    - name: chrimsonR_STN
+      description: ChrimsonR opsin used for optogenetic stimulation injected into the STN.
+      manufacturer: Addgene
+      label: ChrimsonR-tdTomato
+      viral_vector_injection: viral_vector_injection_STN
+    - name: chrimsonR_PPN
+      description: ChrimsonR opsin used for optogenetic stimulation injected into the PPN.
+      manufacturer: Addgene
+      label: ChrimsonR-tdTomato
+      viral_vector_injection: viral_vector_injection_PPN
+  ExcitationSourceModels:
+    - name: optogenetic_excitation_source_model
+      description: Red LED device used for optogenetic stimulation.
+      manufacturer: Shanghai laser
+      model_number: <model of the LED device> # TODO add model number
+      source_type: LED
+      excitation_mode: one-photon
+  ExcitationSources:
+    - name: optogenetic_excitation_source
+      description: Red LED device used for optogenetic stimulation.
+      model: optogenetic_excitation_source_model
+      power_in_W: 0.005 # 5mW
+  OptogeneticSitesTable:
+    description: Information about each optogenetic site, including the excitation source, and targeted effector.
+    reference: Bregma at the cortical surface
+    rows:
+      - name: 0
+        excitation_source: optogenetic_excitation_source
+        # TODO this setup does not include an optical fiber for optogenetic stimulation (probably this is a requirement for the NWB schema --> need to open an issue)
+        effector: chrimsonR_STN
+      - name: 1
+        excitation_source: optogenetic_excitation_source
+        effector: chrimsonR_PPN
