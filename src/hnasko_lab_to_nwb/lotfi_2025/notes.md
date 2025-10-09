@@ -124,3 +124,17 @@ For "Varying frequencies" sessions
 Video needs to be converted in  .mp4 format using ANyMaze software dedicated tool.
 The video start timestamp must be stored in an excel file ("video_metadata") two columns: "file_name" and "start_time".
 Not all sessions have AnyMaze videos
+
+## Processed data (.mat files)
+Example: `PPN_Vglut2_SNr_GABA_GCaMP_varDurs_40Hz_5mW_Demod.mat` file will contain:
+
+### Demodulated Signals:
+- `Gc_raw.SNr.[subject].LP5mW`: Raw 465nm demodulated signal
+- `af_raw.SNr.[subject].LP5mW`: Raw 405nm demodulated signal
+- `Gc.SNr.[subject].LP5mW`: Downsampled 465nm signal (100 Hz)
+- `af.SNr.[subject].LP5mW`: Downsampled 405nm signal (100 Hz)
+
+### Processed dF/F Data:
+- `dF.SNr.[subject].LP5mW`: Baseline-corrected dF/F traces
+- `norm_dF.SNr.[subject].LP5mW.[duration]`: Trial-aligned, baseline-normalized dF/F
+- `out_dFs.SNr.LP5mW.[duration]`: Subject-averaged traces for each duration
