@@ -109,12 +109,53 @@ Ophys:
         model: photodetector_model
         serial_number: <serial number of the photodetector> # TODO add serial number
 
+    BandOpticalFilterModels:
+      - name: emission_filter_model
+        description: <description of emission filter model> # TODO add description
+        manufacturer: <manufacturer of the emission filter> # TODO add manufacturer
+        model_number: <model of the emission filter> # TODO add model number
+        filter_type: Bandpass
+        center_wavelength_in_nm: -1.0
+        bandwidth_in_nm: -1.0
+      - name: excitation_filter_model
+        description: <description of excitation filter model> # TODO add description
+        manufacturer: <manufacturer of the excitation filter> # TODO add manufacturer
+        model_number: <model of the excitation filter> # TODO add model number
+        filter_type: Bandpass
+        center_wavelength_in_nm: -1.0
+        bandwidth_in_nm: -1.0
+
+    BandOpticalFilters:
+      - name: emission_filter
+        description: <description of emission filter> # TODO add description
+        model: emission_filter_model
+      - name: excitation_filter
+        description: <description of excitation filter> # TODO add description
+        model: excitation_filter_model
+
+    DichroicMirrorModels:
+      - name: dichroic_mirror_model
+        description: <description of the dichroic mirror model> # TODO add description
+        manufacturer: <manufacturer of the dichroic mirror> # TODO add manufacturer
+        model_number: <model of the dichroic mirror> # TODO add model number
+        cut_on_wavelength_in_nm: -1.0
+        cut_off_wavelength_in_nm: -1.0
+        reflection_band_in_nm: [-1.0, -1.0]
+        transmission_band_in_nm: [-1.0, -1.0]
+        angle_of_incidence_in_degrees: -1.0
+
+    DichroicMirrors:
+      - name: dichroic_mirror
+        description: <description of the dichroic mirror> # TODO add description
+        model: dichroic_mirror_model
+        serial_number: <serial number of the dichroic mirror> # TODO add serial number
+
     FiberPhotometryViruses:
       - name: viral_vector_gcamp6f
         description: AAV1 viral vector expressing GCaMP6f calcium sensor under EF1a promoter for fiber photometry recording in SNc
         manufacturer: Addgene (catalog number 1283125)
         construct_name: AAV1-Ef1a-fDIO-GCaMP6f
-        titer_in_vg_per_ml: 4.0e12
+        titer_in_vg_per_ml: 4.0e+12
     FiberPhotometryVirusInjections:
       - name: viral_vector_injection_SNc
         description: Viral injection of GCaMP6f in SNc.
@@ -146,6 +187,9 @@ Ophys:
           optical_fiber: optical_fiber_SNr
           excitation_source: excitation_source_calcium_signal
           photodetector: photodetector
+          emission_filter: emission_filter
+          excitation_filter: excitation_filter
+          dichroic_mirror: dichroic_mirror
         - name: 1
           location: SNr
           excitation_wavelength_in_nm: 405.0
@@ -154,22 +198,40 @@ Ophys:
           optical_fiber: optical_fiber_SNr
           excitation_source: excitation_source_isosbestic_control
           photodetector: photodetector
+          emission_filter: emission_filter
+          excitation_filter: excitation_filter
+          dichroic_mirror: dichroic_mirror
 
     FiberPhotometryResponseSeries:
-      - name: calcium_signal_SNr
-        description: The fluorescence from the calcium signal from SNr.
-        stream_name: _465A # TODO check stream name
-        stream_indices: null
+      - name: raw_signal_SNr
+        description: The raw modulated fluorescence signal from GCaMP6f calcium indicator in SNr GABAergic neurons, excited at 465nm and 405nm, respectively.
+        stream_name: Fi1r
+        unit: a.u.
+        fiber_photometry_table_region: [0]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
+
+    DemodulatedFiberPhotometryResponseSeries:
+      - name: demodulated_calcium_signal_SNr
+        description: The demodulated fluorescence signal from GCaMP6f calcium indicator in SNr GABAergic neurons, excited at 465nm and demodulated at 330Hz.
         unit: a.u.
         fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of SNr.
-      - name: isosbestic_control_SNr
-        description: The fluorescence from the isosbestic control from SNr.
-        stream_name: _405A # TODO check stream name
-        stream_indices: null
+      - name: demodulated_isosbestic_control_SNr
+        description: The demodulated fluorescence signal from GCaMP6f for isosbestic control in SNr GABAergic neurons, excited at 405nm and demodulated at 210Hz.
         unit: a.u.
         fiber_photometry_table_region: [1]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNc.
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNr.
+      - name: downsampled_calcium_signal_SNr
+        description: The downsampled fluorescence signal from GCaMP6f calcium indicator in SNr GABAergic neurons, excited at 465nm and downsampled at 100Hz.
+        unit: a.u.
+        fiber_photometry_table_region: [0]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of SNr.
+      - name: downsampled_isosbestic_control_SNr
+        description: The downsampled fluorescence signal from GCaMP6f for isosbestic control in SNr GABAergic neurons, excited at 405nm and downsampled at 100Hz.
+        unit: a.u.
+        fiber_photometry_table_region: [1]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNr.
+
 Optogenetics:
   stimulation_software: TDT Synapse
   excitation_wavelength_in_nm: 635.0 # LED wavelength for ChrimsonR
