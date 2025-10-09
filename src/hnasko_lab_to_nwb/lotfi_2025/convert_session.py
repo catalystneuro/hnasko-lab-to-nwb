@@ -64,26 +64,25 @@ def session_to_nwb(
     conversion_options.update(dict(FiberPhotometry=dict()))
 
     # Add DemodulatedFiberPhotometry for calcium and isosbestic
+    # source_data.update(
+    #     dict(
+    #         DemodulatedFiberPhotometry_Calcium=dict(folder_path=tdt_folder_path),
+    #         DemodulatedFiberPhotometry_Isosbestic=dict(folder_path=tdt_folder_path),
+    #     )
+    # )
+    # source_data.update(
+    #     dict(
+    #         DemodulatedFiberPhotometry_Calcium=dict(folder_path=tdt_folder_path),
+    #         DemodulatedFiberPhotometry_Isosbestic=dict(folder_path=tdt_folder_path),
+    #     )
+    # )
 
-    source_data.update(
-        dict(
-            DemodulatedFiberPhotometry_Calcium=dict(folder_path=tdt_folder_path),
-            DemodulatedFiberPhotometry_Isosbestic=dict(folder_path=tdt_folder_path),
-        )
-    )
-    source_data.update(
-        dict(
-            DemodulatedFiberPhotometry_Calcium=dict(folder_path=tdt_folder_path),
-            DemodulatedFiberPhotometry_Isosbestic=dict(folder_path=tdt_folder_path),
-        )
-    )
-
-    conversion_options.update(
-        dict(
-            DemodulatedFiberPhotometry_Calcium=dict(driver_freq=330, name="calcium_signal"),
-            DemodulatedFiberPhotometry_Isosbestic=dict(driver_freq=210, name="isosbestic_signal"),
-        )
-    )
+    # conversion_options.update(
+    #     dict(
+    #         DemodulatedFiberPhotometry_Calcium=dict(driver_freq=330, name="calcium_signal"),
+    #         DemodulatedFiberPhotometry_Isosbestic=dict(driver_freq=210, name="isosbestic_signal"),
+    #     )
+    # )
 
     # Add Video
     video_time_alignment_dict = dict()
@@ -124,7 +123,7 @@ def session_to_nwb(
 
     # Update default metadata with the editable in the corresponding yaml file
     metadata = converter.get_metadata()
-    editable_metadata_path = Path(__file__).parent / "metadata/general_metadata.yaml"
+    editable_metadata_path = Path(__file__).parent / "updated_metadata/SN_pan_GABA_recordings_metadata.yaml"
     editable_metadata = load_dict_from_file(editable_metadata_path)
     metadata = dict_deep_update(metadata, editable_metadata)
 
@@ -132,28 +131,28 @@ def session_to_nwb(
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
 
-    if "Ophys" in metadata and "FiberPhotometry" in metadata["Ophys"]:
-        fiber_photometry = metadata["Ophys"]["FiberPhotometry"]
-        if "Indicators" in fiber_photometry:
-            indicators = fiber_photometry["Indicators"]
+    # if "Ophys" in metadata and "FiberPhotometry" in metadata["Ophys"]:
+    #     fiber_photometry = metadata["Ophys"]["FiberPhotometry"]
+    #     if "Indicators" in fiber_photometry:
+    #         indicators = fiber_photometry["Indicators"]
 
-            # Filter the indicators based on ogen_stimulus_location
-            filtered_indicators = [
-                indicator
-                for indicator in indicators
-                if not (
-                    (ogen_stimulus_location == "STN" and indicator.get("injection_location") == "PPN")
-                    or (ogen_stimulus_location == "PPN" and indicator.get("injection_location") == "STN")
-                )
-            ]
+    #         # Filter the indicators based on ogen_stimulus_location
+    #         filtered_indicators = [
+    #             indicator
+    #             for indicator in indicators
+    #             if not (
+    #                 (ogen_stimulus_location == "STN" and indicator.get("injection_location") == "PPN")
+    #                 or (ogen_stimulus_location == "PPN" and indicator.get("injection_location") == "STN")
+    #             )
+    #         ]
 
-            # Update the Indicators section
-            fiber_photometry["Indicators"] = filtered_indicators
+    #         # Update the Indicators section
+    #         fiber_photometry["Indicators"] = filtered_indicators
 
-    # Add stimulus metadata
-    metadata = dict_deep_update(metadata, stimulus_metadata, remove_repeats=False)
-    if "OptogeneticStimulusSite" in metadata["Stimulus"]:
-        metadata["Stimulus"]["OptogeneticStimulusSite"][0]["location"] = ogen_stimulus_location
+    # # Add stimulus metadata
+    # metadata = dict_deep_update(metadata, stimulus_metadata, remove_repeats=False)
+    # if "OptogeneticStimulusSite" in metadata["Stimulus"]:
+    #     metadata["Stimulus"]["OptogeneticStimulusSite"][0]["location"] = ogen_stimulus_location
 
     # Run conversion
     converter.run_conversion(
@@ -184,7 +183,7 @@ if __name__ == "__main__":
     path_expander = LocalPathExpander()
     # Expand paths and extract metadata
     metadata_list = path_expander.expand_paths(source_data_spec)
-    for metadata in metadata_list:
+    for metadata in metadata_list[8:]:  # Exclude shock sessions
         protocol_type = metadata["metadata"]["extras"]["protocol_type"]
         session_starting_time_string = metadata["metadata"]["extras"]["session_starting_time_string"]
         session_starting_time = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")

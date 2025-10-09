@@ -7,9 +7,6 @@ from pynwb import NWBFile
 from hnasko_lab_to_nwb.lotfi_2025.interfaces import (
     TDTDemodulatedFiberPhotometryInterface,
 )
-from hnasko_lab_to_nwb.lotfi_2025.utils import (
-    add_optogenetic_stimulation,
-)
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import ExternalVideoInterface, TDTFiberPhotometryInterface
 
@@ -57,12 +54,12 @@ class Lofti2025NWBConverter(NWBConverter):
 
     def add_to_nwbfile(self, nwbfile: NWBFile, metadata, conversion_options: Optional[dict] = None) -> None:
         super().add_to_nwbfile(nwbfile=nwbfile, metadata=metadata, conversion_options=conversion_options)
-        if "FiberPhotometry" in self.data_interface_objects.keys():
-            tdt_interface = self.data_interface_objects["FiberPhotometry"]
-            tdt_events = tdt_interface.get_events()
+        # if "FiberPhotometry" in self.data_interface_objects.keys():
+        #     tdt_interface = self.data_interface_objects["FiberPhotometry"]
+        #     tdt_events = tdt_interface.get_events()
 
-            if "OptogeneticStimulusInterval" in metadata["Stimulus"]:
-                add_optogenetic_stimulation(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
+        #     if "OptogeneticStimulusInterval" in metadata["Stimulus"]:
+        #         add_optogenetic_stimulation(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
 
         for video_interface_name, video_interface in self.data_interface_objects.items():
             if video_interface_name in ["Video_250ms", "Video_1s", "Video_4s"]:
