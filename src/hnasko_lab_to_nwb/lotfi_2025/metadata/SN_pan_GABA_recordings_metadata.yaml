@@ -1,11 +1,11 @@
-# Metadata for Lofti 2025 --> 2. SNc pan-DA GCaMP6f recordings, STN & PPN stim
+# Metadata for Lofti 2025 --> 2. SNr pan-DA GCaMP6f recordings, STN & PPN stim
 # TODO add ogen stimulation metadata
 NWBFile:
   related_publications:
     - https://doi.org/10.1101/2025.06.03.657460
   keywords:
     - fiber photometry
-    - SNc
+    - SNr
     - dopaminergic neurons
     - GCaMP6f
     - calcium imaging
@@ -23,7 +23,7 @@ NWBFile:
     Mice > 6 weeks old were anesthetized with isofluorane (4% for induction and 1-2% for maintenance), and provided with pre- and post-surgical analgesic carprofen (5 mg/kg i.p).
     For calcium recordings in VGLUT2-Cre x VGAT-Flp mice were injected with 300 nl of AAV1-Ef1a-fDIO-GCaMP6f (4e12 vg/mL, Addgene 1283125) in SNr (AP -3.3, ML +/-1.3, DV -4.6).
     For optogenetic stimulation, 150-200 nl of AAV5-Syn-FLEX-ChrimsonR-tdTomato (4 - 8.5e12 vg/ml, Addgene 62723) was injected in either STN (AP -2.00, ML +/-1.6, DV -4.5) or PPN (AP -4.48, ML +/- 1.1, DV -3.75).
-    A fiber (400-um core, 0.39 NA, 6-mm length, 1.25-mm diameter black ceramic ferrule, RWD) was implanted in SNc (AP -3.2, ML +/-1.4, DV -4.1).
+    A fiber (400-um core, 0.39 NA, 6-mm length, 1.25-mm diameter black ceramic ferrule, RWD) was implanted in SNr (AP -3.2, ML +/-1.4, DV -4.1).
 Subject:
   species: Mus musculus
   description:
@@ -152,15 +152,15 @@ Ophys:
 
     FiberPhotometryViruses:
       - name: viral_vector_gcamp6f
-        description: AAV1 viral vector expressing GCaMP6f calcium sensor under EF1a promoter for fiber photometry recording in SNc
+        description: AAV1 viral vector expressing GCaMP6f calcium sensor under EF1a promoter for fiber photometry recording in SNr
         manufacturer: Addgene (catalog number 1283125)
         construct_name: AAV1-Ef1a-fDIO-GCaMP6f
         titer_in_vg_per_ml: 4.0e+12
     FiberPhotometryVirusInjections:
-      - name: viral_vector_injection_SNc
-        description: Viral injection of GCaMP6f in SNc.
+      - name: viral_vector_injection_SNr
+        description: Viral injection of GCaMP6f in SNr.
         viral_vector: viral_vector_gcamp6f
-        location: Substantia Nigra pars compacta (SNc)
+        location: SNr
         hemisphere: right # TODO: get hemisphere from a subject-wise map
         reference: bregma at the cortical surface
         ap_in_mm: -3.3
@@ -173,7 +173,7 @@ Ophys:
         description: GCaMP6f calcium sensor in SNr GABAergic neurons
         manufacturer: Addgene
         label: GCaMP6f
-        viral_vector_injection: viral_vector_injection_SNc
+        viral_vector_injection: viral_vector_injection_SNr
 
     FiberPhotometryTable:
       name: fiber_photometry_table
@@ -213,24 +213,39 @@ Ophys:
     DemodulatedFiberPhotometryResponseSeries:
       - name: demodulated_calcium_signal_SNr
         description: The demodulated fluorescence signal from GCaMP6f calcium indicator in SNr GABAergic neurons, excited at 465nm and demodulated at 330Hz.
+        stream_name: Gc_raw
+        target_area: SNr
         unit: a.u.
         fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of SNr.
       - name: demodulated_isosbestic_control_SNr
         description: The demodulated fluorescence signal from GCaMP6f for isosbestic control in SNr GABAergic neurons, excited at 405nm and demodulated at 210Hz.
+        stream_name: af_raw
+        target_area: SNr
         unit: a.u.
         fiber_photometry_table_region: [1]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNr.
       - name: downsampled_calcium_signal_SNr
         description: The downsampled fluorescence signal from GCaMP6f calcium indicator in SNr GABAergic neurons, excited at 465nm and downsampled at 100Hz.
+        stream_name: Gc
+        target_area: SNr
         unit: a.u.
         fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of SNr.
       - name: downsampled_isosbestic_control_SNr
         description: The downsampled fluorescence signal from GCaMP6f for isosbestic control in SNr GABAergic neurons, excited at 405nm and downsampled at 100Hz.
+        stream_name: af
+        target_area: SNr
         unit: a.u.
         fiber_photometry_table_region: [1]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNr.
+      - name: deltaF_over_F_SNr
+        description: The deltaF/F signal from GCaMP6f calcium indicator in SNr GABAergic neurons, excited at 465nm and calculated as (Gc - fitted_af) / fitted_af.
+        stream_name: dF
+        target_area: SNr
+        unit: a.u.
+        fiber_photometry_table_region: [0]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal of SNr.
 
 Optogenetics:
   stimulation_software: TDT Synapse

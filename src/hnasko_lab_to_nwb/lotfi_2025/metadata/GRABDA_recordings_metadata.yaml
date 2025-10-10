@@ -205,12 +205,11 @@ Ophys:
         manufacturer: Addgene (catalog number 140553)
         construct_name: AAV9-EF1a-GRABDA2m
         titer_in_vg_per_ml: 2.0e+12
-      # TODO viral vector for indicator in SNc?
-      # - name: viral_vector_gcamp6f
-      #   description: AAV1 viral vector expressing GCaMP6f calcium sensor under EF1a promoter for fiber photometry recording in SNc
-      #   manufacturer: Addgene (catalog number 1283125)
-      #   construct_name: AAV1-Ef1a-fDIO-GCaMP6f
-      #   titer_in_vg_per_ml: 4.0e+12
+      - name: viral_vector_gcamp6f
+        description: AAV1 viral vector expressing GCaMP6f calcium sensor under EF1a promoter for fiber photometry recording in SNc
+        manufacturer: Addgene (catalog number 1283125)
+        construct_name: AAV1-Ef1a-fDIO-GCaMP6f
+        titer_in_vg_per_ml: 4.0e+12
     FiberPhotometryVirusInjections:
       - name: viral_vector_injection_DLS
         description: Viral injection of GRABDA2m in DLS.
@@ -232,17 +231,16 @@ Ophys:
         ml_in_mm: 2.9
         dv_in_mm: -3.45
         volume_in_uL: 0.3
-      # TODO viral injection in SNc?
-      # - name: viral_vector_injection_SNc
-      #   description: Viral injection of GRABDA2m in SNc.
-      #   viral_vector: viral_vector_gcamp6f
-      #   location: Substantia Nigra pars compacta (SNc)
-      #   hemisphere: right
-      #   reference: bregma at the cortical surface
-      #   ap_in_mm: -3.2
-      #   ml_in_mm: 1.3
-      #   dv_in_mm: -4.3
-      #   volume_in_uL: 0.3
+      - name: viral_vector_injection_SNc
+        description: Viral injection of GCaMP6f in SNc.
+        viral_vector: viral_vector_gcamp6f
+        location: Substantia Nigra pars compacta (SNc)
+        hemisphere: right
+        reference: bregma at the cortical surface
+        ap_in_mm: -3.2
+        ml_in_mm: 1.3
+        dv_in_mm: -4.3
+        volume_in_uL: 0.3
 
     FiberPhotometryIndicators:
       - name: GRABDA2m_DLS
@@ -255,12 +253,11 @@ Ophys:
         manufacturer: Addgene
         label: GRABDA2m
         viral_vector_injection: viral_vector_injection_TS
-      # TODO indicator for SNc?
-      # - name: GCaMP6f
-      #   description: GCaMP6f calcium sensor
-      #   manufacturer: Addgene
-      #   label: GCaMP6f
-      #   viral_vector_injection: viral_vector_injection_SNc
+      - name: GCaMP6f
+        description: GCaMP6f calcium sensor
+        manufacturer: Addgene
+        label: GCaMP6f
+        viral_vector_injection: viral_vector_injection_SNc
 
     FiberPhotometryTable:
       name: fiber_photometry_table
@@ -333,48 +330,132 @@ Ophys:
           dichroic_mirror: dichroic_mirror
 
     FiberPhotometryResponseSeries:
-      - name: calcium_signal_SNc
-        description: The fluorescence from the calcium signal from SNc.
-        stream_name: _465A # TODO check stream name
-        stream_indices: null
+      - name: raw_signal_SNc
+        description: The raw modulated fluorescence signal from GCaMP6f calcium indicator in SNc DA neurons, excited at 465nm and 405nm, respectively.
+        stream_name: Fi1r
+        unit: a.u.
+        fiber_photometry_table_region: [0]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal in SNc.
+      - name: raw_signal_DLS
+        description: The raw modulated fluorescence signal from GRABDA2m dopamine indicator in DLS neurons, excited at 465nm and 405nm, respectively.
+        stream_name: Fi1r # TODO check stream name
+        unit: a.u.
+        fiber_photometry_table_region: [2]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal in DLS.
+      - name: raw_signal_TS
+        description: The raw modulated fluorescence signal from GRABDA2m dopamine indicator in TS neurons, excited at 465nm and 405nm, respectively.
+        stream_name: Fi1r # TODO check stream name
+        unit: a.u.
+        fiber_photometry_table_region: [4]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal in TS.
+
+    DemodulatedFiberPhotometryResponseSeries:
+      - name: demodulated_calcium_signal_SNc
+        description: The demodulated fluorescence signal from GCaMP6f calcium indicator in SNc DA neurons, excited at 465nm and demodulated at 330Hz.
+        stream_name: Gc_raw
+        target_area: SNc
         unit: a.u.
         fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of SNc.
-      - name: isosbestic_control_SNc
-        description: The fluorescence from the isosbestic control from SNc.
-        stream_name: _405A # TODO check stream name
-        stream_indices: null
+      - name: demodulated_isosbestic_control_SNc
+        description: The demodulated fluorescence signal from GCaMP6f for isosbestic control in SNc DA neurons, excited at 405nm and demodulated at 210Hz.
+        stream_name: af_raw
+        target_area: SNc
         unit: a.u.
         fiber_photometry_table_region: [1]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNc.
-      - name: calcium_signal_DLS
-        description: The fluorescence from the calcium signal from DLS.
-        stream_name: _465B # TODO check stream name
-        stream_indices: null
+      - name: demodulated_calcium_signal_DLS
+        description: The demodulated fluorescence signal from GRABDA2m dopamine indicator in DLS neurons, excited at 465nm and demodulated at 330Hz.
+        stream_name: Gc_raw
+        target_area: DLS
         unit: a.u.
         fiber_photometry_table_region: [2]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of DLS.
-      - name: isosbestic_control_DLS
-        description: The fluorescence from the isosbestic control from DLS.
-        stream_name: _405B # TODO check stream name
-        stream_indices: null
+      - name: demodulated_isosbestic_control_DLS
+        description: The demodulated fluorescence signal from GRABDA2m for isosbestic control in DLS neurons, excited at 405nm and demodulated at 210Hz.
+        stream_name: af_raw
+        target_area: DLS
         unit: a.u.
         fiber_photometry_table_region: [3]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of DLS.
-      - name: calcium_signal_TS
-        description: The fluorescence from the calcium signal from TS.
-        stream_name: _465C # TODO check stream name
-        stream_indices: null
+      - name: demodulated_calcium_signal_TS
+        description: The demodulated fluorescence signal from GRABDA2m dopamine indicator in TS neurons, excited at 465nm and demodulated at 330Hz.
+        stream_name: Gc_raw
+        target_area: TS
         unit: a.u.
         fiber_photometry_table_region: [4]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of TS.
-      - name: isosbestic_control_TS
-        description: The fluorescence from the isosbestic control from TS.
-        stream_name: _405C # TODO check stream name
-        stream_indices: null
+      - name: demodulated_isosbestic_control_TS
+        description: The demodulated fluorescence signal from GRABDA2m for isosbestic control in TS neurons, excited at 405nm and demodulated at 210Hz.
+        stream_name: af_raw
+        target_area: TS
         unit: a.u.
         fiber_photometry_table_region: [5]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of TS.
+      - name: downsampled_calcium_signal_SNc
+        description: The demodulated fluorescence signal from GCaMP6f calcium indicator in SNc DA neurons, excited at 465nm and demodulated at 330Hz.
+        stream_name: Gc_raw
+        target_area: SNc
+        unit: a.u.
+        fiber_photometry_table_region: [0]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of SNc.
+      - name: downsampled_isosbestic_control_SNc
+        description: The downsampled fluorescence signal from GCaMP6f for isosbestic control in SNc DA neurons, excited at 405nm and downsampled at 100Hz.
+        stream_name: af_raw
+        target_area: SNc
+        unit: a.u.
+        fiber_photometry_table_region: [1]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNc.
+      - name: downsampled_calcium_signal_DLS
+        description: The downsampled fluorescence signal from GRABDA2m dopamine indicator in DLS neurons, excited at 465nm and downsampled at 100Hz.
+        stream_name: Gc_raw
+        target_area: DLS
+        unit: a.u.
+        fiber_photometry_table_region: [2]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of DLS.
+      - name: downsampled_isosbestic_control_DLS
+        description: The downsampled fluorescence signal from GRABDA2m for isosbestic control in DLS neurons, excited at 405nm and downsampled at 100Hz.
+        stream_name: af_raw
+        target_area: DLS
+        unit: a.u.
+        fiber_photometry_table_region: [3]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of DLS.
+      - name: downsampled_calcium_signal_TS
+        description: The downsampled fluorescence signal from GRABDA2m dopamine indicator in TS neurons, excited at 465nm and downsampled at 100Hz.
+        stream_name: Gc_raw
+        target_area: TS
+        unit: a.u.
+        fiber_photometry_table_region: [4]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of TS.
+      - name: downsampled_isosbestic_control_TS
+        description: The downsampled fluorescence signal from GRABDA2m for isosbestic control in TS neurons, excited at 405nm and downsampled at 100Hz.
+        stream_name: af_raw
+        target_area: TS
+        unit: a.u.
+        fiber_photometry_table_region: [5]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of TS.
+      - name: deltaF_over_F_SNc
+        description: The deltaF/F signal from GCaMP6f calcium indicator in SNc DA neurons, excited at 465nm and calculated as (Gc - fitted_af) / fitted_af.
+        stream_name: dF
+        target_area: SNc
+        unit: a.u.
+        fiber_photometry_table_region: [0]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal of SNc.
+      - name: deltaF_over_F_DLS
+        description: The deltaF/F signal from GRABDA2m dopamine indicator in DLS neurons, excited at 465nm and calculated as (Gc - fitted_af) / fitted_af.
+        stream_name: dF # TODO check stream name
+        target_area: DLS
+        unit: a.u.
+        fiber_photometry_table_region: [2]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal of DLS.
+      - name: deltaF_over_F_TS
+        description: The deltaF/F signal from GRABDA2m dopamine indicator in TS neurons, excited at 465nm and calculated as (Gc - fitted_af) / fitted_af.
+        stream_name: dF # TODO check stream name
+        target_area: TS
+        unit: a.u.
+        fiber_photometry_table_region: [4]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal of TS.
+
 Optogenetics:
   stimulation_software: TDT Synapse
   excitation_wavelength_in_nm: 635.0 # LED wavelength for ChrimsonR

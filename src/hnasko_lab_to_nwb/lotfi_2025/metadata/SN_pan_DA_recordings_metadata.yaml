@@ -159,7 +159,7 @@ Ophys:
       - name: viral_vector_injection_SNc
         description: Viral injection of GCaMP6f in SNc.
         viral_vector: viral_vector_gcamp6f
-        location: Substantia Nigra pars compacta (SNc)
+        location: SNc
         hemisphere: right
         reference: bregma at the cortical surface
         ap_in_mm: -3.2
@@ -202,20 +202,49 @@ Ophys:
           dichroic_mirror: dichroic_mirror
 
     FiberPhotometryResponseSeries:
-      - name: calcium_signal_SNc
-        description: The fluorescence from the calcium signal from SNc.
-        stream_name: _465A # TODO check stream name
-        stream_indices: null
+      - name: raw_signal_SNc
+        description: The raw modulated fluorescence signal from GCaMP6f calcium indicator in SNc DA neurons, excited at 465nm and 405nm, respectively.
+        stream_name: Fi1r
+        unit: a.u.
+        fiber_photometry_table_region: [0]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
+
+    DemodulatedFiberPhotometryResponseSeries:
+      - name: demodulated_calcium_signal_SNc
+        description: The demodulated fluorescence signal from GCaMP6f calcium indicator in SNc DA neurons, excited at 465nm and demodulated at 330Hz.
+        stream_name: Gc_raw
+        target_area: SNc
         unit: a.u.
         fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of SNc.
-      - name: isosbestic_control_SNc
-        description: The fluorescence from the isosbestic control from SNc.
-        stream_name: _405A # TODO check stream name
-        stream_indices: null
+      - name: demodulated_isosbestic_control_SNc
+        description: The demodulated fluorescence signal from GCaMP6f for isosbestic control in SNc DA neurons, excited at 405nm and demodulated at 210Hz.
+        stream_name: af_raw
+        target_area: SNc
         unit: a.u.
         fiber_photometry_table_region: [1]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNc.
+      - name: downsampled_calcium_signal_SNc
+        description: The downsampled fluorescence signal from GCaMP6f calcium indicator in SNc DA neurons, excited at 465nm and downsampled at 100Hz.
+        stream_name: Gc
+        target_area: SNc
+        unit: a.u.
+        fiber_photometry_table_region: [0]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of SNc.
+      - name: downsampled_isosbestic_control_SNc
+        description: The downsampled fluorescence signal from GCaMP6f for isosbestic control in SNc DA neurons, excited at 405nm and downsampled at 100Hz.
+        stream_name: af
+        target_area: SNc
+        unit: a.u.
+        fiber_photometry_table_region: [1]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNc.
+      - name: deltaF_over_F_SNc
+        description: The deltaF/F signal from GCaMP6f calcium indicator in SNc DA neurons, excited at 465nm and calculated as (Gc - fitted_af) / fitted_af.
+        stream_name: dF
+        target_area: SNc
+        unit: a.u.
+        fiber_photometry_table_region: [0]
+        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal of SNc.
 
 Optogenetics:
   stimulation_software: TDT Synapse
