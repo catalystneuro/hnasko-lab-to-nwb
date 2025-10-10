@@ -1,3 +1,3 @@
-from .demodulated_tdt_interface import TDTDemodulatedFiberPhotometryInterface
+from .demodulated_fp_interface import Lofti2025DemodulatedFiberPhotometryInterface
 
-__all__ = ["TDTDemodulatedFiberPhotometryInterface"]
+__all__ = ["Lofti2025DemodulatedFiberPhotometryInterface"]

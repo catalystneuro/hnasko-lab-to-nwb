@@ -16,6 +16,7 @@ def session_to_nwb(
     subject_id: str,
     tdt_folder_path: Union[str, Path],
     video_file_paths: List[Union[str, Path]],
+    mat_file_path: Union[str, Path],
     protocol_type: str,
     ogen_stimulus_location: str,
     video_metadata_file_path: None | Union[str, Path] = None,
@@ -64,25 +65,60 @@ def session_to_nwb(
     conversion_options.update(dict(FiberPhotometry=dict()))
 
     # Add DemodulatedFiberPhotometry for calcium and isosbestic
-    # source_data.update(
-    #     dict(
-    #         DemodulatedFiberPhotometry_Calcium=dict(folder_path=tdt_folder_path),
-    #         DemodulatedFiberPhotometry_Isosbestic=dict(folder_path=tdt_folder_path),
-    #     )
-    # )
-    # source_data.update(
-    #     dict(
-    #         DemodulatedFiberPhotometry_Calcium=dict(folder_path=tdt_folder_path),
-    #         DemodulatedFiberPhotometry_Isosbestic=dict(folder_path=tdt_folder_path),
-    #     )
-    # )
+    kargs = dict(
+        file_path=mat_file_path,
+        sampling_frequency=6103.5156,
+        target_area="SNr",
+        subject_id=subject_id,
+    )
+    source_data.update(
+        dict(
+            DemodulatedFiberPhotometry_Calcium=dict(
+                stream_name="Gc_raw",
+                **kargs,
+            ),
+            DemodulatedFiberPhotometry_Isosbestic=dict(
+                stream_name="af_raw",
+                **kargs,
+            ),
+        )
+    )
 
-    # conversion_options.update(
-    #     dict(
-    #         DemodulatedFiberPhotometry_Calcium=dict(driver_freq=330, name="calcium_signal"),
-    #         DemodulatedFiberPhotometry_Isosbestic=dict(driver_freq=210, name="isosbestic_signal"),
-    #     )
-    # )
+    # Add DownsampledFiberPhotometry for calcium and isosbestic
+    kargs = dict(
+        file_path=mat_file_path,
+        sampling_frequency=100,
+        target_area="SNr",
+        subject_id=subject_id,
+    )
+    source_data.update(
+        dict(
+            DownsampledFiberPhotometry_Calcium=dict(
+                stream_name="Gc",
+                **kargs,
+            ),
+            DownsampledFiberPhotometry_Isosbestic=dict(
+                stream_name="af",
+                **kargs,
+            ),
+        )
+    )
+
+    # Add DeltaFOverF
+    kargs = dict(
+        file_path=mat_file_path,
+        sampling_frequency=100,
+        target_area="SNr",
+        subject_id=subject_id,
+    )
+    source_data.update(
+        dict(
+            DeltaFOverF=dict(
+                stream_name="dF",
+                **kargs,
+            ),
+        )
+    )
 
     # Add Video
     video_time_alignment_dict = dict()
@@ -123,7 +159,9 @@ def session_to_nwb(
 
     # Update default metadata with the editable in the corresponding yaml file
     metadata = converter.get_metadata()
-    editable_metadata_path = Path(__file__).parent / "updated_metadata/SN_pan_GABA_recordings_metadata.yaml"
+    editable_metadata_path = (
+        Path(__file__).parent / "updated_metadata/SN_pan_GABA_recordings_metadata.yaml"
+    )  # TODO generalize for other datasets
     editable_metadata = load_dict_from_file(editable_metadata_path)
     metadata = dict_deep_update(metadata, editable_metadata)
 
@@ -195,6 +233,15 @@ if __name__ == "__main__":
         )
         video_metadata_file_path = video_folder_path / "video_metadata.xlsx"
         video_file_paths = list(video_folder_path.glob(f"{subject_id}*.mp4"))
+
+        processed_fp_dir = data_dir_path / ogen_stimulus_location / "Fiber photometry_TDT" / protocol_type
+        mat_file_path = list(processed_fp_dir.glob(f"*.mat"))
+        if len(mat_file_path) == 0:
+            raise FileNotFoundError(f"No .mat files found in {processed_fp_dir}")
+        elif len(mat_file_path) > 1:
+            raise ValueError(f"Multiple .mat files found in {processed_fp_dir}")
+        mat_file_path = mat_file_path[0]
+
         session_to_nwb(
             output_dir_path=output_dir_path,
             session_starting_time=session_starting_time,
@@ -204,6 +251,7 @@ if __name__ == "__main__":
             tdt_folder_path=metadata["source_data"]["FiberPhotometry"]["folder_path"],
             video_file_paths=video_file_paths,
             video_metadata_file_path=video_metadata_file_path,
+            mat_file_path=mat_file_path,
             stub_test=False,
             overwrite=True,
             verbose=True,
