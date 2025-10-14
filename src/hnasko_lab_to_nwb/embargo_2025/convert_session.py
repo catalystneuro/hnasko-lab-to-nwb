@@ -1,7 +1,7 @@
 """Primary script to run to convert an entire session for of data using the NWBConverter."""
 
 from pathlib import Path
-from typing import Literal, Union
+from typing import Union
 
 from hnasko_lab_to_nwb.lotfi_2025.nwbconverter import Lofti2025NWBConverter
 from neuroconv.utils import dict_deep_update, load_dict_from_file
@@ -9,7 +9,6 @@ from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 def session_to_nwb(
     output_dir_path: Union[str, Path],
-    tdtomato_injection_location: Literal["PPN", "STN"],
     subject_id: str,
     tdt_folder_path: Union[str, Path],
     stub_test: bool = False,
@@ -39,7 +38,6 @@ def session_to_nwb(
     conversion_options.update(dict(FiberPhotometry=dict()))
 
     # Add DemodulatedFiberPhotometry for calcium and isosbestic
-
     source_data.update(
         dict(
             DemodulatedFiberPhotometry_Calcium=dict(folder_path=tdt_folder_path),
@@ -72,24 +70,6 @@ def session_to_nwb(
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
 
-    if "Ophys" in metadata and "FiberPhotometry" in metadata["Ophys"]:
-        fiber_photometry = metadata["Ophys"]["FiberPhotometry"]
-        if "Indicators" in fiber_photometry:
-            indicators = fiber_photometry["Indicators"]
-
-            # Filter the indicators based on tdtomato_injection_location --> # TODO find better way to deal with this
-            filtered_indicators = [
-                indicator
-                for indicator in indicators
-                if not (
-                    (tdtomato_injection_location == "STN" and indicator.get("injection_location") == "PPN")
-                    or (tdtomato_injection_location == "PPN" and indicator.get("injection_location") == "STN")
-                )
-            ]
-
-            # Update the Indicators section
-            fiber_photometry["Indicators"] = filtered_indicators
-
     # Add stimulus metadata
     metadata = dict_deep_update(metadata, stimulus_metadata, remove_repeats=False)
 
@@ -109,12 +89,11 @@ if __name__ == "__main__":
 
     from neuroconv.tools.path_expansion import LocalPathExpander
 
-    # data_dir_path = "D:/Hnasko-CN-data-share/SN pan GABA recordings/"
     # Specify source data
     source_data_spec = {
         "FiberPhotometry": {
             "base_directory": data_dir_path,
-            "folder_path": "{tdtomato_injection_location}/Fiber photometry_TDT/Shocks/{subject_id}-{session_starting_time_string}",
+            "folder_path": "PPN/Fiber photometry_TDT/Shocks/{subject_id}-{session_starting_time_string}",
         }
     }
 
@@ -124,11 +103,9 @@ if __name__ == "__main__":
     metadata_list = path_expander.expand_paths(source_data_spec)
     for metadata in metadata_list:
         subject_id = metadata["metadata"]["Subject"]["subject_id"]
-        tdtomato_injection_location = metadata["metadata"]["extras"]["tdtomato_injection_location"]
 
         session_to_nwb(
             output_dir_path=output_dir_path,
-            tdtomato_injection_location=tdtomato_injection_location,
             subject_id=subject_id,
             tdt_folder_path=metadata["source_data"]["FiberPhotometry"]["folder_path"],
             stub_test=False,

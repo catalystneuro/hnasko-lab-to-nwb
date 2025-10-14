@@ -4,12 +4,12 @@ from typing import Optional
 
 from pynwb import NWBFile
 
+from hnasko_lab_to_nwb.embargo_2025.interfaces import (
+    TDTDemodulatedFiberPhotometryInterface,
+)
 from hnasko_lab_to_nwb.embargo_2025.utils import (
     add_auditory_stimuli,
     add_shock_stimuli,
-)
-from hnasko_lab_to_nwb.lotfi_2025.interfaces import (
-    TDTDemodulatedFiberPhotometryInterface,
 )
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import TDTFiberPhotometryInterface
