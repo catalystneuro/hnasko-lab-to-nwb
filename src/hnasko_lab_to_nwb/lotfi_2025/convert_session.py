@@ -84,7 +84,7 @@ def session_to_nwb(
 
     # Add FiberPhotometry
     source_data.update(dict(FiberPhotometry=dict(folder_path=tdt_folder_path)))
-    conversion_options.update(dict(FiberPhotometry=dict()))
+    conversion_options.update(dict(FiberPhotometry=dict(stub_test=stub_test)))
 
     # Add processed fp series
     series_list = (
@@ -102,6 +102,7 @@ def session_to_nwb(
             )
         )
     )
+    conversion_options.update(dict(DemodulatedFiberPhotometry_Calcium=dict(stub_test=stub_test)))
 
     stream_name = "af_raw"
     source_data.update(
@@ -113,6 +114,7 @@ def session_to_nwb(
             )
         )
     )
+    conversion_options.update(dict(DemodulatedFiberPhotometry_Isosbestic=dict(stub_test=stub_test)))
 
     # Add DownsampledFiberPhotometry for calcium and isosbestic
     stream_name = "Gc"
@@ -125,6 +127,7 @@ def session_to_nwb(
             )
         )
     )
+    conversion_options.update(dict(DownsampledFiberPhotometry_Calcium=dict(stub_test=stub_test)))
 
     stream_name = "af"
     source_data.update(
@@ -136,6 +139,7 @@ def session_to_nwb(
             )
         )
     )
+    conversion_options.update(dict(DownsampledFiberPhotometry_Isosbestic=dict(stub_test=stub_test)))
 
     # Add DeltaFOverF
     stream_name = "dF"
@@ -148,6 +152,7 @@ def session_to_nwb(
             )
         )
     )
+    conversion_options.update(dict(DeltaFOverF=dict(stub_test=stub_test)))
 
     # Add Video
     video_time_alignment_dict = dict()
@@ -277,7 +282,7 @@ if __name__ == "__main__":
             video_file_paths=video_file_paths,
             video_metadata_file_path=video_metadata_file_path,
             mat_file_path=mat_file_path,
-            stub_test=False,
+            stub_test=True,
             overwrite=True,
             verbose=True,
         )

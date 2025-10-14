@@ -339,13 +339,12 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
                 dataset: h5py.Dataset = subject_group[power_field]  # type: ignore
 
                 rate = self.get_sampling_frequency()
-                start_index = int(t1 * rate) if t1 != 0.0 else 0
-                end_index = int(t2 * rate) if t2 != 0.0 else dataset.shape[0]
-                dataset = dataset[start_index:end_index]
-
                 signal = dataset[:].flatten()
 
-                return signal
+                start_index = int(t1 * rate) if t1 != 0.0 else 0
+                end_index = int(t2 * rate) if t2 != 0.0 else dataset.shape[0]
+
+                return signal[start_index:end_index]
 
         except Exception as e:
             raise RuntimeError(f"Error extracting signals for {self._subject_id} {self._target_area}: {e}")
