@@ -263,7 +263,7 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
         # Cache available sites and subjects
         self._sites = None
         self._subjects = None
-        self._stream_name = stream_name  # TODO validate stream name
+        self._stream_name = stream_name
         self._target_area = target_area
         self._subject_id = subject_id
         self._sampling_frequency = sampling_frequency
@@ -292,8 +292,15 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
             self._scan_file_structure()
         return self._subjects
 
+    @property
+    def available_stimulus_channel_names(self) -> Dict[str, List[str]]:
+        """Get dictionary of available stimulus channel names per site and subject"""
+        if self._stimulus_channel_names is None:
+            self._scan_file_structure()
+        return self._stimulus_channel_names
+
     def _scan_file_structure(self) -> None:
-        """Scan file to determine available sites and subjects"""
+        """Scan file to determine available sites, subjects and stimulus channel names."""
         try:
             with h5py.File(self.source_data["file_path"], "r") as f:
                 # Get stream group
@@ -306,12 +313,17 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
                 self._subjects = {}
                 for site in self._sites:
                     self._subjects[site] = list(signal_group[site].keys())
+                    self._stimulus_channel_names = {}
+                    for subject in self._subjects[site]:
+                        subject_group: h5py.Group = signal_group[site][subject]  # type: ignore
+                        self._stimulus_channel_names[subject] = list(subject_group.keys())
 
         except Exception as e:
             raise RuntimeError(f"Error scanning file structure: {e}")
 
     def _extract_signal(
         self,
+        stimulus_channel_name: str,
         t1: float = 0.0,
         t2: float = 0.0,
     ) -> Dict[str, np.ndarray]:
@@ -330,24 +342,22 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
         np.ndarray
             The extracted signal data.
         """
-        power_field = "LP5mW"  # Does not work for varying frequencies protocol
         try:
             with h5py.File(self.source_data["file_path"], "r") as f:
                 stream_group: h5py.Group = f[self._stream_name]  # type: ignore
                 site_group: h5py.Group = stream_group[self._target_area]  # type: ignore
                 subject_group: h5py.Group = site_group[self._subject_id]  # type: ignore
-                dataset: h5py.Dataset = subject_group[power_field]  # type: ignore
-
-                rate = self.get_sampling_frequency()
+                dataset: h5py.Dataset = subject_group[stimulus_channel_name]  # type: ignore
                 signal = dataset[:].flatten()
-
+                rate = self.get_sampling_frequency()
                 start_index = int(t1 * rate) if t1 != 0.0 else 0
-                end_index = int(t2 * rate) if t2 != 0.0 else dataset.shape[0]
+                end_index = int(t2 * rate) if t2 != 0.0 else signal.shape[0]
 
                 return signal[start_index:end_index]
 
         except Exception as e:
-            raise RuntimeError(f"Error extracting signals for {self._subject_id} {self._target_area}: {e}")
+            # TODO expose what are the objects in the subject group for easier debugging
+            raise RuntimeError(f"Error extracting signals for {self._subject_id} {self._target_area}: {e}.")
 
     def get_metadata(self) -> DeepDict:
         """
@@ -465,6 +475,7 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
         nwbfile: NWBFile,
         metadata: dict,
         *,
+        stimulus_channel_name: str,
         stub_test: bool = False,
         t1: float = 0.0,
         t2: float = 0.0,
@@ -497,13 +508,18 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
             FiberPhotometryResponseSeries,
         )
 
+        if stimulus_channel_name not in self.available_stimulus_channel_names[self._subject_id]:
+            raise ValueError(
+                f"stimulus channel name '{stimulus_channel_name}' not found for {self._subject_id} in {self._target_area}. Available: {self.available_stimulus_channel_names[self._subject_id]}"
+            )
+
         # Load Data
         if stub_test:
             assert (
                 t2 == 0.0
             ), f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
             t2 = t1 + 1.0
-        data = self._extract_signal(t1=t1, t2=t2)
+        data = self._extract_signal(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
 
         # Get series metadata
         fiber_photometry_response_series_metadata = get_fp_series_metadata(
