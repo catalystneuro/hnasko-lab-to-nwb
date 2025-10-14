@@ -1,5 +1,4 @@
 # Metadata for Lofti 2025 --> 3. Striatal GRAB_DA recordings (DLS & TS), STN & PPN stim
-# TODO add ogen stimulation metadata
 NWBFile:
   related_publications:
     - https://doi.org/10.1101/2025.06.03.657460

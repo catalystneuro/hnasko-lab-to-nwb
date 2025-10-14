@@ -1,5 +1,4 @@
-# Metadata for Lofti 2025 --> 2. SNr pan-DA GCaMP6f recordings, STN & PPN stim
-# TODO add ogen stimulation metadata
+# Metadata for Lofti 2025 --> 2. SNr pan-GABA GCaMP6f recordings, STN & PPN stim
 NWBFile:
   related_publications:
     - https://doi.org/10.1101/2025.06.03.657460
