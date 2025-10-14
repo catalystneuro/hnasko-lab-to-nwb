@@ -303,20 +303,19 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
         """Scan file to determine available sites, subjects and stimulus channel names."""
         try:
             with h5py.File(self.source_data["file_path"], "r") as f:
-                # Get stream group
                 signal_group = f[self._stream_name]  # type: ignore
-
                 # Get sites
                 self._sites = list(signal_group.keys())
 
                 # Get subjects per site
+                self._stimulus_channel_names = {}
                 self._subjects = {}
                 for site in self._sites:
+                    self._stimulus_channel_names[site] = {}
                     self._subjects[site] = list(signal_group[site].keys())
-                    self._stimulus_channel_names = {}
                     for subject in self._subjects[site]:
                         subject_group: h5py.Group = signal_group[site][subject]  # type: ignore
-                        self._stimulus_channel_names[subject] = list(subject_group.keys())
+                        self._stimulus_channel_names[site][subject] = list(subject_group.keys())
 
         except Exception as e:
             raise RuntimeError(f"Error scanning file structure: {e}")
@@ -508,9 +507,9 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
             FiberPhotometryResponseSeries,
         )
 
-        if stimulus_channel_name not in self.available_stimulus_channel_names[self._subject_id]:
+        if stimulus_channel_name not in self.available_stimulus_channel_names[self._target_area][self._subject_id]:
             raise ValueError(
-                f"stimulus channel name '{stimulus_channel_name}' not found for {self._subject_id} in {self._target_area}. Available: {self.available_stimulus_channel_names[self._subject_id]}"
+                f"stimulus channel name '{stimulus_channel_name}' not found for {self._subject_id} in {self._target_area}. Available: {self.available_stimulus_channel_names[self._target_area][self._subject_id]}"
             )
 
         # Load Data
