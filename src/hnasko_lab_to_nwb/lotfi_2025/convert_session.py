@@ -10,6 +10,23 @@ from hnasko_lab_to_nwb.lotfi_2025.utils import get_video_aligned_starting_time
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 
+def extract_processed_fp_metadata(series_list, stream_name):
+    """Extract metadata for a specific stream from the session metadata."""
+
+    # Find the matching series by stream_name
+    series_metadata = next((series for series in series_list if series.get("stream_name") == stream_name), None)
+
+    if series_metadata is None:
+        raise ValueError(f"Stream name '{stream_name}' not found in the provided series list.")
+
+    # Extract only the keys we need
+    return {
+        key: series_metadata.get(key)
+        for key in ["stream_name", "sampling_frequency", "target_area"]
+        if key in series_metadata
+    }
+
+
 def session_to_nwb(
     output_dir_path: Union[str, Path],
     session_starting_time: datetime,
@@ -57,6 +74,11 @@ def session_to_nwb(
         )
         return
 
+    editable_metadata_path = (
+        Path(__file__).parent / "metadata/SN_pan_GABA_recordings_metadata.yaml"
+    )  # TODO generalize for other datasets
+    editable_metadata = load_dict_from_file(editable_metadata_path)
+
     source_data = dict()
     conversion_options = dict()
 
@@ -64,59 +86,66 @@ def session_to_nwb(
     source_data.update(dict(FiberPhotometry=dict(folder_path=tdt_folder_path)))
     conversion_options.update(dict(FiberPhotometry=dict()))
 
-    # Add DemodulatedFiberPhotometry for calcium and isosbestic
-    kargs = dict(
-        file_path=mat_file_path,
-        sampling_frequency=6103.5156,
-        target_area="SNr",
-        subject_id=subject_id,
+    # Add processed fp series
+    series_list = (
+        editable_metadata.get("Ophys", {}).get("FiberPhotometry", {}).get("ProcessedFiberPhotometryResponseSeries", [])
     )
+
+    # Add DemodulatedFiberPhotometry for calcium and isosbestic
+    stream_name = "Gc_raw"
     source_data.update(
         dict(
             DemodulatedFiberPhotometry_Calcium=dict(
-                stream_name="Gc_raw",
-                **kargs,
-            ),
+                file_path=mat_file_path,
+                subject_id=subject_id,
+                **extract_processed_fp_metadata(series_list, stream_name),
+            )
+        )
+    )
+
+    stream_name = "af_raw"
+    source_data.update(
+        dict(
             DemodulatedFiberPhotometry_Isosbestic=dict(
-                stream_name="af_raw",
-                **kargs,
-            ),
+                file_path=mat_file_path,
+                subject_id=subject_id,
+                **extract_processed_fp_metadata(series_list, stream_name),
+            )
         )
     )
 
     # Add DownsampledFiberPhotometry for calcium and isosbestic
-    kargs = dict(
-        file_path=mat_file_path,
-        sampling_frequency=100,
-        target_area="SNr",
-        subject_id=subject_id,
-    )
+    stream_name = "Gc"
     source_data.update(
         dict(
             DownsampledFiberPhotometry_Calcium=dict(
-                stream_name="Gc",
-                **kargs,
-            ),
+                file_path=mat_file_path,
+                subject_id=subject_id,
+                **extract_processed_fp_metadata(series_list, stream_name),
+            )
+        )
+    )
+
+    stream_name = "af"
+    source_data.update(
+        dict(
             DownsampledFiberPhotometry_Isosbestic=dict(
-                stream_name="af",
-                **kargs,
-            ),
+                file_path=mat_file_path,
+                subject_id=subject_id,
+                **extract_processed_fp_metadata(series_list, stream_name),
+            )
         )
     )
 
     # Add DeltaFOverF
-    kargs = dict(
-        file_path=mat_file_path,
-        sampling_frequency=100,
-        target_area="SNr",
-        subject_id=subject_id,
-    )
+    stream_name = "dF"
     source_data.update(
         dict(
             DeltaFOverF=dict(
-                stream_name="dF",
-                **kargs,
-            ),
+                file_path=mat_file_path,
+                subject_id=subject_id,
+                **extract_processed_fp_metadata(series_list, stream_name),
+            )
         )
     )
 
@@ -159,10 +188,6 @@ def session_to_nwb(
 
     # Update default metadata with the editable in the corresponding yaml file
     metadata = converter.get_metadata()
-    editable_metadata_path = (
-        Path(__file__).parent / "updated_metadata/SN_pan_GABA_recordings_metadata.yaml"
-    )  # TODO generalize for other datasets
-    editable_metadata = load_dict_from_file(editable_metadata_path)
     metadata = dict_deep_update(metadata, editable_metadata)
 
     metadata["Subject"]["subject_id"] = subject_id

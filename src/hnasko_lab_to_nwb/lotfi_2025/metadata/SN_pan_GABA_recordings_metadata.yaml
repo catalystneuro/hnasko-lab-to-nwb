@@ -76,14 +76,14 @@ Ophys:
         model_number: RZ5P or RZ10x
         source_type: LED
         excitation_mode: one-photon
-        wavelength_range_in_nm: [460, 470]
+        wavelength_range_in_nm: [460.0, 470.0]
       - name: excitation_source_model_isosbestic
         description: excitation source for the sensor's isosbestic control.
         manufacturer: Tucker-Davis Technologies
         model_number: RZ5P or RZ10x
         source_type: LED
         excitation_mode: one-photon
-        wavelength_range_in_nm: [400, 410]
+        wavelength_range_in_nm: [400.0, 410.0]
     ExcitationSources:
       - name: excitation_source_calcium_signal
         description: excitation source for the sensor's fluorescence signal (465nm) modulated at 210 Hz.
@@ -100,7 +100,7 @@ Ophys:
         manufacturer: <manufacturer of the photodetector> # TODO add manufacturer
         model_number: <model of the photodetector> # TODO add model number
         detector_type: photodiode # TODO check detector type
-        wavelength_range_in_nm: [500, 550] #TODO check wavelength range
+        wavelength_range_in_nm: [500.0, 550.0] #TODO check wavelength range
         gain: -1.0
         gain_unit: V/W
     Photodetectors:
@@ -210,11 +210,12 @@ Ophys:
         fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
 
-    DemodulatedFiberPhotometryResponseSeries:
+    ProcessedFiberPhotometryResponseSeries:
       - name: demodulated_calcium_signal_SNr
         description: The demodulated fluorescence signal from GCaMP6f calcium indicator in SNr GABAergic neurons, excited at 465nm and demodulated at 330Hz.
         stream_name: Gc_raw
         target_area: SNr
+        sampling_frequency: 6103.5156
         unit: a.u.
         fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of SNr.
@@ -222,6 +223,7 @@ Ophys:
         description: The demodulated fluorescence signal from GCaMP6f for isosbestic control in SNr GABAergic neurons, excited at 405nm and demodulated at 210Hz.
         stream_name: af_raw
         target_area: SNr
+        sampling_frequency: 6103.5156
         unit: a.u.
         fiber_photometry_table_region: [1]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNr.
@@ -229,6 +231,7 @@ Ophys:
         description: The downsampled fluorescence signal from GCaMP6f calcium indicator in SNr GABAergic neurons, excited at 465nm and downsampled at 100Hz.
         stream_name: Gc
         target_area: SNr
+        sampling_frequency: 100.0
         unit: a.u.
         fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of SNr.
@@ -236,6 +239,7 @@ Ophys:
         description: The downsampled fluorescence signal from GCaMP6f for isosbestic control in SNr GABAergic neurons, excited at 405nm and downsampled at 100Hz.
         stream_name: af
         target_area: SNr
+        sampling_frequency: 100.0
         unit: a.u.
         fiber_photometry_table_region: [1]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNr.
@@ -243,6 +247,7 @@ Ophys:
         description: The deltaF/F signal from GCaMP6f calcium indicator in SNr GABAergic neurons, excited at 465nm and calculated as (Gc - fitted_af) / fitted_af.
         stream_name: dF
         target_area: SNr
+        sampling_frequency: 100.0
         unit: a.u.
         fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal of SNr.

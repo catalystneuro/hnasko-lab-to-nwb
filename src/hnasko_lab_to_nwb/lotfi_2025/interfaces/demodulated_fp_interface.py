@@ -208,7 +208,7 @@ def get_fp_series_metadata(metadata: dict, stream_name: str, target_area: str) -
     dict
         The metadata dictionary for the FiberPhotometryResponseSeries.
     """
-    all_series_metadata = metadata["Ophys"]["FiberPhotometry"]["DemodulatedFiberPhotometryResponseSeries"]
+    all_series_metadata = metadata["Ophys"]["FiberPhotometry"]["ProcessedFiberPhotometryResponseSeries"]
     # Find the metadata for the specified stream_name and target_area
     for series_metadata in all_series_metadata:
         if series_metadata["stream_name"] == stream_name and series_metadata.get("target_area") == target_area:
