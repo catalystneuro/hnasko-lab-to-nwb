@@ -10,12 +10,30 @@ from hnasko_lab_to_nwb.lotfi_2025.utils import get_video_aligned_starting_time
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 
+def extract_processed_fp_metadata(series_list, stream_name):
+    """Extract metadata for a specific stream from the session metadata."""
+
+    # Find the matching series by stream_name
+    series_metadata = next((series for series in series_list if series.get("stream_name") == stream_name), None)
+
+    if series_metadata is None:
+        raise ValueError(f"Stream name '{stream_name}' not found in the provided series list.")
+
+    # Extract only the keys we need
+    return {
+        key: series_metadata.get(key)
+        for key in ["stream_name", "sampling_frequency", "target_area"]
+        if key in series_metadata
+    }
+
+
 def session_to_nwb(
     output_dir_path: Union[str, Path],
     session_starting_time: datetime,
     subject_id: str,
     tdt_folder_path: Union[str, Path],
     video_file_paths: List[Union[str, Path]],
+    mat_file_path: Union[str, Path],
     protocol_type: str,
     ogen_stimulus_location: str,
     video_metadata_file_path: None | Union[str, Path] = None,
@@ -56,34 +74,85 @@ def session_to_nwb(
         )
         return
 
+    editable_metadata_path = (
+        Path(__file__).parent / "metadata/SN_pan_GABA_recordings_metadata.yaml"
+    )  # TODO generalize for other datasets
+    editable_metadata = load_dict_from_file(editable_metadata_path)
+
     source_data = dict()
     conversion_options = dict()
 
     # Add FiberPhotometry
     source_data.update(dict(FiberPhotometry=dict(folder_path=tdt_folder_path)))
-    conversion_options.update(dict(FiberPhotometry=dict()))
+    conversion_options.update(dict(FiberPhotometry=dict(stub_test=stub_test)))
+
+    # Add processed fp series
+    series_list = (
+        editable_metadata.get("Ophys", {}).get("FiberPhotometry", {}).get("ProcessedFiberPhotometryResponseSeries", [])
+    )
 
     # Add DemodulatedFiberPhotometry for calcium and isosbestic
-
+    stream_name = "Gc_raw"
     source_data.update(
         dict(
-            DemodulatedFiberPhotometry_Calcium=dict(folder_path=tdt_folder_path),
-            DemodulatedFiberPhotometry_Isosbestic=dict(folder_path=tdt_folder_path),
+            DemodulatedFiberPhotometry_Calcium=dict(
+                file_path=mat_file_path,
+                subject_id=subject_id,
+                **extract_processed_fp_metadata(series_list, stream_name),
+            )
         )
     )
+    conversion_options.update(dict(DemodulatedFiberPhotometry_Calcium=dict(stub_test=stub_test)))
+
+    stream_name = "af_raw"
     source_data.update(
         dict(
-            DemodulatedFiberPhotometry_Calcium=dict(folder_path=tdt_folder_path),
-            DemodulatedFiberPhotometry_Isosbestic=dict(folder_path=tdt_folder_path),
+            DemodulatedFiberPhotometry_Isosbestic=dict(
+                file_path=mat_file_path,
+                subject_id=subject_id,
+                **extract_processed_fp_metadata(series_list, stream_name),
+            )
         )
     )
+    conversion_options.update(dict(DemodulatedFiberPhotometry_Isosbestic=dict(stub_test=stub_test)))
 
-    conversion_options.update(
+    # Add DownsampledFiberPhotometry for calcium and isosbestic
+    stream_name = "Gc"
+    source_data.update(
         dict(
-            DemodulatedFiberPhotometry_Calcium=dict(driver_freq=330, name="calcium_signal"),
-            DemodulatedFiberPhotometry_Isosbestic=dict(driver_freq=210, name="isosbestic_signal"),
+            DownsampledFiberPhotometry_Calcium=dict(
+                file_path=mat_file_path,
+                subject_id=subject_id,
+                **extract_processed_fp_metadata(series_list, stream_name),
+            )
         )
     )
+    conversion_options.update(dict(DownsampledFiberPhotometry_Calcium=dict(stub_test=stub_test)))
+
+    stream_name = "af"
+    source_data.update(
+        dict(
+            DownsampledFiberPhotometry_Isosbestic=dict(
+                file_path=mat_file_path,
+                subject_id=subject_id,
+                **extract_processed_fp_metadata(series_list, stream_name),
+            )
+        )
+    )
+    conversion_options.update(dict(DownsampledFiberPhotometry_Isosbestic=dict(stub_test=stub_test)))
+
+    # Add DeltaFOverF
+    stream_name = "dF"
+    source_data.update(
+        dict(
+            DeltaFOverF=dict(
+                file_path=mat_file_path,
+                subject_id=subject_id,
+                **extract_processed_fp_metadata(series_list, stream_name),
+            )
+        )
+    )
+    conversion_options.update(dict(DeltaFOverF=dict(stub_test=stub_test)))
 
     # Add Video
     video_time_alignment_dict = dict()
@@ -124,36 +193,34 @@ def session_to_nwb(
 
     # Update default metadata with the editable in the corresponding yaml file
     metadata = converter.get_metadata()
-    editable_metadata_path = Path(__file__).parent / "metadata/general_metadata.yaml"
-    editable_metadata = load_dict_from_file(editable_metadata_path)
     metadata = dict_deep_update(metadata, editable_metadata)
 
     metadata["Subject"]["subject_id"] = subject_id
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
 
-    if "Ophys" in metadata and "FiberPhotometry" in metadata["Ophys"]:
-        fiber_photometry = metadata["Ophys"]["FiberPhotometry"]
-        if "Indicators" in fiber_photometry:
-            indicators = fiber_photometry["Indicators"]
+    # if "Ophys" in metadata and "FiberPhotometry" in metadata["Ophys"]:
+    #     fiber_photometry = metadata["Ophys"]["FiberPhotometry"]
+    #     if "Indicators" in fiber_photometry:
+    #         indicators = fiber_photometry["Indicators"]
 
-            # Filter the indicators based on ogen_stimulus_location
-            filtered_indicators = [
-                indicator
-                for indicator in indicators
-                if not (
-                    (ogen_stimulus_location == "STN" and indicator.get("injection_location") == "PPN")
-                    or (ogen_stimulus_location == "PPN" and indicator.get("injection_location") == "STN")
-                )
-            ]
+    #         # Filter the indicators based on ogen_stimulus_location
+    #         filtered_indicators = [
+    #             indicator
+    #             for indicator in indicators
+    #             if not (
+    #                 (ogen_stimulus_location == "STN" and indicator.get("injection_location") == "PPN")
+    #                 or (ogen_stimulus_location == "PPN" and indicator.get("injection_location") == "STN")
+    #             )
+    #         ]
 
-            # Update the Indicators section
-            fiber_photometry["Indicators"] = filtered_indicators
+    #         # Update the Indicators section
+    #         fiber_photometry["Indicators"] = filtered_indicators
 
-    # Add stimulus metadata
-    metadata = dict_deep_update(metadata, stimulus_metadata, remove_repeats=False)
-    if "OptogeneticStimulusSite" in metadata["Stimulus"]:
-        metadata["Stimulus"]["OptogeneticStimulusSite"][0]["location"] = ogen_stimulus_location
+    # # Add stimulus metadata
+    # metadata = dict_deep_update(metadata, stimulus_metadata, remove_repeats=False)
+    # if "OptogeneticStimulusSite" in metadata["Stimulus"]:
+    #     metadata["Stimulus"]["OptogeneticStimulusSite"][0]["location"] = ogen_stimulus_location
 
     # Run conversion
     converter.run_conversion(
@@ -184,7 +251,7 @@ if __name__ == "__main__":
     path_expander = LocalPathExpander()
     # Expand paths and extract metadata
     metadata_list = path_expander.expand_paths(source_data_spec)
-    for metadata in metadata_list:
+    for metadata in metadata_list[8:]:  # Exclude shock sessions
         protocol_type = metadata["metadata"]["extras"]["protocol_type"]
         session_starting_time_string = metadata["metadata"]["extras"]["session_starting_time_string"]
         session_starting_time = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
@@ -196,6 +263,15 @@ if __name__ == "__main__":
         )
         video_metadata_file_path = video_folder_path / "video_metadata.xlsx"
         video_file_paths = list(video_folder_path.glob(f"{subject_id}*.mp4"))
+
+        processed_fp_dir = data_dir_path / ogen_stimulus_location / "Fiber photometry_TDT" / protocol_type
+        mat_file_path = list(processed_fp_dir.glob(f"*.mat"))
+        if len(mat_file_path) == 0:
+            raise FileNotFoundError(f"No .mat files found in {processed_fp_dir}")
+        elif len(mat_file_path) > 1:
+            raise ValueError(f"Multiple .mat files found in {processed_fp_dir}")
+        mat_file_path = mat_file_path[0]
+
         session_to_nwb(
             output_dir_path=output_dir_path,
             session_starting_time=session_starting_time,
@@ -205,7 +281,8 @@ if __name__ == "__main__":
             tdt_folder_path=metadata["source_data"]["FiberPhotometry"]["folder_path"],
             video_file_paths=video_file_paths,
             video_metadata_file_path=video_metadata_file_path,
-            stub_test=False,
+            mat_file_path=mat_file_path,
+            stub_test=True,
             overwrite=True,
             verbose=True,
         )
