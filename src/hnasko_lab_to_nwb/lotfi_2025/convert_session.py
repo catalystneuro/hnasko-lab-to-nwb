@@ -51,12 +51,10 @@ def session_to_nwb(
         stimulus_metadata_path = Path(__file__).parent / "metadata/varying_frequencies_ogen_metadata.yaml"
         stimulus_metadata = load_dict_from_file(stimulus_metadata_path)
     elif protocol_type == "Shocks":
-        session_description = (
-            "The subject is placed in a shock chamber and recorded for 6 minutes. "
-            "Auditory cues of 8 sec not paired or paired with shock are delivered during the session."
+        warnings.warn(
+            "Please use the conversion pipeline in embargo_2025/convert_session.py to convert sessions with the Shocks protocol."
         )
-        stimulus_metadata_path = Path(__file__).parent / "metadata/shock_stimulus_metadata.yaml"
-        stimulus_metadata = load_dict_from_file(stimulus_metadata_path)
+        return
 
     source_data = dict()
     conversion_options = dict()

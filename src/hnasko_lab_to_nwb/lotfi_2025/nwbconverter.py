@@ -8,9 +8,7 @@ from hnasko_lab_to_nwb.lotfi_2025.interfaces import (
     TDTDemodulatedFiberPhotometryInterface,
 )
 from hnasko_lab_to_nwb.lotfi_2025.utils import (
-    add_auditory_stimuli,
     add_optogenetic_stimulation,
-    add_shock_stimuli,
 )
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import ExternalVideoInterface, TDTFiberPhotometryInterface
@@ -65,9 +63,6 @@ class Lofti2025NWBConverter(NWBConverter):
 
             if "OptogeneticStimulusInterval" in metadata["Stimulus"]:
                 add_optogenetic_stimulation(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
-            if "ShockStimulusInterval" in metadata["Stimulus"]:
-                add_shock_stimuli(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
-                add_auditory_stimuli(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
 
         for video_interface_name, video_interface in self.data_interface_objects.items():
             if video_interface_name in ["Video_250ms", "Video_1s", "Video_4s"]:
