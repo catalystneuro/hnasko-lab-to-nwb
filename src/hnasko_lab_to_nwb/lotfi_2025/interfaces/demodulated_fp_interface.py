@@ -233,7 +233,7 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
     keywords = ("processed fiber photometry",)
     display_name = "DemodulatedFiberPhotometry"
     info = "Data Interface for converting fiber photometry data from processed .mat files from Hnasko Lab."
-    associated_suffixes = ".mat"
+    associated_suffixes = (".mat",)
 
     @validate_call
     def __init__(
@@ -268,7 +268,6 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
         self._subject_id = subject_id
         self._sampling_frequency = sampling_frequency
         self._starting_time = 0.0
-        self._num_samples = None
 
         self._scan_file_structure()
         if target_area not in self.available_sites:
@@ -322,10 +321,10 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
 
     def _extract_signal(
         self,
-        stimulus_channel_name: str,
+        stimulus_channel_name: None | str = None,
         t1: float = 0.0,
         t2: float = 0.0,
-    ) -> Dict[str, np.ndarray]:
+    ) -> np.ndarray:
         """
         Extract processed fiber photometry signal for a specific subject.
 
@@ -341,6 +340,8 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
         np.ndarray
             The extracted signal data.
         """
+        if stimulus_channel_name is None:
+            stimulus_channel_name = self.available_stimulus_channel_names[self._target_area][self._subject_id][0]
         try:
             with h5py.File(self.source_data["file_path"], "r") as f:
                 stream_group: h5py.Group = f[self._stream_name]  # type: ignore
@@ -393,7 +394,7 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
         """
         return self._sampling_frequency
 
-    def get_num_samples(self) -> int:
+    def get_num_samples(self, stimulus_channel_name: None | str = None) -> int:
         """
         Get the number of samples in the data.
         Returns
@@ -401,12 +402,10 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
         int
             The number of samples.
         """
-        if self._num_samples is None:
-            signal = self._extract_signal()
-            self._num_samples = len(signal)
-        return self._num_samples
+        signal = self._extract_signal(stimulus_channel_name=stimulus_channel_name)
+        return len(signal)
 
-    def get_original_timestamps(self) -> np.ndarray:
+    def get_original_timestamps(self, stimulus_channel_name: None | str = None) -> np.ndarray:
         """
         Get the original timestamps for the data.
 
@@ -415,13 +414,13 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
         np.ndarray
             The original timestamps.
         """
-        num_samples = self.get_num_samples()
+        num_samples = self.get_num_samples(stimulus_channel_name=stimulus_channel_name)
         rate = self.get_sampling_frequency()
-        original_timestamps = np.arange(0.0, num_samples / rate, 1 / rate)
+        original_timestamps = np.arange(num_samples) / rate
 
         return original_timestamps
 
-    def get_timestamps(self, t1: float = 0.0, t2: float = 0.0) -> np.ndarray:
+    def get_timestamps(self, t1: float = 0.0, t2: float = 0.0, stimulus_channel_name: None | str = None) -> np.ndarray:
         """
         Get the timestamps for the data.
 
@@ -440,7 +439,7 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
         if hasattr(self, "aligned_timestamps"):
             timestamps = self.aligned_timestamps
         else:
-            timestamps = self.get_original_timestamps() + self._starting_time
+            timestamps = self.get_original_timestamps(stimulus_channel_name=stimulus_channel_name) + self._starting_time
 
         timestamps = timestamps[timestamps >= t1]
         if t2 != 0.0:
@@ -507,19 +506,6 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
             FiberPhotometryResponseSeries,
         )
 
-        if stimulus_channel_name not in self.available_stimulus_channel_names[self._target_area][self._subject_id]:
-            raise ValueError(
-                f"stimulus channel name '{stimulus_channel_name}' not found for {self._subject_id} in {self._target_area}. Available: {self.available_stimulus_channel_names[self._target_area][self._subject_id]}"
-            )
-
-        # Load Data
-        if stub_test:
-            assert (
-                t2 == 0.0
-            ), f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
-            t2 = t1 + 1.0
-        data = self._extract_signal(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
-
         # Get series metadata
         fiber_photometry_response_series_metadata = get_fp_series_metadata(
             metadata=metadata, stream_name=self._stream_name, target_area=self._target_area
@@ -531,7 +517,18 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
             description=fiber_photometry_response_series_metadata["fiber_photometry_table_region_description"],
             region=fiber_photometry_response_series_metadata["fiber_photometry_table_region"],
         )
-
+        # Validate stimulus channel name
+        if stimulus_channel_name not in self.available_stimulus_channel_names[self._target_area][self._subject_id]:
+            raise ValueError(
+                f"stimulus channel name '{stimulus_channel_name}' not found for {self._subject_id} in {self._target_area}. Available: {self.available_stimulus_channel_names[self._target_area][self._subject_id]}"
+            )
+        # Load Data
+        if stub_test:
+            assert (
+                t2 == 0.0
+            ), f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
+            t2 = t1 + 1.0
+        data = self._extract_signal(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
         # Get the timing information
         if timing_source == "aligned_timestamps":
             timestamps = self.get_timestamps(t1=t1, t2=t2)
@@ -555,6 +552,139 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
             unit=fiber_photometry_response_series_metadata["unit"],
             fiber_photometry_table_region=fiber_photometry_table_region,
             **timing_kwargs,
+        )
+
+        # Add ophys module for processed fiber photometry signals if it doesn't exist
+        ophys_module = get_module(nwbfile=nwbfile, name="ophys", description="Processed fiber photometry signals")
+        ophys_module.add(fiber_photometry_response_series)
+
+
+class ConcatenatedLofti2025DemodulatedFiberPhotometryInterface(Lofti2025DemodulatedFiberPhotometryInterface):
+    """
+    Data Interface for converting and concatenating multiple processed fiber photometry data files from Hnasko Lab custom .mat files.
+
+    Extracts demodulated fiber photometry signals from multiple MATLAB v7.3 files created by
+    the Hnasko lab analysis pipeline, then parses into the ndx-fiber-photometry format.
+
+    Verified to work with:
+    - SNr GABA recordings (PPN stimulation)
+    - GRAB-DA recordings (DLS & TS sites, PPN stimulation)
+    - SNc pan-DA recordings (STN stimulation)
+    """
+
+    keywords = ("processed fiber photometry", "concatenated")
+    display_name = "ConcatenatedDemodulatedFiberPhotometry"
+    info = "Data Interface for converting and concatenating multiple fiber photometry data from processed .mat files from Hnasko Lab."
+    associated_suffixes = (".mat",)
+
+    @validate_call
+    def __init__(
+        self,
+        file_path: FilePath,
+        stream_name: str,
+        subject_id: str,
+        target_area: str,
+        sampling_frequency: float,
+        verbose: bool = False,
+    ):
+        """Initialize the ConcatenatedLofti2025DemodulatedFiberPhotometryInterface.
+
+        Parameters
+        ----------
+        file_path: FilePath
+            The path to the .mat file containing the processed fiber photometry data.
+        verbose : bool, optional
+            Whether to print status messages, default = True.
+        """
+        super().__init__(
+            file_path=file_path,
+            stream_name=stream_name,
+            subject_id=subject_id,
+            target_area=target_area,
+            sampling_frequency=sampling_frequency,
+            verbose=verbose,
+        )
+
+    def add_to_nwbfile(
+        self,
+        nwbfile: NWBFile,
+        metadata: dict,
+        *,
+        stimulus_channel_names: list[str],
+        segment_starting_times: list[float],
+        stub_test: bool = False,
+        t1: float = 0.0,
+        t2: float = 0.0,
+    ):
+        """
+        Add the data to an NWBFile.
+
+        Parameters
+        ----------
+        nwbfile : pynwb.NWBFile
+            The in-memory object to add the data to.
+        metadata : dict
+            Metadata dictionary with information used to create the NWBFile.
+        stimulus_channel_names : list[str]
+            List of stimulus channel names to concatenate.
+        segment_starting_times : list[float]
+            List of starting times (in seconds) for each segment to concatenate.
+        stub_test : bool, optional
+            If True, only add a subset of the data (1s) to the NWBFile for testing purposes, default = False.
+        t1 : float, optional
+            Retrieve data starting at t1 (in seconds), default = 0 for start of recording.
+        t2 : float, optional
+            Retrieve data ending at t2 (in seconds), default = 0 for end of recording.
+
+        Raises
+        ------
+        AssertionError
+            If the timing_source is not one of "original", "aligned_timestamps", or "aligned_starting_time_and_rate".
+        """
+        from ndx_fiber_photometry import (
+            FiberPhotometryResponseSeries,
+        )
+
+        # Get series metadata
+        fiber_photometry_response_series_metadata = get_fp_series_metadata(
+            metadata=metadata, stream_name=self._stream_name, target_area=self._target_area
+        )
+
+        # Get or create FiberPhotometryTable
+        fiber_photometry_table = get_fiber_photometry_table(nwbfile=nwbfile, metadata=metadata)
+        fiber_photometry_table_region = fiber_photometry_table.create_fiber_photometry_table_region(
+            description=fiber_photometry_response_series_metadata["fiber_photometry_table_region_description"],
+            region=fiber_photometry_response_series_metadata["fiber_photometry_table_region"],
+        )
+        # Validate stimulus channel name
+        concatenated_data = np.array([])
+        concatenated_timestamps = np.array([])
+        for i, stimulus_channel_name in enumerate(stimulus_channel_names):
+            if stimulus_channel_name not in self.available_stimulus_channel_names[self._target_area][self._subject_id]:
+                raise ValueError(
+                    f"stimulus channel name '{stimulus_channel_name}' not found for {self._subject_id} in {self._target_area}. "
+                    f"Available: {self.available_stimulus_channel_names[self._target_area][self._subject_id]}"
+                )
+            # Load Data
+            if stub_test:
+                assert (
+                    t2 == 0.0
+                ), f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
+                t2 = t1 + 1.0
+            data = self._extract_signal(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
+            # Get the timing information
+            self._starting_time = segment_starting_times[i]
+            timestamps = self.get_timestamps(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
+            concatenated_data = np.concatenate((concatenated_data, data))
+            concatenated_timestamps = np.concatenate((concatenated_timestamps, timestamps))
+
+        fiber_photometry_response_series = FiberPhotometryResponseSeries(
+            name=fiber_photometry_response_series_metadata["name"],
+            description=fiber_photometry_response_series_metadata["description"],
+            data=concatenated_data,
+            unit=fiber_photometry_response_series_metadata["unit"],
+            fiber_photometry_table_region=fiber_photometry_table_region,
+            timestamps=concatenated_timestamps,
         )
 
         # Add ophys module for processed fiber photometry signals if it doesn't exist

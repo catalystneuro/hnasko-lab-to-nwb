@@ -5,6 +5,8 @@ from typing import Optional
 from pynwb import NWBFile
 
 from hnasko_lab_to_nwb.lotfi_2025.interfaces import (
+    ConcatenatedLofti2025DemodulatedFiberPhotometryInterface,
+    ConcatenatedTDTFiberPhotometryInterface,
     Lofti2025DemodulatedFiberPhotometryInterface,
 )
 from neuroconv import NWBConverter
@@ -21,6 +23,12 @@ class Lofti2025NWBConverter(NWBConverter):
         DownsampledFiberPhotometry_Calcium=Lofti2025DemodulatedFiberPhotometryInterface,
         DownsampledFiberPhotometry_Isosbestic=Lofti2025DemodulatedFiberPhotometryInterface,
         DeltaFOverF=Lofti2025DemodulatedFiberPhotometryInterface,
+        ConcatenatedFiberPhotometry=ConcatenatedTDTFiberPhotometryInterface,
+        ConcatenatedDemodulatedFiberPhotometry_Calcium=ConcatenatedLofti2025DemodulatedFiberPhotometryInterface,
+        ConcatenatedDemodulatedFiberPhotometry_Isosbestic=ConcatenatedLofti2025DemodulatedFiberPhotometryInterface,
+        ConcatenatedDownsampledFiberPhotometry_Calcium=ConcatenatedLofti2025DemodulatedFiberPhotometryInterface,
+        ConcatenatedDownsampledFiberPhotometry_Isosbestic=ConcatenatedLofti2025DemodulatedFiberPhotometryInterface,
+        ConcatenatedDeltaFOverF=ConcatenatedLofti2025DemodulatedFiberPhotometryInterface,
         Video=ExternalVideoInterface,
         Video_250ms=ExternalVideoInterface,
         Video_1s=ExternalVideoInterface,
