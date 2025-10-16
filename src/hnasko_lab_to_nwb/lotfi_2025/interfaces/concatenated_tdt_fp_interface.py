@@ -336,6 +336,22 @@ class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
             concatenated_data = np.concatenate((concatenated_data, data))
             concatenated_timestamps = np.concatenate((concatenated_timestamps, timestamps))
 
+        # Fill gaps with NaNs
+        from hnasko_lab_to_nwb.lotfi_2025.utils import fill_gaps_w_nans
+
+        concatenated_data, concatenated_timestamps = fill_gaps_w_nans(
+            data=concatenated_data,
+            timestamps=concatenated_timestamps,
+            sampling_rate=tdt_photometry.streams[stream_name].fs,
+        )
+        from neuroconv.utils.checks import calculate_regular_series_rate
+
+        calculated_rate = calculate_regular_series_rate(concatenated_timestamps, tolerance_decimals=2)
+        if calculated_rate is not None:
+            timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=calculated_rate)
+        else:
+            timing_kwargs = dict(timestamps=concatenated_timestamps)
+
         fiber_photometry_table_region = fiber_photometry_table.create_fiber_photometry_table_region(
             description=fiber_photometry_response_series_metadata["fiber_photometry_table_region_description"],
             region=fiber_photometry_response_series_metadata["fiber_photometry_table_region"],
@@ -347,6 +363,6 @@ class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
             data=concatenated_data,
             unit=fiber_photometry_response_series_metadata["unit"],
             fiber_photometry_table_region=fiber_photometry_table_region,
-            timestamps=concatenated_timestamps,
+            **timing_kwargs,
         )
         nwbfile.add_acquisition(fiber_photometry_response_series)

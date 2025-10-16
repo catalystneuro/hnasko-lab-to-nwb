@@ -672,19 +672,37 @@ class ConcatenatedLofti2025DemodulatedFiberPhotometryInterface(Lofti2025Demodula
                 ), f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
                 t2 = t1 + 1.0
             data = self._extract_signal(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
+
             # Get the timing information
             self._starting_time = segment_starting_times[i]
             timestamps = self.get_timestamps(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
             concatenated_data = np.concatenate((concatenated_data, data))
             concatenated_timestamps = np.concatenate((concatenated_timestamps, timestamps))
 
+        # Fill gaps with NaNs
+        from hnasko_lab_to_nwb.lotfi_2025.utils import fill_gaps_w_nans
+
+        concatenated_data, concatenated_timestamps = fill_gaps_w_nans(
+            data=concatenated_data,
+            timestamps=concatenated_timestamps,
+            sampling_rate=self.get_sampling_frequency(),
+        )
+
+        from neuroconv.utils.checks import calculate_regular_series_rate
+
+        calculated_rate = calculate_regular_series_rate(concatenated_timestamps, tolerance_decimals=2)
+        if calculated_rate is not None:
+            timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=calculated_rate)
+        else:
+            timing_kwargs = dict(timestamps=concatenated_timestamps)
+
         fiber_photometry_response_series = FiberPhotometryResponseSeries(
             name=fiber_photometry_response_series_metadata["name"],
             description=fiber_photometry_response_series_metadata["description"],
-            data=concatenated_data,
+            data=concatenated_data.T,
             unit=fiber_photometry_response_series_metadata["unit"],
             fiber_photometry_table_region=fiber_photometry_table_region,
-            timestamps=concatenated_timestamps,
+            **timing_kwargs,
         )
 
         # Add ophys module for processed fiber photometry signals if it doesn't exist
