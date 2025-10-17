@@ -217,7 +217,7 @@ def get_fp_series_metadata(metadata: dict, stream_name: str, target_area: str) -
     return fiber_photometry_response_series_metadata
 
 
-class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterface):
+class Lofti2025ProcessedFiberPhotometryInterface(BaseTemporalAlignmentInterface):
     """
     Data Interface for converting processed fiber photometry data from a Hnasko Lab custom .mat files.
 
@@ -559,7 +559,7 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
         ophys_module.add(fiber_photometry_response_series)
 
 
-class ConcatenatedLofti2025DemodulatedFiberPhotometryInterface(Lofti2025DemodulatedFiberPhotometryInterface):
+class ConcatenatedLofti2025ProcessedFiberPhotometryInterface(Lofti2025ProcessedFiberPhotometryInterface):
     """
     Data Interface for converting and concatenating multiple processed fiber photometry data files from Hnasko Lab custom .mat files.
 
@@ -587,7 +587,7 @@ class ConcatenatedLofti2025DemodulatedFiberPhotometryInterface(Lofti2025Demodula
         sampling_frequency: float,
         verbose: bool = False,
     ):
-        """Initialize the ConcatenatedLofti2025DemodulatedFiberPhotometryInterface.
+        """Initialize the ConcatenatedLofti2025ProcessedFiberPhotometryInterface.
 
         Parameters
         ----------
