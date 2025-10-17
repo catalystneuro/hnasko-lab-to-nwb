@@ -5,9 +5,9 @@ from typing import Optional
 from pynwb import NWBFile
 
 from hnasko_lab_to_nwb.lotfi_2025.interfaces import (
-    ConcatenatedLofti2025DemodulatedFiberPhotometryInterface,
+    ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
     ConcatenatedTDTFiberPhotometryInterface,
-    Lofti2025DemodulatedFiberPhotometryInterface,
+    Lofti2025ProcessedFiberPhotometryInterface,
 )
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import ExternalVideoInterface, TDTFiberPhotometryInterface
@@ -15,25 +15,6 @@ from neuroconv.datainterfaces import ExternalVideoInterface, TDTFiberPhotometryI
 
 class Lofti2025NWBConverter(NWBConverter):
     """Primary conversion class for my extracellular electrophysiology dataset."""
-
-    data_interface_classes = dict(
-        FiberPhotometry=TDTFiberPhotometryInterface,
-        DemodulatedFiberPhotometry_Calcium=Lofti2025DemodulatedFiberPhotometryInterface,
-        DemodulatedFiberPhotometry_Isosbestic=Lofti2025DemodulatedFiberPhotometryInterface,
-        DownsampledFiberPhotometry_Calcium=Lofti2025DemodulatedFiberPhotometryInterface,
-        DownsampledFiberPhotometry_Isosbestic=Lofti2025DemodulatedFiberPhotometryInterface,
-        DeltaFOverF=Lofti2025DemodulatedFiberPhotometryInterface,
-        ConcatenatedFiberPhotometry=ConcatenatedTDTFiberPhotometryInterface,
-        ConcatenatedDemodulatedFiberPhotometry_Calcium=ConcatenatedLofti2025DemodulatedFiberPhotometryInterface,
-        ConcatenatedDemodulatedFiberPhotometry_Isosbestic=ConcatenatedLofti2025DemodulatedFiberPhotometryInterface,
-        ConcatenatedDownsampledFiberPhotometry_Calcium=ConcatenatedLofti2025DemodulatedFiberPhotometryInterface,
-        ConcatenatedDownsampledFiberPhotometry_Isosbestic=ConcatenatedLofti2025DemodulatedFiberPhotometryInterface,
-        ConcatenatedDeltaFOverF=ConcatenatedLofti2025DemodulatedFiberPhotometryInterface,
-        Video=ExternalVideoInterface,
-        Video_250ms=ExternalVideoInterface,
-        Video_1s=ExternalVideoInterface,
-        Video_4s=ExternalVideoInterface,
-    )
 
     def __init__(self, source_data: dict, verbose: bool = True, video_time_alignment_dict: Optional[dict] = None):
         """
@@ -48,6 +29,30 @@ class Lofti2025NWBConverter(NWBConverter):
         video_time_alignment_dict : Optional[dict], optional
             Dictionary for aligning video timestamps with session metadata, by default None.
         """
+        data_interface_name_mapping = {
+            "Video": ExternalVideoInterface,
+            "RawFiberPhotometry": TDTFiberPhotometryInterface,
+            "DemodulatedFiberPhotometry": Lofti2025ProcessedFiberPhotometryInterface,
+            "DownsampledFiberPhotometry": Lofti2025ProcessedFiberPhotometryInterface,
+            "DeltaFOverF": Lofti2025ProcessedFiberPhotometryInterface,
+        }
+        concatenated_data_interface_name_mapping = {
+            "ConcatenatedRawFiberPhotometry": ConcatenatedTDTFiberPhotometryInterface,
+            "ConcatenatedDemodulatedFiberPhotometry": ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
+            "ConcatenatedDownsampledFiberPhotometry": ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
+            "ConcatenatedDeltaFOverF": ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
+        }
+
+        for interface_name in source_data.keys():
+            if "Concatenated" in interface_name:
+                for key, interface_class in concatenated_data_interface_name_mapping.items():
+                    if key in interface_name:
+                        self.data_interface_classes[interface_name] = interface_class
+            else:
+                for key, interface_class in data_interface_name_mapping.items():
+                    if key in interface_name:
+                        self.data_interface_classes[interface_name] = interface_class
+
         super().__init__(source_data=source_data, verbose=verbose)
         self.video_time_alignment_dict = video_time_alignment_dict or {}
 
