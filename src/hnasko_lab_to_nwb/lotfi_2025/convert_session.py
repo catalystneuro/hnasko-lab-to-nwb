@@ -1,7 +1,10 @@
 """Primary script to run to convert an entire session for of data using the NWBConverter."""
 
+from datetime import datetime
 from pathlib import Path
 from typing import Union
+
+import pytz
 
 from hnasko_lab_to_nwb.lotfi_2025.interfaces.concatenated_tdt_fp_interface import (
     ConcatenatedTDTFiberPhotometryInterface,
@@ -121,6 +124,7 @@ def varying_frequencies_session_to_nwb(
     stim_frequencies = [10.0, 20.0, 40.0, 5.0]
 
     # Handle exception for SN pan GABA recordings
+    add_video_conversion = False
     if recording_type == "SN pan GABA recordings" and stimulus_location == "PPN":
         # TODO add behavioral video conversion
         add_video_conversion = True
@@ -151,6 +155,11 @@ def varying_frequencies_session_to_nwb(
     # Add FiberPhotometry
     source_data.update(dict(ConcatenatedRawFiberPhotometry=dict(folder_paths=tdt_folder_paths)))
     conversion_options.update(dict(ConcatenatedRawFiberPhotometry=dict(stub_test=stub_test, stream_name="Fi1r")))
+
+    # Extract session starting time from TDT data
+    # Assume that the tdt folders are named as {subject_id}-{session_starting_time_string}
+    session_starting_time_string = tdt_folder_paths[0].name.replace(f"{subject_id}-", "")
+    session_start_datetime = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
 
     # Add processed fp series
     mat_file_path = list(protocol_folder_path.glob("*.mat"))
@@ -197,7 +206,36 @@ def varying_frequencies_session_to_nwb(
             )
         )
 
-    converter = Lofti2025NWBConverter(source_data=source_data, verbose=verbose)
+    # Add Behavioral Video if needed
+    if add_video_conversion:
+        from hnasko_lab_to_nwb.lotfi_2025.utils import get_video_aligned_starting_time
+
+        video_time_alignment_dict = dict()
+        video_folder_path = protocol_folder_path.parents[1] / "AnyMaze videos_mp4" / "Varying frequencies"
+        video_metadata_file_path = video_folder_path / "video_metadata.xlsx"
+        video_file_paths = list(video_folder_path.glob(f"{subject_id}*.mp4"))
+        if len(video_file_paths) != 3:
+            raise FileNotFoundError(
+                f"Expected three video files for subject {subject_id}, found {len(video_file_paths)}."
+            )
+        else:
+            for video_file_path in video_file_paths:
+                suffix = video_file_path.name.split("_")[-1].split(".")[0]  # Extract suffix from filename
+                source_data.update(
+                    {f"Video_{suffix}": dict(file_paths=[video_file_path], video_name=f"BehavioralVideo_{suffix}")}
+                )
+                video_starting_time = get_video_aligned_starting_time(
+                    video_metadata_file_path=video_metadata_file_path,
+                    video_file_path=video_file_path,
+                    session_starting_time=session_start_datetime,
+                )
+                video_time_alignment_dict.update({f"Video_{suffix}": dict(video_starting_time=video_starting_time)})
+    else:
+        video_time_alignment_dict = None
+
+    converter = Lofti2025NWBConverter(
+        source_data=source_data, verbose=verbose, video_time_alignment_dict=video_time_alignment_dict
+    )
 
     # Add OptogeneticStimulation
     # TODO add optogenetic stimulation interface to the converter and add the metadata here
@@ -209,6 +247,7 @@ def varying_frequencies_session_to_nwb(
     metadata["Subject"]["subject_id"] = subject_id
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
+    metadata["NWBFile"]["session_start_time"] = session_start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
 
     # Remove entries for other target areas from metadata
     for key in metadata["Ophys"]["FiberPhotometry"].keys():
@@ -307,6 +346,7 @@ def varying_durations_session_to_nwb(  #
     mat_stim_ch_name = "LP5mW"
 
     # Handle exception for SN pan GABA recordings
+    add_video_conversion = False
     if recording_type == "SN pan GABA recordings" and stimulus_location == "PPN":
         # TODO add behavioral video conversion
         add_video_conversion = True
@@ -323,6 +363,11 @@ def varying_durations_session_to_nwb(  #
     tdt_folder_path = tdt_folder_path[0]
     source_data.update(dict(RawFiberPhotometry=dict(folder_path=tdt_folder_path)))
     conversion_options.update(dict(RawFiberPhotometry=dict(stub_test=stub_test)))
+
+    # Extract session starting time from TDT data
+    # Assume that the tdt folders are named as {subject_id}-{session_starting_time_string}
+    session_starting_time_string = tdt_folder_path.name.replace(f"{subject_id}-", "")
+    session_start_datetime = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
 
     # Add processed fp series
     mat_file_path = list(protocol_folder_path.glob("*.mat"))
@@ -365,7 +410,30 @@ def varying_durations_session_to_nwb(  #
             )
         )
 
-    converter = Lofti2025NWBConverter(source_data=source_data, verbose=verbose)
+        # Add Behavioral Video if needed
+    if add_video_conversion:
+        from hnasko_lab_to_nwb.lotfi_2025.utils import get_video_aligned_starting_time
+
+        video_time_alignment_dict = dict()
+        video_folder_path = protocol_folder_path.parents[1] / "AnyMaze videos_mp4" / "Varying durations"
+        video_metadata_file_path = video_folder_path / "video_metadata.xlsx"
+        video_file_paths = list(video_folder_path.glob(f"{subject_id}*.mp4"))
+        if len(video_file_paths) != 1:
+            raise FileNotFoundError(f"Expected one video file for subject {subject_id}, found {len(video_file_paths)}.")
+        else:
+            source_data.update(dict(Video=dict(file_paths=video_file_paths, video_name="BehavioralVideo")))
+            video_starting_time = get_video_aligned_starting_time(
+                video_metadata_file_path=video_metadata_file_path,
+                video_file_path=video_file_paths[0],
+                session_starting_time=session_start_datetime,
+            )
+            video_time_alignment_dict.update(dict(Video=dict(video_starting_time=video_starting_time)))
+    else:
+        video_time_alignment_dict = None
+
+    converter = Lofti2025NWBConverter(
+        source_data=source_data, verbose=verbose, video_time_alignment_dict=video_time_alignment_dict
+    )
 
     # Add OptogeneticStimulation
     # TODO add optogenetic stimulation interface to the converter and add the metadata here
@@ -377,6 +445,7 @@ def varying_durations_session_to_nwb(  #
     metadata["Subject"]["subject_id"] = subject_id
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
+    metadata["NWBFile"]["session_start_time"] = session_start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
 
     # Remove entries for other target areas from metadata
     for key in metadata["Ophys"]["FiberPhotometry"].keys():
@@ -400,9 +469,9 @@ if __name__ == "__main__":
     data_dir_path = Path("D:/Hnasko-CN-data-share/")
     output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
 
-    recording_type = "GRABDA recordings"  # "GRABDA recordings"  "SN pan DA recordings" "Str_DA_terminal recordings" "SN pan GABA recordings"
-    stimulus_location = "STN"  # "PPN" "STN"
-    subject_id = "C3017"
+    recording_type = "SN pan GABA recordings"  # "GRABDA recordings"  "SN pan DA recordings" "Str_DA_terminal recordings" "SN pan GABA recordings"
+    stimulus_location = "PPN"  # "PPN" "STN"
+    subject_id = "C4550"
     parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
 
     varying_frequencies_session_to_nwb(
