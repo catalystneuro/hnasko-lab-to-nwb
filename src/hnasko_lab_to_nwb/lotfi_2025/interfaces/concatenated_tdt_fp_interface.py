@@ -199,8 +199,6 @@ def get_fp_series_metadata(metadata: dict, stream_name: str) -> dict:
         Metadata dictionary with information used to create the NWBFile.
     stream_name : str
         The name of the stream to extract.
-    target_area : str
-        The target area to extract.
 
     Returns
     -------

@@ -10,21 +10,34 @@ from hnasko_lab_to_nwb.lotfi_2025.nwbconverter import Lofti2025NWBConverter
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 
-def extract_processed_fp_metadata(series_list, stream_name):
-    """Extract metadata for a specific stream from the session metadata."""
+def get_target_area_for_subject(file_path: Path, subject_id: str) -> str:
+    """Extract available sites for a specific subject.
 
-    # Find the matching series by stream_name
-    series_metadata = next((series for series in series_list if series.get("stream_name") == stream_name), None)
+    Parameters
+    ----------
+    file_path : Path
+        Path to the .mat file.
+    subject_id : str
+        The subject ID to extract sites for.
 
-    if series_metadata is None:
-        raise ValueError(f"Stream name '{stream_name}' not found in the provided series list.")
+    Returns
+    -------
+    str
+        The target area associated with the subject.
+    """
+    import h5py
 
-    # Extract only the keys we need
-    return {
-        key: series_metadata.get(key)
-        for key in ["stream_name", "sampling_frequency", "target_area"]
-        if key in series_metadata
-    }
+    try:
+        with h5py.File(file_path, "r") as f:
+            signal_group = f["Gc_raw"]  # assuming the structure is the same for all streams
+            for target_area in signal_group.keys():
+                target_area_group: h5py.Group = signal_group[target_area]
+                # Assuming one target area per subject
+                if subject_id in target_area_group.keys():
+                    return target_area
+        raise ValueError(f"Subject ID {subject_id} not found in the .mat file.")
+    except Exception as e:
+        raise RuntimeError(f"Error extracting the target area for subject {subject_id}: {e}.")
 
 
 def varying_frequencies_session_to_nwb(
@@ -146,114 +159,43 @@ def varying_frequencies_session_to_nwb(
     elif len(mat_file_path) > 1:
         raise ValueError(f"Multiple .mat files found in {protocol_folder_path}")
     mat_file_path = mat_file_path[0]
-    series_list = (
-        editable_metadata.get("Ophys", {}).get("FiberPhotometry", {}).get("ProcessedFiberPhotometryResponseSeries", [])
-    )
 
     concatenated_tdt_interface = ConcatenatedTDTFiberPhotometryInterface(folder_paths=tdt_folder_paths, verbose=verbose)
     segment_starting_times = concatenated_tdt_interface.segment_starting_times
-    # Add DemodulatedFiberPhotometry for calcium and isosbestic
-    stream_name = "Gc_raw"
-    source_data.update(
-        dict(
-            ConcatenatedDemodulatedFiberPhotometry_Calcium=dict(
-                file_path=mat_file_path,
-                subject_id=subject_id,
-                **extract_processed_fp_metadata(series_list, stream_name),
+    # Add Processed Fiber Photometry
+    stream_to_interface_mapping = {
+        "Gc_raw": "ConcatenatedDemodulatedFiberPhotometry_Calcium",
+        "af_raw": "ConcatenatedDemodulatedFiberPhotometry_Isosbestic",
+        "Gc": "ConcatenatedDownsampledFiberPhotometry_Calcium",
+        "af": "ConcatenatedDownsampledFiberPhotometry_Isosbestic",
+        "dF": "ConcatenatedDeltaFOverF",
+    }
+    target_area = get_target_area_for_subject(mat_file_path, subject_id)
+    for stream_name, interface_name in stream_to_interface_mapping.items():
+        source_data.update(
+            dict(
+                **{
+                    interface_name: dict(
+                        file_path=mat_file_path,
+                        subject_id=subject_id,
+                        stream_name=stream_name,
+                        target_area=target_area,
+                        sampling_frequency=6103.5156 if "raw" in stream_name else 100.0,
+                    )
+                }
             )
         )
-    )
-    conversion_options.update(
-        dict(
-            ConcatenatedDemodulatedFiberPhotometry_Calcium=dict(
-                stub_test=stub_test,
-                stimulus_channel_names=ordered_mat_stim_ch_names,
-                segment_starting_times=segment_starting_times,
+        conversion_options.update(
+            dict(
+                **{
+                    interface_name: dict(
+                        stub_test=stub_test,
+                        stimulus_channel_names=ordered_mat_stim_ch_names,
+                        segment_starting_times=segment_starting_times,
+                    )
+                }
             )
         )
-    )
-
-    stream_name = "af_raw"
-    source_data.update(
-        dict(
-            ConcatenatedDemodulatedFiberPhotometry_Isosbestic=dict(
-                file_path=mat_file_path,
-                subject_id=subject_id,
-                **extract_processed_fp_metadata(series_list, stream_name),
-            )
-        )
-    )
-    conversion_options.update(
-        dict(
-            ConcatenatedDemodulatedFiberPhotometry_Isosbestic=dict(
-                stub_test=stub_test,
-                stimulus_channel_names=ordered_mat_stim_ch_names,
-                segment_starting_times=segment_starting_times,
-            )
-        )
-    )
-
-    # Add DownsampledFiberPhotometry for calcium and isosbestic
-    stream_name = "Gc"
-    source_data.update(
-        dict(
-            ConcatenatedDownsampledFiberPhotometry_Calcium=dict(
-                file_path=mat_file_path,
-                subject_id=subject_id,
-                **extract_processed_fp_metadata(series_list, stream_name),
-            )
-        )
-    )
-    conversion_options.update(
-        dict(
-            ConcatenatedDownsampledFiberPhotometry_Calcium=dict(
-                stub_test=stub_test,
-                stimulus_channel_names=ordered_mat_stim_ch_names,
-                segment_starting_times=segment_starting_times,
-            )
-        )
-    )
-
-    stream_name = "af"
-    source_data.update(
-        dict(
-            ConcatenatedDownsampledFiberPhotometry_Isosbestic=dict(
-                file_path=mat_file_path,
-                subject_id=subject_id,
-                **extract_processed_fp_metadata(series_list, stream_name),
-            )
-        )
-    )
-    conversion_options.update(
-        dict(
-            ConcatenatedDownsampledFiberPhotometry_Isosbestic=dict(
-                stub_test=stub_test,
-                stimulus_channel_names=ordered_mat_stim_ch_names,
-                segment_starting_times=segment_starting_times,
-            )
-        )
-    )
-
-    # Add DeltaFOverF
-    stream_name = "dF"
-    source_data.update(
-        dict(
-            ConcatenatedDeltaFOverF=dict(
-                file_path=mat_file_path,
-                subject_id=subject_id,
-                **extract_processed_fp_metadata(series_list, stream_name),
-            )
-        )
-    )
-    conversion_options.update(
-        dict(
-            ConcatenatedDeltaFOverF=dict(
-                stub_test=stub_test,
-                stimulus_channel_names=ordered_mat_stim_ch_names,
-                segment_starting_times=segment_starting_times,
-            )
-        )
-    )
 
     converter = Lofti2025NWBConverter(source_data=source_data, verbose=verbose)
 
@@ -268,7 +210,13 @@ def varying_frequencies_session_to_nwb(
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
 
-    # TODO handle exception for GRABDA recordings: pop FiberPhotometrySeries metadata for area that is not recorded
+    # Remove entries for other target areas from metadata
+    for key in metadata["Ophys"]["FiberPhotometry"].keys():
+        if "FiberPhotometryResponseSeries" in key:
+            fp_response_series = metadata["Ophys"]["FiberPhotometry"][key]
+            metadata["Ophys"]["FiberPhotometry"][key] = [
+                fps for fps in fp_response_series if fps.get("target_area", None) == target_area
+            ]
 
     # Run conversion
     converter.run_conversion(
@@ -278,7 +226,7 @@ def varying_frequencies_session_to_nwb(
         print(f"Session {session_id} for subject {subject_id} converted successfully to NWB format at {nwbfile_path}")
 
 
-def varying_durations_session_to_nwb(
+def varying_durations_session_to_nwb(  #
     output_dir_path: Union[str, Path],
     subject_id: str,
     protocol_folder_path: Union[str, Path],
@@ -383,79 +331,39 @@ def varying_durations_session_to_nwb(
     elif len(mat_file_path) > 1:
         raise ValueError(f"Multiple .mat files found in {protocol_folder_path}")
     mat_file_path = mat_file_path[0]
-    series_list = (
-        editable_metadata.get("Ophys", {}).get("FiberPhotometry", {}).get("ProcessedFiberPhotometryResponseSeries", [])
-    )
-    # Add DemodulatedFiberPhotometry for calcium and isosbestic
-    stream_name = "Gc_raw"
-    source_data.update(
-        dict(
-            DemodulatedFiberPhotometry_Calcium=dict(
-                file_path=mat_file_path,
-                subject_id=subject_id,
-                **extract_processed_fp_metadata(series_list, stream_name),
+    # Add Processed Fiber Photometry
+    stream_to_interface_mapping = {
+        "Gc_raw": "DemodulatedFiberPhotometry_Calcium",
+        "af_raw": "DemodulatedFiberPhotometry_Isosbestic",
+        "Gc": "DownsampledFiberPhotometry_Calcium",
+        "af": "DownsampledFiberPhotometry_Isosbestic",
+        "dF": "DeltaFOverF",
+    }
+    target_area = get_target_area_for_subject(mat_file_path, subject_id)
+    for stream_name, interface_name in stream_to_interface_mapping.items():
+        source_data.update(
+            dict(
+                **{
+                    interface_name: dict(
+                        file_path=mat_file_path,
+                        subject_id=subject_id,
+                        stream_name=stream_name,
+                        target_area=target_area,
+                        sampling_frequency=6103.5156 if "raw" in stream_name else 100.0,
+                    )
+                }
             )
         )
-    )
-    conversion_options.update(
-        dict(DemodulatedFiberPhotometry_Calcium=dict(stub_test=stub_test, stimulus_channel_name=mat_stim_ch_name))
-    )
-
-    stream_name = "af_raw"
-    source_data.update(
-        dict(
-            DemodulatedFiberPhotometry_Isosbestic=dict(
-                file_path=mat_file_path,
-                subject_id=subject_id,
-                **extract_processed_fp_metadata(series_list, stream_name),
+        conversion_options.update(
+            dict(
+                **{
+                    interface_name: dict(
+                        stub_test=stub_test,
+                        stimulus_channel_name=mat_stim_ch_name,
+                    )
+                }
             )
         )
-    )
-    conversion_options.update(
-        dict(DemodulatedFiberPhotometry_Isosbestic=dict(stub_test=stub_test, stimulus_channel_name=mat_stim_ch_name))
-    )
-
-    # Add DownsampledFiberPhotometry for calcium and isosbestic
-    stream_name = "Gc"
-    source_data.update(
-        dict(
-            DownsampledFiberPhotometry_Calcium=dict(
-                file_path=mat_file_path,
-                subject_id=subject_id,
-                **extract_processed_fp_metadata(series_list, stream_name),
-            )
-        )
-    )
-    conversion_options.update(
-        dict(DownsampledFiberPhotometry_Calcium=dict(stub_test=stub_test, stimulus_channel_name=mat_stim_ch_name))
-    )
-
-    stream_name = "af"
-    source_data.update(
-        dict(
-            DownsampledFiberPhotometry_Isosbestic=dict(
-                file_path=mat_file_path,
-                subject_id=subject_id,
-                **extract_processed_fp_metadata(series_list, stream_name),
-            )
-        )
-    )
-    conversion_options.update(
-        dict(DownsampledFiberPhotometry_Isosbestic=dict(stub_test=stub_test, stimulus_channel_name=mat_stim_ch_name))
-    )
-
-    # Add DeltaFOverF
-    stream_name = "dF"
-    source_data.update(
-        dict(
-            DeltaFOverF=dict(
-                file_path=mat_file_path,
-                subject_id=subject_id,
-                **extract_processed_fp_metadata(series_list, stream_name),
-            )
-        )
-    )
-    conversion_options.update(dict(DeltaFOverF=dict(stub_test=stub_test, stimulus_channel_name=mat_stim_ch_name)))
 
     converter = Lofti2025NWBConverter(source_data=source_data, verbose=verbose)
 
@@ -469,6 +377,14 @@ def varying_durations_session_to_nwb(
     metadata["Subject"]["subject_id"] = subject_id
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
+
+    # Remove entries for other target areas from metadata
+    for key in metadata["Ophys"]["FiberPhotometry"].keys():
+        if "FiberPhotometryResponseSeries" in key:
+            fp_response_series = metadata["Ophys"]["FiberPhotometry"][key]
+            metadata["Ophys"]["FiberPhotometry"][key] = [
+                fps for fps in fp_response_series if fps.get("target_area", None) == target_area
+            ]
 
     # Run conversion
     converter.run_conversion(
@@ -484,9 +400,9 @@ if __name__ == "__main__":
     data_dir_path = Path("D:/Hnasko-CN-data-share/")
     output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
 
-    recording_type = "SN pan GABA recordings"  # "GRABDA recordings"  "SN pan DA recordings" "Str_DA_terminal recordings" "SN pan GABA recordings"
-    stimulus_location = "PPN"  # "PPN" "STN"
-    subject_id = "C4550"
+    recording_type = "GRABDA recordings"  # "GRABDA recordings"  "SN pan DA recordings" "Str_DA_terminal recordings" "SN pan GABA recordings"
+    stimulus_location = "STN"  # "PPN" "STN"
+    subject_id = "C3017"
     parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
 
     varying_frequencies_session_to_nwb(
