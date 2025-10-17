@@ -87,24 +87,6 @@ def varying_frequencies_session_to_nwb(
         "The subject receives optogenetic stimulation at varying frequencies "
         "(5 Hz, 10 Hz , 20 Hz and 40 Hz) 5 times for each duration with an ISI of 10s. "
     )
-    tdt_stim_ch_names = ["H10_", "H20_", "H40_", "H05_"]
-    stim_frequencies = [10.0, 20.0, 40.0, 5.0]
-    tdt_folder_paths = list(protocol_folder_path.glob(f"varFreq_*/{subject_id}-*"))
-    if len(tdt_folder_paths) != 3:
-        raise ValueError(f"Number of sub-session folders ({len(tdt_folder_paths)}) does not match expected count (3)")
-    # Sort the folders based on the session_starting_time_string
-    tdt_folder_paths.sort(key=lambda x: x.name.split("-")[-1])
-    mat_stim_ch_names = []
-    for folder in tdt_folder_paths:
-        if "varFreq_250ms" in folder.parent.name:
-            mat_stim_ch_names.append("s250ms")
-        elif "varFreq_1s" in folder.parent.name:
-            mat_stim_ch_names.append("s1s")
-        elif "varFreq_4s" in folder.parent.name:
-            mat_stim_ch_names.append("s4s")
-        else:
-            raise ValueError(f"Unknown sub-session folder name: {folder.parent.name}")
-
     if recording_type is None:
         recording_type = protocol_folder_path.parts[-4]
     if recording_type not in [
@@ -122,12 +104,40 @@ def varying_frequencies_session_to_nwb(
     if stimulus_location not in ["PPN", "STN"]:
         raise ValueError(f"Unknown stimulus location: {stimulus_location}")
 
+    tdt_stim_ch_names = ["H10_", "H20_", "H40_", "H05_"]
+    stim_frequencies = [10.0, 20.0, 40.0, 5.0]
+
+    # Handle exception for SN pan GABA recordings
+    if recording_type == "SN pan GABA recordings" and stimulus_location == "PPN":
+        # TODO add behavioral video conversion
+        add_video_conversion = True
+        tdt_folder_paths = list(protocol_folder_path.glob(f"{subject_id}-*"))
+        ordered_mat_stim_ch_names = ["AllDurs"]
+    else:
+        mat_stim_ch_names = ["s250ms", "s1s", "s4s"]
+        if recording_type == "SN pan GABA recordings" and stimulus_location == "STN":
+            mat_stim_ch_names = ["s250ms5mW", "s1s10mW"]
+
+        tdt_folder_paths = list(protocol_folder_path.glob(f"varFreq_*/{subject_id}-*"))
+        # Sort the folders based on the session_starting_time_string
+        tdt_folder_paths.sort(key=lambda x: x.name.split("-")[-1])
+        ordered_mat_stim_ch_names = []
+        for folder in tdt_folder_paths:
+            if "varFreq_250ms" in folder.parent.name:
+                ordered_mat_stim_ch_names.append(mat_stim_ch_names[0])
+            elif "varFreq_1s" in folder.parent.name:
+                ordered_mat_stim_ch_names.append(mat_stim_ch_names[1])
+            elif "varFreq_4s" in folder.parent.name:
+                ordered_mat_stim_ch_names.append(mat_stim_ch_names[2])
+            else:
+                raise ValueError(f"Unknown sub-session folder name: {folder.parent.name}")
+
     source_data = dict()
     conversion_options = dict()
 
     # Add FiberPhotometry
-    source_data.update(dict(ConcatenatedFiberPhotometry=dict(folder_paths=tdt_folder_paths)))
-    conversion_options.update(dict(ConcatenatedFiberPhotometry=dict(stub_test=stub_test, stream_name="Fi1r")))
+    source_data.update(dict(ConcatenatedRawFiberPhotometry=dict(folder_paths=tdt_folder_paths)))
+    conversion_options.update(dict(ConcatenatedRawFiberPhotometry=dict(stub_test=stub_test, stream_name="Fi1r")))
 
     # Add processed fp series
     mat_file_path = list(protocol_folder_path.glob("*.mat"))
@@ -139,6 +149,7 @@ def varying_frequencies_session_to_nwb(
     series_list = (
         editable_metadata.get("Ophys", {}).get("FiberPhotometry", {}).get("ProcessedFiberPhotometryResponseSeries", [])
     )
+
     concatenated_tdt_interface = ConcatenatedTDTFiberPhotometryInterface(folder_paths=tdt_folder_paths, verbose=verbose)
     segment_starting_times = concatenated_tdt_interface.segment_starting_times
     # Add DemodulatedFiberPhotometry for calcium and isosbestic
@@ -156,7 +167,7 @@ def varying_frequencies_session_to_nwb(
         dict(
             ConcatenatedDemodulatedFiberPhotometry_Calcium=dict(
                 stub_test=stub_test,
-                stimulus_channel_names=mat_stim_ch_names,
+                stimulus_channel_names=ordered_mat_stim_ch_names,
                 segment_starting_times=segment_starting_times,
             )
         )
@@ -176,7 +187,7 @@ def varying_frequencies_session_to_nwb(
         dict(
             ConcatenatedDemodulatedFiberPhotometry_Isosbestic=dict(
                 stub_test=stub_test,
-                stimulus_channel_names=mat_stim_ch_names,
+                stimulus_channel_names=ordered_mat_stim_ch_names,
                 segment_starting_times=segment_starting_times,
             )
         )
@@ -197,7 +208,7 @@ def varying_frequencies_session_to_nwb(
         dict(
             ConcatenatedDownsampledFiberPhotometry_Calcium=dict(
                 stub_test=stub_test,
-                stimulus_channel_names=mat_stim_ch_names,
+                stimulus_channel_names=ordered_mat_stim_ch_names,
                 segment_starting_times=segment_starting_times,
             )
         )
@@ -217,7 +228,7 @@ def varying_frequencies_session_to_nwb(
         dict(
             ConcatenatedDownsampledFiberPhotometry_Isosbestic=dict(
                 stub_test=stub_test,
-                stimulus_channel_names=mat_stim_ch_names,
+                stimulus_channel_names=ordered_mat_stim_ch_names,
                 segment_starting_times=segment_starting_times,
             )
         )
@@ -238,7 +249,7 @@ def varying_frequencies_session_to_nwb(
         dict(
             ConcatenatedDeltaFOverF=dict(
                 stub_test=stub_test,
-                stimulus_channel_names=mat_stim_ch_names,
+                stimulus_channel_names=ordered_mat_stim_ch_names,
                 segment_starting_times=segment_starting_times,
             )
         )
@@ -256,6 +267,8 @@ def varying_frequencies_session_to_nwb(
     metadata["Subject"]["subject_id"] = subject_id
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
+
+    # TODO handle exception for GRABDA recordings: pop FiberPhotometrySeries metadata for area that is not recorded
 
     # Run conversion
     converter.run_conversion(
@@ -324,10 +337,6 @@ def varying_durations_session_to_nwb(
         "The subject receives a 40 Hz stimulation at various durations (i.e. 250ms, 1s and 4s) "
         "5 times for each duration) with an inter-stimulus interval (ISI) of 10s. "
     )
-    tdt_stim_ch_names = ["sms_", "s1s_", "s4s_"]
-    stim_frequencies = [40.0, 40.0, 40.0]
-    mat_stim_ch_name = "LP5mW"
-
     if recording_type is None:
         recording_type = protocol_folder_path.parts[-4]
     if recording_type not in [
@@ -345,6 +354,15 @@ def varying_durations_session_to_nwb(
     if stimulus_location not in ["PPN", "STN"]:
         raise ValueError(f"Unknown stimulus location: {stimulus_location}")
 
+    tdt_stim_ch_names = ["sms_", "s1s_", "s4s_"]
+    stim_frequencies = [40.0, 40.0, 40.0]
+    mat_stim_ch_name = "LP5mW"
+
+    # Handle exception for SN pan GABA recordings
+    if recording_type == "SN pan GABA recordings" and stimulus_location == "PPN":
+        # TODO add behavioral video conversion
+        add_video_conversion = True
+
     source_data = dict()
     conversion_options = dict()
 
@@ -355,8 +373,8 @@ def varying_durations_session_to_nwb(
     elif len(tdt_folder_path) > 1:
         raise ValueError(f"Multiple TDT folders found in {protocol_folder_path}")
     tdt_folder_path = tdt_folder_path[0]
-    source_data.update(dict(FiberPhotometry=dict(folder_path=tdt_folder_path)))
-    conversion_options.update(dict(FiberPhotometry=dict(stub_test=stub_test)))
+    source_data.update(dict(RawFiberPhotometry=dict(folder_path=tdt_folder_path)))
+    conversion_options.update(dict(RawFiberPhotometry=dict(stub_test=stub_test)))
 
     # Add processed fp series
     mat_file_path = list(protocol_folder_path.glob("*.mat"))
@@ -466,9 +484,9 @@ if __name__ == "__main__":
     data_dir_path = Path("D:/Hnasko-CN-data-share/")
     output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
 
-    recording_type = "SN pan DA recordings"  # "GRABDA recordings"  "SN pan DA recordings" "Str_DA_terminal recordings" "SN pan GABA recordings"
-    stimulus_location = "STN"  # "PPN" "STN"
-    subject_id = "C4217"
+    recording_type = "SN pan GABA recordings"  # "GRABDA recordings"  "SN pan DA recordings" "Str_DA_terminal recordings" "SN pan GABA recordings"
+    stimulus_location = "PPN"  # "PPN" "STN"
+    subject_id = "C4550"
     parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
 
     varying_frequencies_session_to_nwb(
