@@ -21,6 +21,7 @@ dependencies = [
   "ndx-ophys-devices==0.3.1",
   "openpyxl",
   "opencv-python-headless",
+  "tdt",
   "dandi",
 ]
 
