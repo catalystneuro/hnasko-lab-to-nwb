@@ -7,6 +7,7 @@ Then mice underwent uncued electrical shocks and were recorded using fiber photo
 
 Reference paper:  ["Parkinson's Disease-vulnerable and -resilient dopamine neurons display opposite responses to excitatory input"](https://www.biorxiv.org/content/10.1101/2025.06.03.657460v1)
 
+
 ## Sessions description
 
 Each subject --> 3 experimental days:
