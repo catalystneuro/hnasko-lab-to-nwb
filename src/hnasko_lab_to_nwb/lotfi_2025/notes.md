@@ -7,6 +7,7 @@ Then mice underwent uncued electrical shocks and were recorded using fiber photo
 
 Reference paper:  ["Parkinson's Disease-vulnerable and -resilient dopamine neurons display opposite responses to excitatory input"](https://www.biorxiv.org/content/10.1101/2025.06.03.657460v1)
 
+
 ## Sessions description
 
 Each subject --> 3 experimental days:
@@ -73,7 +74,7 @@ For monitoring DA release in striatal subregions (DLS and TS) VGLUT2-Cre mice we
 * in **TS** (AP -1.25, ML +/-2.9, DV -3.25).
 
 --> From matlab code we can extract information on the targeted subregion per subject
---> What indicator used in SNc? injection location?
+--> What indicator used in SNc? injection location? In the paper is mentioned a fiber implanted in SNc but no signal from that in the data
 
 ####  Optogenetic Stimulation
 150-200 nl of AAV5-Syn-FLEX-ChrimsonR-tdTomato (4 – 8.5e12 vg/ml, Addgene 62723) was injected in:

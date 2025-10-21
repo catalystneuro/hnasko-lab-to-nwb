@@ -7,7 +7,7 @@ from hnasko_lab_to_nwb.lotfi_2025.nwbconverter import Lofti2025NWBConverter
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 
-def session_to_nwb(
+def shock_session_to_nwb(
     output_dir_path: Union[str, Path],
     subject_id: str,
     tdt_folder_path: Union[str, Path],
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     for metadata in metadata_list:
         subject_id = metadata["metadata"]["Subject"]["subject_id"]
 
-        session_to_nwb(
+        shock_session_to_nwb(
             output_dir_path=output_dir_path,
             subject_id=subject_id,
             tdt_folder_path=metadata["source_data"]["FiberPhotometry"]["folder_path"],

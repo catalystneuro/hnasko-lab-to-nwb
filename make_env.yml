@@ -1,9 +1,9 @@
 name: hnasko-lab-to-nwb-env
 channels:
-- conda-forge
-- defaults
+  - conda-forge
+  - defaults
 dependencies:
-- python>=3.11
-- pip
-- pip:
-  - --editable .  # This calls the setup and therefore requirements minimal
+  - python==3.13
+  - pip
+  - pip:
+      - --editable . # This calls the setup and therefore requirements minimal

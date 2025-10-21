@@ -1,15 +1,14 @@
 from copy import deepcopy
-from typing import Dict, List, Literal
+from datetime import datetime
+from typing import List
 
-import h5py
 import numpy as np
-from pydantic import FilePath, validate_call
+import pytz
+from pydantic import DirectoryPath, validate_call
 from pynwb.file import NWBFile
 
-from neuroconv.basetemporalalignmentinterface import BaseTemporalAlignmentInterface
+from neuroconv.datainterfaces import TDTFiberPhotometryInterface
 from neuroconv.tools.fiber_photometry import add_ophys_device, add_ophys_device_model
-from neuroconv.tools.nwb_helpers import get_module
-from neuroconv.utils import DeepDict
 
 
 def get_fiber_photometry_table(nwbfile: NWBFile, metadata: dict):
@@ -191,7 +190,7 @@ def get_fiber_photometry_table(nwbfile: NWBFile, metadata: dict):
     return fiber_photometry_table
 
 
-def get_fp_series_metadata(metadata: dict, stream_name: str, target_area: str) -> dict:
+def get_fp_series_metadata(metadata: dict, stream_name: str) -> dict:
     """Get the metadata for the FiberPhotometryResponseSeries.
 
     Parameters
@@ -200,275 +199,80 @@ def get_fp_series_metadata(metadata: dict, stream_name: str, target_area: str) -
         Metadata dictionary with information used to create the NWBFile.
     stream_name : str
         The name of the stream to extract.
-    target_area : str
-        The target area to extract.
 
     Returns
     -------
     dict
         The metadata dictionary for the FiberPhotometryResponseSeries.
     """
-    all_series_metadata = metadata["Ophys"]["FiberPhotometry"]["ProcessedFiberPhotometryResponseSeries"]
+    all_series_metadata = metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"]
     # Find the metadata for the specified stream_name and target_area
     for series_metadata in all_series_metadata:
-        if series_metadata["stream_name"] == stream_name and series_metadata.get("target_area") == target_area:
+        if series_metadata["stream_name"] == stream_name:
             fiber_photometry_response_series_metadata = deepcopy(series_metadata)
             break
     return fiber_photometry_response_series_metadata
 
 
-class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterface):
+class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
     """
-    Data Interface for converting processed fiber photometry data from a Hnasko Lab custom .mat files.
+    Data Interface for converting and concatenating fiber photometry data from multiple TDT output folders.
 
-    Extracts demodulated fiber photometry signals from MATLAB v7.3 files created by
-    the Hnasko lab analysis pipeline, then parses into the ndx-fiber-photometry format.
-
-    Verified to work with:
-    - SNr GABA recordings (PPN stimulation)
-    - GRAB-DA recordings (DLS & TS sites, PPN stimulation)
-    - SNc pan-DA recordings (STN stimulation)
+    Each TDT output folder consists of a variety of TDT-specific file types (e.g. Tbk, Tdx, tev, tin, tsq).
+    Data from multiple folders is read by the tdt.read_block function, concatenated, and then parsed into the ndx-fiber-photometry format.
     """
 
-    keywords = ("processed fiber photometry",)
-    display_name = "DemodulatedFiberPhotometry"
-    info = "Data Interface for converting fiber photometry data from processed .mat files from Hnasko Lab."
-    associated_suffixes = ".mat"
+    keywords = ("fiber photometry", "concatenated")
+    display_name = "ConcatenatedTDTFiberPhotometry"
+    info = "Data Interface for converting and concatenating fiber photometry data from multiple TDT folders."
+    associated_suffixes = ("Tbk", "Tdx", "tev", "tin", "tsq")
 
     @validate_call
     def __init__(
         self,
-        file_path: FilePath,
-        stream_name: str,
-        subject_id: str,
-        target_area: str,
-        sampling_frequency: float,
+        folder_paths: List[DirectoryPath],
         verbose: bool = False,
     ):
-        """Initialize the DemodulatedFiberPhotometryInterface.
+        """Initialize the ConcatenatedTDTFiberPhotometryInterface.
 
         Parameters
         ----------
-        file_path : FilePath
-            The path to the .mat file containing the processed fiber photometry data.
+        folder_paths : List[DirectoryPath]
+            The paths to the TDT output folders containing the processed fiber photometry data.
         verbose : bool, optional
             Whether to print status messages, default = True.
         """
-        super().__init__(
-            file_path=file_path,
-            verbose=verbose,
-        )
-        # This module should be here so ndx_fiber_photometry is in the global namespace when an pynwb.io object is created
+        self._tdt_interfaces = []
+        session_start_datetimes = []
+        for folder_path in folder_paths:
+            tdt_interface = TDTFiberPhotometryInterface(folder_path, verbose=verbose)
+            tdt_photometry = tdt_interface.load(evtype=["scalars"])
+            start_timestamp = tdt_photometry.info.start_date.timestamp()
+            session_start_datetime = datetime.fromtimestamp(start_timestamp, tz=pytz.utc)
+            session_start_datetimes.append(session_start_datetime)
+            self._tdt_interfaces.append(tdt_interface)
+        # check that the session start times are in chronological order
+        assert session_start_datetimes == sorted(
+            session_start_datetimes
+        ), "Session start times are not in chronological order. Please provide folder paths in chronological order."
+        # Calculate segment start times based on the session start datetimes
+        # E.g. we have three consecutive sessions starting at times 10:00, 10:20, and 10:40 on the same day
+        # we want segment_starting_times to be [0, 1200, 2400] (in seconds)
+        self.segment_starting_times = [
+            (dt - session_start_datetimes[0]).total_seconds() for dt in session_start_datetimes
+        ]
 
-        # Cache available sites and subjects
-        self._sites = None
-        self._subjects = None
-        self._stream_name = stream_name  # TODO validate stream name
-        self._target_area = target_area
-        self._subject_id = subject_id
-        self._sampling_frequency = sampling_frequency
-        self._starting_time = 0.0
-        self._num_samples = None
-
-        self._scan_file_structure()
-        if target_area not in self.available_sites:
-            raise ValueError(f"Target area '{target_area}' not found. Available: {self.available_sites}")
-        if subject_id not in self.available_subjects[target_area]:
-            raise ValueError(
-                f"Subject '{subject_id}' not found in {target_area}. Available: {self.available_subjects[target_area]}"
-            )
-
-    @property
-    def available_sites(self) -> List[str]:
-        """Get list of available recording sites"""
-        if self._sites is None:
-            self._scan_file_structure()
-        return self._sites
-
-    @property
-    def available_subjects(self) -> Dict[str, List[str]]:
-        """Get dictionary of available subjects per site"""
-        if self._subjects is None:
-            self._scan_file_structure()
-        return self._subjects
-
-    def _scan_file_structure(self) -> None:
-        """Scan file to determine available sites and subjects"""
-        try:
-            with h5py.File(self.source_data["file_path"], "r") as f:
-                # Get stream group
-                signal_group = f[self._stream_name]  # type: ignore
-
-                # Get sites
-                self._sites = list(signal_group.keys())
-
-                # Get subjects per site
-                self._subjects = {}
-                for site in self._sites:
-                    self._subjects[site] = list(signal_group[site].keys())
-
-        except Exception as e:
-            raise RuntimeError(f"Error scanning file structure: {e}")
-
-    def _extract_signal(
-        self,
-        t1: float = 0.0,
-        t2: float = 0.0,
-    ) -> Dict[str, np.ndarray]:
-        """
-        Extract processed fiber photometry signal for a specific subject.
-
-        Parameters
-        ----------
-        t1 : float, optional
-            Retrieve data starting at t1 (in seconds), default = 0 for start of recording.
-        t2 : float, optional
-            Retrieve data ending at t2 (in seconds), default = 0 for end of recording.
-
-        Returns
-        -------
-        np.ndarray
-            The extracted signal data.
-        """
-        power_field = "LP5mW"  # Does not work for varying frequencies protocol
-        try:
-            with h5py.File(self.source_data["file_path"], "r") as f:
-                stream_group: h5py.Group = f[self._stream_name]  # type: ignore
-                site_group: h5py.Group = stream_group[self._target_area]  # type: ignore
-                subject_group: h5py.Group = site_group[self._subject_id]  # type: ignore
-                dataset: h5py.Dataset = subject_group[power_field]  # type: ignore
-
-                rate = self.get_sampling_frequency()
-                signal = dataset[:].flatten()
-
-                start_index = int(t1 * rate) if t1 != 0.0 else 0
-                end_index = int(t2 * rate) if t2 != 0.0 else dataset.shape[0]
-
-                return signal[start_index:end_index]
-
-        except Exception as e:
-            raise RuntimeError(f"Error extracting signals for {self._subject_id} {self._target_area}: {e}")
-
-    def get_metadata(self) -> DeepDict:
-        """
-        Get metadata for the DemodulatedFiberPhotometryInterface.
-
-        Returns
-        -------
-        DeepDict
-            The metadata dictionary for this interface.
-        """
-        metadata = super().get_metadata()
-        return metadata
-
-    def get_metadata_schema(self) -> dict:
-        """
-        Get the metadata schema for the DemodulatedFiberPhotometryInterface.
-
-        Returns
-        -------
-        dict
-            The metadata schema for this interface.
-        """
-        metadata_schema = super().get_metadata_schema()
-        return metadata_schema
-
-    def get_sampling_frequency(self) -> float:
-        """
-        Get the sampling rate for a specific stream.
-
-        Returns
-        -------
-        float
-            The sampling rate in Hz.
-        """
-        return self._sampling_frequency
-
-    def get_num_samples(self) -> int:
-        """
-        Get the number of samples in the data.
-        Returns
-        -------
-        int
-            The number of samples.
-        """
-        if self._num_samples is None:
-            signal = self._extract_signal()
-            self._num_samples = len(signal)
-        return self._num_samples
-
-    def get_original_timestamps(self) -> np.ndarray:
-        """
-        Get the original timestamps for the data.
-
-        Returns
-        -------
-        np.ndarray
-            The original timestamps.
-        """
-        num_samples = self.get_num_samples()
-        rate = self.get_sampling_frequency()
-        original_timestamps = np.arange(0.0, num_samples / rate, 1 / rate)
-
-        return original_timestamps
-
-    def get_timestamps(self, t1: float = 0.0, t2: float = 0.0) -> np.ndarray:
-        """
-        Get the timestamps for the data.
-
-        Parameters
-        ----------
-        t1 : float, optional
-            Retrieve data starting at t1 (in seconds), default = 0 for start of recording.
-        t2 : float, optional
-            Retrieve data ending at t2 (in seconds), default = 0 for end of recording.
-
-        Returns
-        -------
-        np.ndarray
-            The timestamps.
-        """
-        if hasattr(self, "aligned_timestamps"):
-            timestamps = self.aligned_timestamps
-        else:
-            timestamps = self.get_original_timestamps() + self._starting_time
-
-        timestamps = timestamps[timestamps >= t1]
-        if t2 != 0.0:
-            timestamps = timestamps[timestamps < t2]
-        return timestamps
-
-    def set_aligned_timestamps(self, aligned_timestamps: np.ndarray) -> None:
-        """
-        Set the aligned timestamps for the data.
-
-        Parameters
-        ----------
-        aligned_timestamps : np.ndarray
-            The aligned timestamps.
-        """
-        self.aligned_timestamps = aligned_timestamps
-
-    def set_aligned_starting_time(self, aligned_starting_time: float) -> None:
-        """
-        Set the aligned starting time for the data.
-
-        Parameters
-        ----------
-        aligned_starting_time : float
-            The aligned starting time.
-        """
-        self._starting_time = aligned_starting_time
+        super().__init__(folder_path=folder_paths[0], verbose=verbose)
 
     def add_to_nwbfile(
         self,
         nwbfile: NWBFile,
         metadata: dict,
         *,
+        stream_name: str,
         stub_test: bool = False,
         t1: float = 0.0,
         t2: float = 0.0,
-        timing_source: Literal["original", "aligned_timestamps", "aligned_starting_time_and_rate"] = "original",
     ):
         """
         Add the data to an NWBFile.
@@ -485,63 +289,78 @@ class Lofti2025DemodulatedFiberPhotometryInterface(BaseTemporalAlignmentInterfac
             Retrieve data starting at t1 (in seconds), default = 0 for start of recording.
         t2 : float, optional
             Retrieve data ending at t2 (in seconds), default = 0 for end of recording.
-        timing_source : Literal["original", "aligned_timestamps", "aligned_starting_time_and_rate"], optional
-            Source of timing information for the data, default = "original".
 
         Raises
         ------
         AssertionError
             If the timing_source is not one of "original", "aligned_timestamps", or "aligned_starting_time_and_rate".
         """
-        from ndx_fiber_photometry import (
-            FiberPhotometryResponseSeries,
+        from ndx_fiber_photometry import FiberPhotometryResponseSeries
+
+        # Fiber Photometry Response Series
+        fiber_photometry_response_series_metadata = get_fp_series_metadata(metadata=metadata, stream_name=stream_name)
+        stream_indices = fiber_photometry_response_series_metadata.get("stream_indices", None)
+
+        fiber_photometry_table = get_fiber_photometry_table(nwbfile, metadata)
+        concatenated_timestamps = []
+        concatenated_data = []
+        for i, tdt_interface in enumerate(self._tdt_interfaces):
+
+            # Load Data
+            if stub_test:
+                assert (
+                    t2 == 0.0
+                ), f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
+                t2 = t1 + 1.0
+
+            tdt_photometry = tdt_interface.load(t1=t1, t2=t2)
+
+            # timing_source is used to avoid loading the data twice if alignment is NOT used.
+            # It is also used to determine whether or not to use the aligned timestamps or starting time and rate.
+            stream_name_to_timestamps = tdt_interface.get_timestamps(t1=t1, t2=t2)
+
+            # Get the timing information
+            timestamps = stream_name_to_timestamps[stream_name] + self.segment_starting_times[i]
+
+            # Get the data
+            data = tdt_photometry.streams[stream_name].data
+            if stream_indices is not None:
+                data = tdt_photometry.streams[stream_name].data[stream_indices, :]
+
+                # Transpose the data if it is in the wrong shape
+                if data.shape[0] < data.shape[1]:
+                    data = data.T
+
+            concatenated_data = np.concatenate((concatenated_data, data))
+            concatenated_timestamps = np.concatenate((concatenated_timestamps, timestamps))
+
+        # Fill gaps with NaNs
+        from hnasko_lab_to_nwb.lotfi_2025.utils import fill_gaps_w_nans
+
+        concatenated_data, concatenated_timestamps = fill_gaps_w_nans(
+            data=concatenated_data,
+            timestamps=concatenated_timestamps,
+            sampling_rate=tdt_photometry.streams[stream_name].fs,
         )
+        from neuroconv.utils.checks import calculate_regular_series_rate
 
-        # Load Data
-        if stub_test:
-            assert (
-                t2 == 0.0
-            ), f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
-            t2 = t1 + 1.0
-        data = self._extract_signal(t1=t1, t2=t2)
+        calculated_rate = calculate_regular_series_rate(concatenated_timestamps, tolerance_decimals=2)
+        if calculated_rate is not None:
+            timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=calculated_rate)
+        else:
+            timing_kwargs = dict(timestamps=concatenated_timestamps)
 
-        # Get series metadata
-        fiber_photometry_response_series_metadata = get_fp_series_metadata(
-            metadata=metadata, stream_name=self._stream_name, target_area=self._target_area
-        )
-
-        # Get or create FiberPhotometryTable
-        fiber_photometry_table = get_fiber_photometry_table(nwbfile=nwbfile, metadata=metadata)
         fiber_photometry_table_region = fiber_photometry_table.create_fiber_photometry_table_region(
             description=fiber_photometry_response_series_metadata["fiber_photometry_table_region_description"],
             region=fiber_photometry_response_series_metadata["fiber_photometry_table_region"],
         )
 
-        # Get the timing information
-        if timing_source == "aligned_timestamps":
-            timestamps = self.get_timestamps(t1=t1, t2=t2)
-            timing_kwargs = dict(timestamps=timestamps)
-        elif timing_source == "aligned_starting_time_and_rate":
-            rate = self.get_sampling_frequency()
-            starting_time = self.get_timestamps(t1=t1, t2=t2)[0]
-            timing_kwargs = dict(starting_time=starting_time, rate=rate)
-        else:
-            assert (
-                timing_source == "original"
-            ), "timing_source must be one of 'original', 'aligned_timestamps', or 'aligned_starting_time_and_rate'."
-            rate = self.get_sampling_frequency()
-            starting_time = 0.0
-            timing_kwargs = dict(starting_time=starting_time, rate=rate)
-
         fiber_photometry_response_series = FiberPhotometryResponseSeries(
             name=fiber_photometry_response_series_metadata["name"],
             description=fiber_photometry_response_series_metadata["description"],
-            data=data,
+            data=concatenated_data,
             unit=fiber_photometry_response_series_metadata["unit"],
             fiber_photometry_table_region=fiber_photometry_table_region,
             **timing_kwargs,
         )
-
-        # Add ophys module for processed fiber photometry signals if it doesn't exist
-        ophys_module = get_module(nwbfile=nwbfile, name="ophys", description="Processed fiber photometry signals")
-        ophys_module.add(fiber_photometry_response_series)
+        nwbfile.add_acquisition(fiber_photometry_response_series)
