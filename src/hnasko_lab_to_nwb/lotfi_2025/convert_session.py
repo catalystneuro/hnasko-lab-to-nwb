@@ -125,7 +125,6 @@ def varying_frequencies_session_to_nwb(
     # Handle exception for SN pan GABA recordings
     add_video_conversion = False
     if recording_type == "SN pan GABA recordings" and stimulus_location == "PPN":
-        # TODO add behavioral video conversion
         add_video_conversion = True
         tdt_folder_paths = list(protocol_folder_path.glob(f"{subject_id}-*"))
         ordered_mat_stim_ch_names = ["AllDurs"]
@@ -234,11 +233,11 @@ def varying_frequencies_session_to_nwb(
 
     # Add OptogeneticStimulation
     # TODO update for concatenated interface if needed
-    source_data.update(dict(OptogeneticStimulus=dict(folder_path=tdt_folder_paths[0], stimulus_site=stimulus_location)))
+    source_data.update(dict(OptogeneticStimulus=dict(folder_path=tdt_folder_paths[0])))
     conversion_options.update(
         dict(
             OptogeneticStimulus=dict(
-                stub_test=stub_test, tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency
+                tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency, stimulus_site=stimulus_location
             )
         )
     )
@@ -263,6 +262,17 @@ def varying_frequencies_session_to_nwb(
             metadata["Ophys"]["FiberPhotometry"][key] = [
                 fps for fps in fp_response_series if fps.get("target_area", None) == target_area
             ]
+
+    # Remove entries for other stimulus sites from metadata
+    for item in metadata["Optogenetics"]["OptogeneticEffectors"]:
+        if stimulus_location not in item["name"]:
+            metadata["Optogenetics"]["OptogeneticEffectors"].remove(item)
+    for item in metadata["Optogenetics"]["OptogeneticVirusInjections"]:
+        if stimulus_location not in item["name"]:
+            metadata["Optogenetics"]["OptogeneticVirusInjections"].remove(item)
+    for row in metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"]:
+        if stimulus_location not in row["effector"]:
+            metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"].remove(row)
 
     # Run conversion
     converter.run_conversion(
@@ -355,7 +365,6 @@ def varying_durations_session_to_nwb(  #
     # Handle exception for SN pan GABA recordings
     add_video_conversion = False
     if recording_type == "SN pan GABA recordings" and stimulus_location == "PPN":
-        # TODO add behavioral video conversion
         add_video_conversion = True
 
     source_data = dict()
@@ -439,11 +448,11 @@ def varying_durations_session_to_nwb(  #
         video_time_alignment_dict = None
 
     # Add OptogeneticStimulation
-    source_data.update(dict(OptogeneticStimulus=dict(folder_path=tdt_folder_path, stimulus_site=stimulus_location)))
+    source_data.update(dict(OptogeneticStimulus=dict(folder_path=tdt_folder_path)))
     conversion_options.update(
         dict(
             OptogeneticStimulus=dict(
-                stub_test=stub_test, tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency
+                tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency, stimulus_site=stimulus_location
             )
         )
     )
@@ -468,6 +477,17 @@ def varying_durations_session_to_nwb(  #
             metadata["Ophys"]["FiberPhotometry"][key] = [
                 fps for fps in fp_response_series if fps.get("target_area", None) == target_area
             ]
+
+    # Remove entries for other stimulus sites from metadata
+    for item in metadata["Optogenetics"]["OptogeneticEffectors"]:
+        if stimulus_location not in item["name"]:
+            metadata["Optogenetics"]["OptogeneticEffectors"].remove(item)
+    for item in metadata["Optogenetics"]["OptogeneticVirusInjections"]:
+        if stimulus_location not in item["name"]:
+            metadata["Optogenetics"]["OptogeneticVirusInjections"].remove(item)
+    for row in metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"]:
+        if stimulus_location not in row["effector"]:
+            metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"].remove(row)
 
     # Run conversion
     converter.run_conversion(

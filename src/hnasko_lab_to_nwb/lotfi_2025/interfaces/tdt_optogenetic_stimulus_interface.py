@@ -168,7 +168,6 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
     def __init__(
         self,
         folder_path: DirectoryPath,
-        stimulus_site: str,
         verbose: bool = True,
     ):
         """Initialize the Lofti2025TDTOptogeneticStimulusInterface.
@@ -185,9 +184,6 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
             verbose=verbose,
         )
         # This module should be here so ndx_optogenetics is in the global namespace when an pynwb.io object is created
-
-        # Cache available sites and subjects
-        self._stimulus_site = stimulus_site
 
     def get_metadata(self) -> DeepDict:
         """
@@ -233,7 +229,6 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         nwbfile: NWBFile,
         metadata: dict,
         tdt_stimulus_channel_to_frequency: dict,
-        stub_test: bool = False,
     ):
         """
         Add the data to an NWBFile.
@@ -244,8 +239,8 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
             The in-memory object to add the data to.
         metadata : dict
             Metadata dictionary with information used to create the NWBFile.
-        stub_test : bool, optional
-            If True, only add a subset of the data (1s) to the NWBFile for testing purposes, default = False.
+        tdt_stimulus_channel_to_frequency : dict
+            Mapping of TDT stimulus channel names to their corresponding frequencies.
         """
         from ndx_optogenetics import (
             OptogeneticEpochsTable,
@@ -280,7 +275,7 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
                     intertrain_interval_in_ms=0.0,
                     power_in_mW=metadata["Optogenetics"]["power_in_mW"],
                     wavelength_in_nm=metadata["Optogenetics"]["excitation_wavelength_in_nm"],
-                    optogenetic_sites=[0],  # TODO select the correct site by stimulus location
+                    optogenetic_sites=[0],  # assuming single stimulation site for now
                 )
 
         nwbfile.add_time_intervals(opto_epochs_table)
