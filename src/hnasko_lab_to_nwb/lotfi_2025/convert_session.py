@@ -120,8 +120,7 @@ def varying_frequencies_session_to_nwb(
     if stimulus_location not in ["PPN", "STN"]:
         raise ValueError(f"Unknown stimulus location: {stimulus_location}")
 
-    tdt_stim_ch_names = ["H10_", "H20_", "H40_", "H05_"]
-    stim_frequencies = [10.0, 20.0, 40.0, 5.0]
+    tdt_stimulus_channel_to_frequency = {"H10_": 10.0, "H20_": 20.0, "H40_": 40.0, "H05_": 5.0}
 
     # Handle exception for SN pan GABA recordings
     add_video_conversion = False
@@ -233,12 +232,20 @@ def varying_frequencies_session_to_nwb(
     else:
         video_time_alignment_dict = None
 
+    # Add OptogeneticStimulation
+    # TODO update for concatenated interface if needed
+    source_data.update(dict(OptogeneticStimulus=dict(folder_path=tdt_folder_paths[0], stimulus_site=stimulus_location)))
+    conversion_options.update(
+        dict(
+            OptogeneticStimulus=dict(
+                stub_test=stub_test, tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency
+            )
+        )
+    )
+
     converter = Lofti2025NWBConverter(
         source_data=source_data, verbose=verbose, video_time_alignment_dict=video_time_alignment_dict
     )
-
-    # Add OptogeneticStimulation
-    # TODO add optogenetic stimulation interface to the converter and add the metadata here
 
     # Update default metadata with the editable in the corresponding yaml file
     metadata = converter.get_metadata()
@@ -341,8 +348,8 @@ def varying_durations_session_to_nwb(  #
     if stimulus_location not in ["PPN", "STN"]:
         raise ValueError(f"Unknown stimulus location: {stimulus_location}")
 
-    tdt_stim_ch_names = ["sms_", "s1s_", "s4s_"]
-    stim_frequencies = [40.0, 40.0, 40.0]
+    tdt_stimulus_channel_to_frequency = {"sms_": 40.0, "s1s_": 40.0, "s4s_": 40.0, "ssm_": 40.0}  # include typo
+
     mat_stim_ch_name = "LP5mW"
 
     # Handle exception for SN pan GABA recordings
@@ -410,7 +417,7 @@ def varying_durations_session_to_nwb(  #
             )
         )
 
-        # Add Behavioral Video if needed
+    # Add Behavioral Video if needed
     if add_video_conversion:
         from hnasko_lab_to_nwb.lotfi_2025.utils import get_video_aligned_starting_time
 
@@ -431,12 +438,19 @@ def varying_durations_session_to_nwb(  #
     else:
         video_time_alignment_dict = None
 
+    # Add OptogeneticStimulation
+    source_data.update(dict(OptogeneticStimulus=dict(folder_path=tdt_folder_path, stimulus_site=stimulus_location)))
+    conversion_options.update(
+        dict(
+            OptogeneticStimulus=dict(
+                stub_test=stub_test, tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency
+            )
+        )
+    )
+
     converter = Lofti2025NWBConverter(
         source_data=source_data, verbose=verbose, video_time_alignment_dict=video_time_alignment_dict
     )
-
-    # Add OptogeneticStimulation
-    # TODO add optogenetic stimulation interface to the converter and add the metadata here
 
     # Update default metadata with the editable in the corresponding yaml file
     metadata = converter.get_metadata()
@@ -466,8 +480,8 @@ def varying_durations_session_to_nwb(  #
 if __name__ == "__main__":
 
     # Parameters for conversion
-    data_dir_path = Path("D:/Hnasko-CN-data-share/")
-    output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
+    data_dir_path = Path("F:/Hnasko-CN-data-share/")
+    output_dir_path = Path("F:/hnasko_lab_conversion_nwb")
 
     recording_type = "SN pan GABA recordings"  # "GRABDA recordings"  "SN pan DA recordings" "Str_DA_terminal recordings" "SN pan GABA recordings"
     stimulus_location = "PPN"  # "PPN" "STN"

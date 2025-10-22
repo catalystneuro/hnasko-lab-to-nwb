@@ -8,6 +8,7 @@ from hnasko_lab_to_nwb.lotfi_2025.interfaces import (
     ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
     ConcatenatedTDTFiberPhotometryInterface,
     Lofti2025ProcessedFiberPhotometryInterface,
+    Lofti2025TDTOptogeneticStimulusInterface,
 )
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import ExternalVideoInterface, TDTFiberPhotometryInterface
@@ -35,6 +36,7 @@ class Lofti2025NWBConverter(NWBConverter):
             "DemodulatedFiberPhotometry": Lofti2025ProcessedFiberPhotometryInterface,
             "DownsampledFiberPhotometry": Lofti2025ProcessedFiberPhotometryInterface,
             "DeltaFOverF": Lofti2025ProcessedFiberPhotometryInterface,
+            "OptogeneticStimulus": Lofti2025TDTOptogeneticStimulusInterface,
         }
         concatenated_data_interface_name_mapping = {
             "ConcatenatedRawFiberPhotometry": ConcatenatedTDTFiberPhotometryInterface,
