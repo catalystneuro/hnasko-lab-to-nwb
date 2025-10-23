@@ -232,14 +232,9 @@ def varying_frequencies_session_to_nwb(
         video_time_alignment_dict = None
 
     # Add OptogeneticStimulation
-    # TODO update for concatenated interface if needed
-    source_data.update(dict(OptogeneticStimulus=dict(folder_path=tdt_folder_paths[0])))
+    source_data.update(dict(ConcatenatedOptogeneticStimulus=dict(folder_paths=tdt_folder_paths)))
     conversion_options.update(
-        dict(
-            OptogeneticStimulus=dict(
-                tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency, stimulus_site=stimulus_location
-            )
-        )
+        dict(ConcatenatedOptogeneticStimulus=dict(tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency))
     )
 
     converter = Lofti2025NWBConverter(
@@ -450,11 +445,7 @@ def varying_durations_session_to_nwb(  #
     # Add OptogeneticStimulation
     source_data.update(dict(OptogeneticStimulus=dict(folder_path=tdt_folder_path)))
     conversion_options.update(
-        dict(
-            OptogeneticStimulus=dict(
-                tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency, stimulus_site=stimulus_location
-            )
-        )
+        dict(OptogeneticStimulus=dict(tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency))
     )
 
     converter = Lofti2025NWBConverter(
@@ -505,7 +496,7 @@ if __name__ == "__main__":
 
     recording_type = "SN pan GABA recordings"  # "GRABDA recordings"  "SN pan DA recordings" "Str_DA_terminal recordings" "SN pan GABA recordings"
     stimulus_location = "PPN"  # "PPN" "STN"
-    subject_id = "C4550"
+    subject_id = "C4550"  # "C2618" "C2659" "B8627" "C4550"
     parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
 
     varying_frequencies_session_to_nwb(

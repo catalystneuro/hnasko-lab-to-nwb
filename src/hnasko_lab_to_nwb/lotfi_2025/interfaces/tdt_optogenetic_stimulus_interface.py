@@ -1,5 +1,7 @@
 from copy import deepcopy
+from datetime import datetime
 from logging import warning
+from typing import List
 
 from pydantic import DirectoryPath, validate_call
 from pynwb.file import NWBFile
@@ -7,6 +9,7 @@ from pynwb.file import NWBFile
 from neuroconv.basetemporalalignmentinterface import BaseDataInterface
 from neuroconv.tools.fiber_photometry import add_ophys_device, add_ophys_device_model
 from neuroconv.utils import DeepDict
+import pytz
 
 
 def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
@@ -149,9 +152,9 @@ def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
 
 class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
     """
-    Data Interface for converting processed optogenetic stimulus data from a Hnasko Lab tdt files.
+    Data Interface for converting optogenetic stimulus data from a Hnasko Lab tdt files.
 
-    Extracts demodulated optogenetic stimulus signals from TDT system, then parses into the ndx-optogenetic format.
+    Extracts optogenetic stimulus signals from TDT system, then parses into the ndx-optogenetic format.
 
     Verified to work with:
     - SNr GABA recordings (PPN stimulation)
@@ -159,10 +162,10 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
     - SNc pan-DA recordings (STN stimulation)
     """
 
-    keywords = ("processed optogenetic stimulus",)
+    keywords = ("optogenetic stimulus",)
     display_name = "Lofti2025TDTOptogeneticStimulus"
-    info = "Data Interface for converting optogenetic stimulus data from processed .tdt files from Hnasko Lab."
-    associated_suffixes = (".tdt",)
+    info = "Data Interface for converting optogenetic stimulus data from .tdt files from Hnasko Lab."
+    associated_suffixes = ("Tbk", "Tdx", "tev", "tin", "tsq")
 
     @validate_call
     def __init__(
@@ -257,6 +260,165 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         opto_epochs_table.add_column(name="stimulus_frequency", description="Frequency of the stimulation in Hz.")
         # Populate
         tdt_events = self.get_events()
+        for stream_name, stimulus_frequency in tdt_stimulus_channel_to_frequency.items():
+            if stream_name not in tdt_events:
+                warning(f"Stream name {stream_name} not found in TDT events. Skipping.")
+                continue
+            for start_time, stop_time in zip(tdt_events[stream_name]["onset"], tdt_events[stream_name]["offset"]):
+                number_pulses_per_pulse_train = int((stop_time - start_time) * stimulus_frequency)
+                opto_epochs_table.add_row(
+                    start_time=start_time,
+                    stop_time=stop_time,
+                    stimulus_frequency=stimulus_frequency,
+                    stimulation_on=True,
+                    pulse_length_in_ms=1.0,  # Unknown
+                    period_in_ms=(1 / stimulus_frequency) * 1000,
+                    number_pulses_per_pulse_train=number_pulses_per_pulse_train,
+                    number_trains=1,
+                    intertrain_interval_in_ms=0.0,
+                    power_in_mW=metadata["Optogenetics"]["power_in_mW"],
+                    wavelength_in_nm=metadata["Optogenetics"]["excitation_wavelength_in_nm"],
+                    optogenetic_sites=[0],  # assuming single stimulation site for now
+                )
+
+        nwbfile.add_time_intervals(opto_epochs_table)
+
+
+class ConcatenatedLofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
+    """
+    Data Interface for converting and concatenating optogenetic stimulus data from multiple Hnasko Lab tdt folders.
+
+    Extracts optogenetic stimulus signals from TDT system, then parses into the ndx-optogenetic format.
+
+    Verified to work with:
+    - SNr GABA recordings (PPN stimulation)
+    - GRAB-DA recordings (DLS & TS sites, PPN stimulation)
+    - SNc pan-DA recordings (STN stimulation)
+    """
+
+    keywords = ("processed optogenetic stimulus",)
+    display_name = "Lofti2025TDTOptogeneticStimulus"
+    info = "Data Interface for converting optogenetic stimulus data from .tdt files from Hnasko Lab."
+    associated_suffixes = ("Tbk", "Tdx", "tev", "tin", "tsq")
+
+    @validate_call
+    def __init__(
+        self,
+        folder_paths: List[DirectoryPath],
+        verbose: bool = True,
+    ):
+        """Initialize the ConcatenatedLofti2025TDTOptogeneticStimulusInterface.
+
+        Parameters
+        ----------
+        file_path : FilePath
+            The path to the .mat file containing the processed optogenetic stimulus data.
+        verbose : bool, optional
+            Whether to print status messages, default = True.
+        """
+        super().__init__(
+            folder_paths=folder_paths,
+            verbose=verbose,
+        )
+        # This module should be here so ndx_optogenetics is in the global namespace when an pynwb.io object is created
+
+    def get_metadata(self) -> DeepDict:
+        """
+        Get metadata for the ConcatenatedLofti2025TDTOptogeneticStimulusInterface.
+
+        Returns
+        -------
+        DeepDict
+            The metadata dictionary for this interface.
+        """
+        metadata = super().get_metadata()
+        return metadata
+
+    def get_metadata_schema(self) -> dict:
+        """
+        Get the metadata schema for the Lofti2025TDTOptogeneticStimulusInterface.
+
+        Returns
+        -------
+        dict
+            The metadata schema for this interface.
+        """
+        metadata_schema = super().get_metadata_schema()
+        return metadata_schema
+
+    def get_concatenated_events(self) -> dict:
+        """
+        Get the events from the Lofti2025TDTOptogeneticStimulusInterface.
+
+        Returns
+        -------
+        dict
+            The events dictionary for this interface.
+        """
+        from neuroconv.datainterfaces import TDTFiberPhotometryInterface
+
+        all_events = {}
+        tdt_interfaces = []
+        session_start_datetimes = []
+        for folder_path in self.source_data["folder_paths"]:
+            tdt_interface = TDTFiberPhotometryInterface(folder_path=folder_path)
+            tdt_photometry = tdt_interface.load(evtype=["scalars"])
+            start_timestamp = tdt_photometry.info.start_date.timestamp()
+            session_start_datetime = datetime.fromtimestamp(start_timestamp, tz=pytz.utc)
+            tdt_interfaces.append(tdt_interface)
+            session_start_datetimes.append(session_start_datetime)
+
+        assert session_start_datetimes == sorted(
+            session_start_datetimes
+        ), "Session start times are not in chronological order. Please provide folder paths in chronological order."
+        # Calculate segment start times based on the session start datetimes
+        # E.g. we have three consecutive sessions starting at times 10:00, 10:20, and 10:40 on the same day
+        # we want segment_starting_times to be [0, 1200, 2400] (in seconds)
+        segment_starting_times = [(dt - session_start_datetimes[0]).total_seconds() for dt in session_start_datetimes]
+        for tdt_interface, segment_start_time in zip(tdt_interfaces, segment_starting_times):
+            # Adjust event times by adding segment_start_time
+            events = tdt_interface.get_events()
+            for stream_name, stream_events in events.items():
+                if stream_name not in all_events:
+                    all_events[stream_name] = {"onset": [], "offset": []}
+                all_events[stream_name]["onset"].extend(stream_events["onset"] + segment_start_time)
+                all_events[stream_name]["offset"].extend(stream_events["offset"] + segment_start_time)
+
+        return all_events
+
+    def add_to_nwbfile(
+        self,
+        nwbfile: NWBFile,
+        metadata: dict,
+        tdt_stimulus_channel_to_frequency: dict,
+    ):
+        """
+        Add the data to an NWBFile.
+
+        Parameters
+        ----------
+        nwbfile : pynwb.NWBFile
+            The in-memory object to add the data to.
+        metadata : dict
+            Metadata dictionary with information used to create the NWBFile.
+        tdt_stimulus_channel_to_frequency : dict
+            Mapping of TDT stimulus channel names to their corresponding frequencies.
+        """
+        from ndx_optogenetics import (
+            OptogeneticEpochsTable,
+        )
+
+        # Get or create OptogeneticEpochsTable
+        optogenetic_experiment_metadata = get_optogenetic_experiment_metadata(nwbfile=nwbfile, metadata=metadata)
+        optogenetic_sites_table = optogenetic_experiment_metadata.optogenetic_sites_table
+        # Create stimulation epochs table if it doesn't exist
+        opto_epochs_table = OptogeneticEpochsTable(
+            **metadata["Optogenetics"]["OptogeneticEpochsTable"],
+            target_tables={"optogenetic_sites": optogenetic_sites_table},
+        )
+        opto_epochs_table.add_column(name="stimulus_frequency", description="Frequency of the stimulation in Hz.")
+        # Populate
+        tdt_events = self.get_concatenated_events()
         for stream_name, stimulus_frequency in tdt_stimulus_channel_to_frequency.items():
             if stream_name not in tdt_events:
                 warning(f"Stream name {stream_name} not found in TDT events. Skipping.")

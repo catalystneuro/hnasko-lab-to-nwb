@@ -334,6 +334,11 @@ class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
             concatenated_data = np.concatenate((concatenated_data, data))
             concatenated_timestamps = np.concatenate((concatenated_timestamps, timestamps))
 
+            # Add trials for each segment
+            if len(self._tdt_interfaces) > 1:
+                tag = tdt_interface.source_data["folder_path"].parts[-2].replace("varFreq_", "")
+                nwbfile.add_trial(start_time=timestamps[0], stop_time=timestamps[-1], tags=tag)
+
         # Fill gaps with NaNs
         from hnasko_lab_to_nwb.lotfi_2025.utils import fill_gaps_w_nans
 
