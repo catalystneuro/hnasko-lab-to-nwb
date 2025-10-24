@@ -122,6 +122,8 @@ def varying_frequencies_session_to_nwb(
 
     tdt_stimulus_channel_to_frequency = {"H10_": 10.0, "H20_": 20.0, "H40_": 40.0, "H05_": 5.0}
 
+    mat_stim_ch_names = ["s250ms", "s1s", "s4s"]
+
     # Handle exception for SN pan GABA recordings
     add_video_conversion = False
     if recording_type == "SN pan GABA recordings" and stimulus_location == "PPN":
@@ -129,13 +131,12 @@ def varying_frequencies_session_to_nwb(
         tdt_folder_paths = list(protocol_folder_path.glob(f"{subject_id}-*"))
         ordered_mat_stim_ch_names = ["AllDurs"]
     else:
-        mat_stim_ch_names = ["s250ms", "s1s", "s4s"]
         if recording_type == "SN pan GABA recordings" and stimulus_location == "STN":
             mat_stim_ch_names = ["s250ms5mW", "s1s10mW"]
 
         tdt_folder_paths = list(protocol_folder_path.glob(f"varFreq_*/{subject_id}-*"))
-        # Sort the folders based on the session_starting_time_string
-        tdt_folder_paths.sort(key=lambda x: x.name.split("-")[-1])
+        # Sort the folders based on the session_starting_time_string. Under the assumption that the folders are named as {subject_id}-{day_string:%y%m%d}-{%H%M%S}
+        tdt_folder_paths.sort(key=lambda x: x.name.split("-")[-2] + x.name.split("-")[-1])
         ordered_mat_stim_ch_names = []
         for folder in tdt_folder_paths:
             if "varFreq_250ms" in folder.parent.name:
@@ -361,6 +362,9 @@ def varying_durations_session_to_nwb(  #
     add_video_conversion = False
     if recording_type == "SN pan GABA recordings" and stimulus_location == "PPN":
         add_video_conversion = True
+    if recording_type == "SN pan GABA recordings" and stimulus_location == "STN":
+        # Update the TDT stimulus channel to frequency mapping for this specific case
+        tdt_stimulus_channel_to_frequency = {"S1s_": 40.0, "S4s_": 40.0, "S6s_": 40.0, "Sms_": 40.0}
 
     source_data = dict()
     conversion_options = dict()
@@ -495,8 +499,8 @@ if __name__ == "__main__":
     output_dir_path = Path("F:/hnasko_lab_conversion_nwb")
 
     recording_type = "SN pan GABA recordings"  # "GRABDA recordings"  "SN pan DA recordings" "Str_DA_terminal recordings" "SN pan GABA recordings"
-    stimulus_location = "PPN"  # "PPN" "STN"
-    subject_id = "C4550"  # "C2618" "C2659" "B8627" "C4550"
+    stimulus_location = "STN"  # "PPN" "STN"
+    subject_id = "B7514"  # "C2618" "C2659" "B8627" "C4550"
     parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
 
     varying_frequencies_session_to_nwb(
