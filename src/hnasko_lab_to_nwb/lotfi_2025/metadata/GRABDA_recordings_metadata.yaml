@@ -326,7 +326,7 @@ Ophys:
       # - name: raw_signal_SNc
       #   description: The raw modulated fluorescence signal from GCaMP6f calcium indicator in SNc DA neurons, excited at 465nm and 405nm, respectively.
       #   stream_name: Fi1r
-      #   stream_indices: 0
+      #   stream_indices: None
       #   target_area: SNc
       #   unit: a.u.
       #   fiber_photometry_table_region: [0]
@@ -334,6 +334,7 @@ Ophys:
       - name: raw_signal_DLS
         description: The raw modulated fluorescence signal from GRABDA2m dopamine indicator in DLS neurons, excited at 465nm and 405nm, respectively.
         stream_name: Fi1r # TODO check stream name
+        stream_indices: None
         target_area: DLS
         unit: a.u.
         fiber_photometry_table_region: [2]
@@ -341,6 +342,7 @@ Ophys:
       - name: raw_signal_TS
         description: The raw modulated fluorescence signal from GRABDA2m dopamine indicator in TS neurons, excited at 465nm and 405nm, respectively.
         stream_name: Fi1r # TODO check stream name
+        stream_indices: None
         target_area: TS
         unit: a.u.
         fiber_photometry_table_region: [4]

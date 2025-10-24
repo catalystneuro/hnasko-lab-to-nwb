@@ -270,6 +270,7 @@ class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
         metadata: dict,
         *,
         stream_name: str,
+        fill_gaps: bool = False,
         stub_test: bool = False,
         t1: float = 0.0,
         t2: float = 0.0,
@@ -330,7 +331,11 @@ class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
                 # Transpose the data if it is in the wrong shape
                 if data.shape[0] < data.shape[1]:
                     data = data.T
-
+            # if data shape > 1 D, flatten it
+            if len(data.shape) > 1:
+                data = data.flatten()
+            if len(data.shape) > 1:
+                data = data.flatten()
             concatenated_data = np.concatenate((concatenated_data, data))
             concatenated_timestamps = np.concatenate((concatenated_timestamps, timestamps))
 
@@ -340,18 +345,21 @@ class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
                 nwbfile.add_trial(start_time=timestamps[0], stop_time=timestamps[-1], tags=tag)
 
         # Fill gaps with NaNs
-        from hnasko_lab_to_nwb.lotfi_2025.utils import fill_gaps_w_nans
+        if fill_gaps:
+            from hnasko_lab_to_nwb.lotfi_2025.utils import fill_gaps_w_nans
 
-        concatenated_data, concatenated_timestamps = fill_gaps_w_nans(
-            data=concatenated_data,
-            timestamps=concatenated_timestamps,
-            sampling_rate=tdt_photometry.streams[stream_name].fs,
-        )
-        from neuroconv.utils.checks import calculate_regular_series_rate
+            concatenated_data, concatenated_timestamps = fill_gaps_w_nans(
+                data=concatenated_data,
+                timestamps=concatenated_timestamps,
+                sampling_rate=tdt_photometry.streams[stream_name].fs,
+            )
+            from neuroconv.utils.checks import calculate_regular_series_rate
 
-        calculated_rate = calculate_regular_series_rate(concatenated_timestamps, tolerance_decimals=2)
-        if calculated_rate is not None:
-            timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=calculated_rate)
+            calculated_rate = calculate_regular_series_rate(concatenated_timestamps, tolerance_decimals=2)
+            if calculated_rate is not None:
+                timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=calculated_rate)
+            else:
+                timing_kwargs = dict(timestamps=concatenated_timestamps)
         else:
             timing_kwargs = dict(timestamps=concatenated_timestamps)
 
@@ -366,6 +374,6 @@ class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
             data=concatenated_data,
             unit=fiber_photometry_response_series_metadata["unit"],
             fiber_photometry_table_region=fiber_photometry_table_region,
-            **timing_kwargs,
+            timestamps=concatenated_timestamps,
         )
         nwbfile.add_acquisition(fiber_photometry_response_series)

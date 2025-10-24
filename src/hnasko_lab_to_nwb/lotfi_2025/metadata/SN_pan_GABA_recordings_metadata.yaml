@@ -205,6 +205,7 @@ Ophys:
       - name: raw_signal_SNr
         description: The raw modulated fluorescence signal from GCaMP6f calcium indicator in SNr GABAergic neurons, excited at 465nm and 405nm, respectively.
         stream_name: Fi1r
+        stream_indices: None
         target_area: SNr
         unit: a.u.
         fiber_photometry_table_region: [0]

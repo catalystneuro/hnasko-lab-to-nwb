@@ -121,8 +121,10 @@ def varying_frequencies_session_to_nwb(
         raise ValueError(f"Unknown stimulus location: {stimulus_location}")
 
     tdt_stimulus_channel_to_frequency = {"H10_": 10.0, "H20_": 20.0, "H40_": 40.0, "H05_": 5.0}
-
     mat_stim_ch_names = ["s250ms", "s1s", "s4s"]
+    stream_indices = None
+    raw_sampling_frequency = 6103.5156
+    fill_gaps = True
 
     # Handle exception for SN pan GABA recordings
     add_video_conversion = False
@@ -133,6 +135,9 @@ def varying_frequencies_session_to_nwb(
     else:
         if recording_type == "SN pan GABA recordings" and stimulus_location == "STN":
             mat_stim_ch_names = ["s250ms5mW", "s1s10mW"]
+            stream_indices = [2]
+            raw_sampling_frequency = 24414.0625
+            fill_gaps = False
 
         tdt_folder_paths = list(protocol_folder_path.glob(f"varFreq_*/{subject_id}-*"))
         # Sort the folders based on the session_starting_time_string. Under the assumption that the folders are named as {subject_id}-{day_string:%y%m%d}-{%H%M%S}
@@ -153,7 +158,9 @@ def varying_frequencies_session_to_nwb(
 
     # Add FiberPhotometry
     source_data.update(dict(ConcatenatedRawFiberPhotometry=dict(folder_paths=tdt_folder_paths)))
-    conversion_options.update(dict(ConcatenatedRawFiberPhotometry=dict(stub_test=stub_test, stream_name="Fi1r")))
+    conversion_options.update(
+        dict(ConcatenatedRawFiberPhotometry=dict(stub_test=stub_test, stream_name="Fi1r", fill_gaps=fill_gaps))
+    )
 
     # Extract session starting time from TDT data
     # Assume that the tdt folders are named as {subject_id}-{session_starting_time_string}
@@ -188,7 +195,7 @@ def varying_frequencies_session_to_nwb(
                         subject_id=subject_id,
                         stream_name=stream_name,
                         target_area=target_area,
-                        sampling_frequency=6103.5156 if "raw" in stream_name else 100.0,
+                        sampling_frequency=raw_sampling_frequency if "raw" in stream_name else 100.0,
                     )
                 }
             )
@@ -200,6 +207,7 @@ def varying_frequencies_session_to_nwb(
                         stub_test=stub_test,
                         stimulus_channel_names=ordered_mat_stim_ch_names,
                         segment_starting_times=segment_starting_times,
+                        fill_gaps=fill_gaps,
                     )
                 }
             )
@@ -258,6 +266,9 @@ def varying_frequencies_session_to_nwb(
             metadata["Ophys"]["FiberPhotometry"][key] = [
                 fps for fps in fp_response_series if fps.get("target_area", None) == target_area
             ]
+
+    for i in range(len(metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"])):
+        metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"][i]["stream_indices"] = stream_indices
 
     # Remove entries for other stimulus sites from metadata
     for item in metadata["Optogenetics"]["OptogeneticEffectors"]:
@@ -355,8 +366,9 @@ def varying_durations_session_to_nwb(  #
         raise ValueError(f"Unknown stimulus location: {stimulus_location}")
 
     tdt_stimulus_channel_to_frequency = {"sms_": 40.0, "s1s_": 40.0, "s4s_": 40.0, "ssm_": 40.0}  # include typo
-
     mat_stim_ch_name = "LP5mW"
+    stream_indices = None
+    raw_sampling_frequency = 6103.5156
 
     # Handle exception for SN pan GABA recordings
     add_video_conversion = False
@@ -365,6 +377,8 @@ def varying_durations_session_to_nwb(  #
     if recording_type == "SN pan GABA recordings" and stimulus_location == "STN":
         # Update the TDT stimulus channel to frequency mapping for this specific case
         tdt_stimulus_channel_to_frequency = {"S1s_": 40.0, "S4s_": 40.0, "S6s_": 40.0, "Sms_": 40.0}
+        stream_indices = [2]
+        raw_sampling_frequency = 24414.0625
 
     source_data = dict()
     conversion_options = dict()
@@ -409,7 +423,7 @@ def varying_durations_session_to_nwb(  #
                         subject_id=subject_id,
                         stream_name=stream_name,
                         target_area=target_area,
-                        sampling_frequency=6103.5156 if "raw" in stream_name else 100.0,
+                        sampling_frequency=raw_sampling_frequency if "raw" in stream_name else 100.0,
                     )
                 }
             )
@@ -473,6 +487,9 @@ def varying_durations_session_to_nwb(  #
                 fps for fps in fp_response_series if fps.get("target_area", None) == target_area
             ]
 
+    for i in range(len(metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"])):
+        metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"][i]["stream_indices"] = stream_indices
+
     # Remove entries for other stimulus sites from metadata
     for item in metadata["Optogenetics"]["OptogeneticEffectors"]:
         if stimulus_location not in item["name"]:
@@ -498,9 +515,9 @@ if __name__ == "__main__":
     data_dir_path = Path("F:/Hnasko-CN-data-share/")
     output_dir_path = Path("F:/hnasko_lab_conversion_nwb")
 
-    recording_type = "SN pan GABA recordings"  # "GRABDA recordings"  "SN pan DA recordings" "Str_DA_terminal recordings" "SN pan GABA recordings"
-    stimulus_location = "STN"  # "PPN" "STN"
-    subject_id = "B7514"  # "C2618" "C2659" "B8627" "C4550"
+    recording_type = "GRABDA recordings"  # "GRABDA recordings"  "SN pan DA recordings" "Str_DA_terminal recordings" "SN pan GABA recordings"
+    stimulus_location = "PPN"  # "PPN" "STN"
+    subject_id = "C2618"  # "C2618" "C2659" "B8627" "C4550" "B7514"
     parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
 
     varying_frequencies_session_to_nwb(
