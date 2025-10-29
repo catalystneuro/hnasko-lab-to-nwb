@@ -414,39 +414,15 @@ Optogenetics:
       description: Red LED device used for optogenetic stimulation.
       model: optogenetic_excitation_source_model
       power_in_W: 0.005 # 5mW
-  OpticalFiberModels:
-    - name: dummy_optical_fiber_model
-      description: Only for compatibility with NWB schema, no optical fiber is implanted for optogenetic stimulation in this setup.
-      manufacturer: RWD
-      model_number: <model of the optical fiber> # TODO add model number
-      numerical_aperture: 0.39
-      core_diameter_in_um: 400.0
-      active_length_in_mm: 6.0
-      ferrule_diameter_in_mm: 1.25
-      ferrule_name: black ceramic ferrule
-  OpticalFibers:
-    - name: dummy_optical_fiber
-      description: Only for compatibility with NWB schema, no optical fiber is implanted for optogenetic stimulation in this setup.
-      model: dummy_optical_fiber_model
-      serial_number: <serial number of the optical fiber> # TODO add serial number
-      fiber_insertion:
-        insertion_position_ap_in_mm: 0.0
-        insertion_position_ml_in_mm: 0.0 # TODO: get ML coordinate from a subject-wise map (depends on hemisphere)
-        insertion_position_dv_in_mm: 0.0
-        position_reference: bregma
-        hemisphere: right # TODO: get hemisphere from a subject-wise map
   OptogeneticSitesTable:
     name: optogenetic_sites_table
     description: Information about each optogenetic site, including the excitation source, and targeted effector.
     rows:
       - name: 0
         excitation_source: optogenetic_excitation_source
-        # TODO this setup does not include an optical fiber for optogenetic stimulation (probably this is a requirement for the NWB schema --> need to open an issue)
-        optical_fiber: dummy_optical_fiber
         effector: chrimsonR_STN
       - name: 1
         excitation_source: optogenetic_excitation_source
-        optical_fiber: dummy_optical_fiber
         effector: chrimsonR_PPN
   OptogeneticEpochsTable:
     name: optogenetic_epochs_table

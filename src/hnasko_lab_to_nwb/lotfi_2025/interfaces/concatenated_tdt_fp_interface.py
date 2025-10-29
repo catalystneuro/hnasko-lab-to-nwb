@@ -374,6 +374,6 @@ class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
             data=concatenated_data,
             unit=fiber_photometry_response_series_metadata["unit"],
             fiber_photometry_table_region=fiber_photometry_table_region,
-            timestamps=concatenated_timestamps,
+            **timing_kwargs,
         )
         nwbfile.add_acquisition(fiber_photometry_response_series)
