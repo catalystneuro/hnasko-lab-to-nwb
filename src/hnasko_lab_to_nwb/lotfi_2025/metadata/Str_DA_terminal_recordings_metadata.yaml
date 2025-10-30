@@ -18,7 +18,7 @@ NWBFile:
   experimenter:
     - Hadjas, Lotfi
     - Hollon, Nick
-  surgery:
+  surgery: # TODO verify and expand surgery description
     Mice > 6 weeks old were anesthetized with isoflurane (4% for induction; 1-2% for maintenance).
     For monitoring DA release in striatal subregions VGLUT2-Cre mice were injected with AAV5-Syn-FLEX-ChrimsonR-tdTomato in either STN or PPN as above.
     And 300 nl of AAV9-EF1a-GRABDA2m (2e12 vg/mL, Addgene 140553) was injected in either DLS (AP +0.5, ML +/-2.25, DV -2.95) or TS (AP -1.25, ML +/-2.9, DV -3.45).
@@ -38,7 +38,7 @@ Subject:
   age: P6W
   sex: U
   strain: C57BL/6J
-  genotype: VGLUT2-IRES-CRE
+  genotype: VGLUT2-IRES-CRE/DAT-flp
 Behavior:
   ExternalVideos:
     BehavioralVideo:
@@ -326,7 +326,7 @@ Ophys:
       # - name: raw_signal_SNc
       #   description: The raw modulated fluorescence signal from GCaMP6f calcium indicator in SNc DA neurons, excited at 465nm and 405nm, respectively.
       #   stream_name: Fi1r
-      #   stream_indices: None
+      #   stream_indices: 0
       #   target_area: SNc
       #   unit: a.u.
       #   fiber_photometry_table_region: [0]
@@ -334,7 +334,6 @@ Ophys:
       - name: raw_signal_DLS
         description: The raw modulated fluorescence signal from GRABDA2m dopamine indicator in DLS neurons, excited at 465nm and 405nm, respectively.
         stream_name: Fi1r # TODO check stream name
-        stream_indices: None
         target_area: DLS
         unit: a.u.
         fiber_photometry_table_region: [2]
@@ -342,7 +341,6 @@ Ophys:
       - name: raw_signal_TS
         description: The raw modulated fluorescence signal from GRABDA2m dopamine indicator in TS neurons, excited at 465nm and 405nm, respectively.
         stream_name: Fi1r # TODO check stream name
-        stream_indices: None
         target_area: TS
         unit: a.u.
         fiber_photometry_table_region: [4]

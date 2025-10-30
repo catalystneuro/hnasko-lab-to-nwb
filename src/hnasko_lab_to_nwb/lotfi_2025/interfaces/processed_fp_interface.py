@@ -612,6 +612,7 @@ class ConcatenatedLofti2025ProcessedFiberPhotometryInterface(Lofti2025ProcessedF
         *,
         stimulus_channel_names: list[str],
         segment_starting_times: list[float],
+        fill_gaps: bool = False,
         stub_test: bool = False,
         t1: float = 0.0,
         t2: float = 0.0,
@@ -680,19 +681,22 @@ class ConcatenatedLofti2025ProcessedFiberPhotometryInterface(Lofti2025ProcessedF
             concatenated_timestamps = np.concatenate((concatenated_timestamps, timestamps))
 
         # Fill gaps with NaNs
-        from hnasko_lab_to_nwb.lotfi_2025.utils import fill_gaps_w_nans
+        if fill_gaps:
+            from hnasko_lab_to_nwb.lotfi_2025.utils import fill_gaps_w_nans
 
-        concatenated_data, concatenated_timestamps = fill_gaps_w_nans(
-            data=concatenated_data,
-            timestamps=concatenated_timestamps,
-            sampling_rate=self.get_sampling_frequency(),
-        )
+            concatenated_data, concatenated_timestamps = fill_gaps_w_nans(
+                data=concatenated_data,
+                timestamps=concatenated_timestamps,
+                sampling_rate=self.get_sampling_frequency(),
+            )
 
-        from neuroconv.utils.checks import calculate_regular_series_rate
+            from neuroconv.utils.checks import calculate_regular_series_rate
 
-        calculated_rate = calculate_regular_series_rate(concatenated_timestamps, tolerance_decimals=2)
-        if calculated_rate is not None:
-            timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=calculated_rate)
+            calculated_rate = calculate_regular_series_rate(concatenated_timestamps, tolerance_decimals=2)
+            if calculated_rate is not None:
+                timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=calculated_rate)
+            else:
+                timing_kwargs = dict(timestamps=concatenated_timestamps)
         else:
             timing_kwargs = dict(timestamps=concatenated_timestamps)
 

@@ -100,6 +100,7 @@ Optic fibers were implanted in both SNc and DLS (400-um core, 0.39 NA, L = 6 or 
 ####  Optogenetic Stimulation
 
 --> Data shared but I cannot extract info on effector and indicator injection locations in the paper
+The processed fp traces are in the same .mat file of SN pan GABA recordings BUT the tdt acquisitions are in the SN pan DA recordings folder (SAME GENOTYPE)
 
 ## TDT data structure
 

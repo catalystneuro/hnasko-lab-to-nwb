@@ -195,6 +195,7 @@ Ophys:
       - name: raw_signal_SNc
         description: The raw modulated fluorescence signal from GCaMP6f calcium indicator in SNc DA neurons, excited at 465nm and 405nm, respectively.
         stream_name: Fi1r
+        stream_indices: None
         target_area: SNc
         unit: a.u.
         fiber_photometry_table_region: [0]
@@ -244,6 +245,7 @@ Ophys:
 Optogenetics:
   stimulation_software: TDT Synapse
   excitation_wavelength_in_nm: 635.0 # LED wavelength for ChrimsonR
+  power_in_mW: 5.0 # LED power for optogenetic stimulation
   OptogeneticViruses:
     - name: viral_vector_ogen
       description: pAAV-Syn-FLEX-rc[ChrimsonR-tdTomato] (AAV5) viral vector was used for optogenetic experiments.
@@ -295,13 +297,15 @@ Optogenetics:
       model: optogenetic_excitation_source_model
       power_in_W: 0.005 # 5mW
   OptogeneticSitesTable:
+    name: optogenetic_sites_table
     description: Information about each optogenetic site, including the excitation source, and targeted effector.
-    reference: Bregma at the cortical surface
     rows:
       - name: 0
         excitation_source: optogenetic_excitation_source
-        # TODO this setup does not include an optical fiber for optogenetic stimulation (probably this is a requirement for the NWB schema --> need to open an issue)
         effector: chrimsonR_STN
       - name: 1
         excitation_source: optogenetic_excitation_source
         effector: chrimsonR_PPN
+  OptogeneticEpochsTable:
+    name: optogenetic_epochs_table
+    description: Table containing optogenetic stimulation epochs.

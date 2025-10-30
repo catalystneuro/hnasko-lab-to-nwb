@@ -8,6 +8,8 @@ from hnasko_lab_to_nwb.lotfi_2025.interfaces import (
     ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
     ConcatenatedTDTFiberPhotometryInterface,
     Lofti2025ProcessedFiberPhotometryInterface,
+    Lofti2025TDTOptogeneticStimulusInterface,
+    ConcatenatedLofti2025TDTOptogeneticStimulusInterface,
 )
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import ExternalVideoInterface, TDTFiberPhotometryInterface
@@ -35,12 +37,14 @@ class Lofti2025NWBConverter(NWBConverter):
             "DemodulatedFiberPhotometry": Lofti2025ProcessedFiberPhotometryInterface,
             "DownsampledFiberPhotometry": Lofti2025ProcessedFiberPhotometryInterface,
             "DeltaFOverF": Lofti2025ProcessedFiberPhotometryInterface,
+            "OptogeneticStimulus": Lofti2025TDTOptogeneticStimulusInterface,
         }
         concatenated_data_interface_name_mapping = {
             "ConcatenatedRawFiberPhotometry": ConcatenatedTDTFiberPhotometryInterface,
             "ConcatenatedDemodulatedFiberPhotometry": ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
             "ConcatenatedDownsampledFiberPhotometry": ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
             "ConcatenatedDeltaFOverF": ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
+            "ConcatenatedOptogeneticStimulus": ConcatenatedLofti2025TDTOptogeneticStimulusInterface,
         }
 
         for interface_name in source_data.keys():
@@ -77,8 +81,8 @@ class Lofti2025NWBConverter(NWBConverter):
         #     if "OptogeneticStimulusInterval" in metadata["Stimulus"]:
         #         add_optogenetic_stimulation(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
 
-        for video_interface_name, video_interface in self.data_interface_objects.items():
-            if video_interface_name in ["Video_250ms", "Video_1s", "Video_4s"]:
-                start = video_interface._timestamps[0][0]
-                stop = video_interface._timestamps[0][-1]
-                nwbfile.add_trial(start_time=start, stop_time=stop, tags=video_interface_name.replace("Video_", ""))
+        for interface_name, interface in self.data_interface_objects.items():
+            if interface_name in ["Video_250ms", "Video_1s", "Video_4s"]:
+                start = interface._timestamps[0][0]
+                stop = interface._timestamps[0][-1]
+                nwbfile.add_trial(start_time=start, stop_time=stop, tags=interface_name.replace("Video_", ""))
