@@ -33,7 +33,6 @@ Subject:
     VGLUT2-PhiC31 (Jeong et al. 2024) mice were generously provided by Dr. Lim (UC San Diego).
     DAT-Flp (Slc6a3em1(flpo)NW Jax and RRID) and Anxa1-Cre (RRID:MMRRC_069931-MU) were generously provided by Dr.Awatramani (Northwestern).
   age: P6W
-  sex: U
   strain: C57BL/6J
   genotype: VGlut2-cre X DAT-flp
 Ophys:
