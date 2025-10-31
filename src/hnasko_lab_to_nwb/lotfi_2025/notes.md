@@ -36,71 +36,122 @@ Optogenetic stimulations were delivered by a red laser (Shanghai laser, 635nm) a
 The recordings were done using a fiber photometry rig with optical components from Tucker David Technologies (TDT) and
 Doric lenses controlled by a real-time processor from TDT (RZ10x).
 TDT software Synapse was used for data acquisition.
+Gcamp6f was excited by amplitude modulated signals from two light-emitting diodes (465- and 405-nm isosbestic control, TDT).
 
 ### 1. SNr GABA GCaMP6f recordings, STN & PPN stim
+
 #### Fiber photometry
-A fiber (400-um core, 0.39 NA, 6-mm length, 1.25-mm diameter black ceramic ferrule, RWD)  was implanted in SNr (AP -3.3, ML +/-1.4, DV -4.4).
-TDT software Synapse was used for data acquisition.
-Gcamp6f was excited by amplitude modulated signals from two light-emitting diodes (465- and 405-nm isosbestic control, TDT).
 
-Targeted neurons --> **SNr GABA Neurons**: VGLUT2-Cre x VGAT-Flp mice were injected with 300 nl of AAV1-Ef1a-fDIO-GCaMP6f (4e12 vg/mL, Addgene 1283125) in SNr (AP -3.3, ML +/-1.3, DV -4.6)
+* Setup FP1
+* Optical fiber model: 400-um core, 0.39 NA, 6-mm length, 1.25-mm diameter black ceramic ferrule, RWD
+* Optical fiber location:  **SNr** (AP -3.3, ML +/-1.4, DV -4.4).
+* Targeted neurons: **SNr GABA Neurons** in VGLUT2-Cre x VGAT-Flp mice
+* Indicator: 300 nl of AAV1-Ef1a-fDIO-**GCaMP6f** (4e12 vg/mL, Addgene 1283125)
+* Indicator injection site: **SNr** (AP -3.3, ML +/-1.3, DV -4.6)
 
-####  Optogenetic Stimulation
-150-200 nl of AAV5-Syn-FLEX-ChrimsonR-tdTomato (4 – 8.5e12 vg/ml, Addgene 62723) was injected in:
-* **STN** (AP -2.00, ML +/-1.6, DV -4.5)
-* **PPN** (AP -4.48, ML +/- 1.1, DV -3.75)
+#### Optogenetic Stimulation
+
+* Effector: 150-200 nl of AAV5-Syn-FLEX-**ChrimsonR-tdTomato** (4 – 8.5e12 vg/ml, Addgene 62723)
+
+* Effector injection sites:
+    * **STN** (AP -2.00, ML +/-1.6, DV -4.5)
+    * **PPN** (AP -4.48, ML +/- 1.1, DV -3.75)
 
 ### 2. SNc pan-DA GCaMP6f recordings, STN & PPN stim
-#### Fiber photometry
-A fiber (400-um core, 0.39 NA, 6-mm length, 1.25-mm diameter black ceramic ferrule, RWD)  was implanted in SNc (AP -3.2, ML +/-1.4, DV -4.1).
-TDT software Synapse was used for data acquisition.
-Gcamp6f was excited by amplitude modulated signals from two light-emitting diodes (465- and 405-nm isosbestic control, TDT).
 
-Targeted neurons --> **SNc pan-DA Neurons**: VGLUT2-Cre x DAT-Flp mice were injected with 300 nl of AAV1-Ef1a-fDIO-GCaMP6f (4e12 vg/mL, Addgene 1283125) in SNc (AP -3.2, ML +/-1.3, DV -4.3)
+#### Fiber photometry
+
+* Setup FP1 
+* Optical fiber model: 400-um core, 0.39 NA, 6-mm length, 1.25-mm diameter black ceramic ferrule, RWD
+* Optical fiber location: **SNc** (AP -3.2, ML +/-1.4, DV -4.1).
+* Targeted neurons: **SNc pan-DA Neurons** in VGLUT2-Cre x DAT-Flp mice
+* Indicator: 300 nl of AAV1-Ef1a-fDIO-GCaMP6f (4e12 vg/mL, Addgene 1283125)
+* Indicator injection site: **SNc** (AP -3.2, ML +/-1.3, DV -4.3)
 
 ####  Optogenetic Stimulation
-150-200 nl of AAV5-Syn-FLEX-ChrimsonR-tdTomato (4 – 8.5e12 vg/ml, Addgene 62723) was injected in:
-* **STN** (AP -2.00, ML +/-1.6, DV -4.5)
-* **PPN** (AP -4.48, ML +/- 1.1, DV -3.75)
+
+* Effector: 150-200 nl of AAV5-Syn-FLEX-**ChrimsonR-tdTomato** (4 – 8.5e12 vg/ml, Addgene 62723)
+* Effector injection sites:
+    * **STN** (AP -2.00, ML +/-1.6, DV -4.5)
+    * **PPN** (AP -4.48, ML +/- 1.1, DV -3.75)
 
 ### 3. Striatal GRAB_DA recordings (DLS & TS), STN & PPN stim
+
 #### Fiber photometry
-For monitoring DA release in striatal subregions (DLS and TS) VGLUT2-Cre mice were injected with 300 nl of AAV9-EF1a-GRABDA2m (2e12 vg/mL, Addgene: 140553):
-* in **DLS** at (AP +0.5, ML +/-2.25, DV -2.95) or
-* in **TS** at (AP -1.25, ML +/-2.9, DV -3.45)
 
- A fiber was implanted in SNc (200-um core, 0.39 NA, L = 6 mm, 1.25-mm diameter white ceramic ferrule, RWD) and a second fiber (400-um core, 0.39 NA, L = 4 mm, 1.25-mm black ceramic ferrule, RWD) was implanted:
-* in **DLS** (AP +0.5, ML +/- 2.25, DV -2.75) or
-* in **TS** (AP -1.25, ML +/-2.9, DV -3.25).
-
---> From matlab code we can extract information on the targeted subregion per subject
---> What indicator used in SNc? injection location? In the paper is mentioned a fiber implanted in SNc but no signal from that in the data
+* Setup FP3
+* Optical fiber model: 200-um core, 0.39 NA, L = 6 mm, 1.25-mm diameter white ceramic ferrule, RWD
+* Optical fiber locations: 
+    * **DLS** (AP +0.5, ML +/- 2.25, DV -2.75)
+    * **TS** (AP -1.25, ML +/-2.9, DV -3.25)
+* Targeted neurons: **DA release in striatal subregions (DLS and TS)** in VGLUT2-Cre mice
+* Indicator: 300 nl of AAV9-EF1a-GRABDA2m (2e12 vg/mL, Addgene: 140553)
+* Indicator injection sites: 
+    * **DLS** (AP +0.5, ML +/-2.25, DV -2.95)
+    * **TS** (AP -1.25, ML +/-2.9, DV -3.45)
 
 ####  Optogenetic Stimulation
-150-200 nl of AAV5-Syn-FLEX-ChrimsonR-tdTomato (4 – 8.5e12 vg/ml, Addgene 62723) was injected in:
-* **STN** (AP -2.00, ML +/-1.6, DV -4.5)
-* **PPN** (AP -4.48, ML +/- 1.1, DV -3.75)
+
+* Effector: 150-200 nl of AAV5-Syn-FLEX-**ChrimsonR-tdTomato** (4 – 8.5e12 vg/ml, Addgene 62723)
+* Effector injection sites:
+    * **STN** (AP -2.00, ML +/-1.6, DV -4.5)
+    * **PPN** (AP -4.48, ML +/- 1.1, DV -3.75)
 
 ### 4. SNc DA subtype recordings (Anxa1 & Vglut2), STN & PPN stim
-#### Fiber photometry
-* **Vglut2+** DA neurons in SNc: VGLUT2-Cre x DAT-Flp animals were injected with 300 nl of AAV8-Ef1a-ConFon-GCaMP6f (2.3e12 vg/ml, Addgene: 137122) in SNc (AP -3.20, ML +/-1.5, DV -4.20).
-A fiber (400-um core, 0.39 NA, L = 6 mm, 1.25 mm black ceramic ferrule, RWD) was implanted in SNc (AP -3.20, ML +/-1.60, DV -4.00).
-* **Anxa1+** DA neurons and terminals projecting to DLS: VGLUT2-PhiC x Anxa1Cre mice were injected with 300 nl of AAV5-Syn-FLEX-GCaMP8f (1e13 vg/ml, Addgene: 162379) in SNc (AP -3.20, ML +/-1.30, DV -4.30).
-Optic fibers were implanted in both SNc and DLS (400-um core, 0.39 NA, L = 6 or 4 mm, 1.25-mm black ceramic ferrule, RWD).
 
-####  Optogenetic Stimulation
-150-200 nl of AAV5-Syn-FLEX-ChrimsonR-tdTomato (4 – 8.5e12 vg/ml, Addgene 62723) was injected in:
-* **STN** (AP -2.00, ML +/-1.6, DV -4.5)
-* **PPN** (AP -4.48, ML +/- 1.1, DV -3.75)
+#### Fiber photometry Anxa1
 
---> No data shared yet
+* Setup FP3 
+* Optical fiber model: 400-um core, 0.39 NA, 6-mm length, 1.25-mm diameter black ceramic ferrule, RWD
+* Optical fiber locations: 
+    * **SNc** (AP -3.2, ML +/-1.4, DV -4.1).
+    * **DLS** (AP +0.5, ML +/- 2.25, DV -2.75)
+* Targeted neurons: **DA neurons and terminals projecting to DLS** in VGLUT2-PhiC x Anxa1Cre mice
+* Indicator: 300 nl of AAV5-Syn-FLEX-GCaMP8f (1e13 vg/ml, Addgene: 162379)
+* Indicator injection site: **SNc** (AP -3.2, ML +/-1.3, DV -4.3)
+
+####  Optogenetic Stimulation Anxa1
+
+* Effector: 150-200 nl of AAVDJ-Ef1a-pSIO-ChrimsonR-tdTomato (1e13 vg/ml, Vectorbuilder)
+* Effector injection sites:
+    * **STN** (AP -2.00, ML +/-1.6, DV -4.5)
+    * **PPN** (AP -4.48, ML +/- 1.1, DV -3.75)
+
+#### Fiber photometry Vglut2
+
+* Setup FP1 
+* Optical fiber model: 400-um core, 0.39 NA, 6-mm length, 1.25-mm diameter black ceramic ferrule, RWD
+* Optical fiber location: **SNc** (AP -3.2, ML +/-1.6, DV -4.0).
+* Targeted neurons: **SNc Vglut2+ DA Neurons** in VGLUT2-Cre x DAT-Flp mice
+* Indicator: 300 nl of AAV8-Ef1a-ConFon-GCaMP6f (2.3e12 vg/ml, Addgene: 137122)
+* Indicator injection site: **SNc** (AP -3.2, ML +/-1.5, DV -4.2)
+
+####  Optogenetic Stimulation Vglut2
+
+* Effector: 150-200 nl of AAV5-Syn-FLEX-**ChrimsonR-tdTomato** (4 – 8.5e12 vg/ml, Addgene 62723)
+* Effector injection sites:
+    * **STN** (AP -2.00, ML +/-1.6, DV -4.5)
+    * **PPN** (AP -4.48, ML +/- 1.1, DV -3.75)
 
 ### 5. DA axon terminal GCaMP recordings, STN stim only
+
 #### Fiber photometry
+
+* Setup FP3
+* Optical fiber model: 200-um core, 0.39 NA, L = 6 mm, 1.25-mm diameter white ceramic ferrule, RWD
+* Optical fiber locations: 
+    * **DLS** (AP +0.5, ML +/- 2.25, DV -2.75)
+    * **TS** (AP -1.25, ML +/-2.9, DV -3.25)
+* Targeted neurons: **DA axon terminal (DLS and TS)** in VGlut2-cre x DAT-flp
+* Indicator: 300 nl of AAV1-Ef1a-fDIO-**GCaMP6f** (4e12 vg/mL, Addgene 1283125)
+* Indicator injection sites: 
+    * **DLS** (AP +0.5, ML +/-2.25, DV -2.95)
+    * **TS** (AP -1.25, ML +/-2.9, DV -3.45)
+
 ####  Optogenetic Stimulation
 
---> Data shared but I cannot extract info on effector and indicator injection locations in the paper
-The processed fp traces are in the same .mat file of SN pan GABA recordings BUT the tdt acquisitions are in the SN pan DA recordings folder (SAME GENOTYPE)
+* Effector: 150-200 nl of AAV5-Syn-FLEX-**ChrimsonR-tdTomato** (4 – 8.5e12 vg/ml, Addgene 62723)
+* Effector injection site: **STN** (AP -2.00, ML +/-1.6, DV -4.5)
 
 ## TDT data structure
 

@@ -12,7 +12,7 @@ NWBFile:
   experiment_description: Mice were freely moving on a plastic tub.
     Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the first two days.
     Excitatory inputs from either the STN or PPN to SN were stimulated.
-    Recordings of GCaMP6f fluorescence signal captured pan-DA activity in the substantia nigra pars compacta in VGLUT2-Cre x DAT-Flp mice.
+    Recordings of GCaMP6f fluorescence signal captured striatal DA terminal activity in VGLUT2-Cre x DAT-Flp mice.
   institution: UC San Diego School of Medicine
   lab: Hnasko
   experimenter:
@@ -21,8 +21,8 @@ NWBFile:
   surgery:
     Mice > 6 weeks old were anesthetized with isofluorane (4% for induction and 1-2% for maintenance), and provided with pre- and post-surgical analgesic carprofen (5 mg/kg i.p).
     For calcium recordings of striatal DA terminals in VGLUT2-Cre x DAT-Flp mice were injected with 300 nl of AAV1-Ef1a-fDIO-GCaMP6f (4e12 vg/mL, Addgene 1283125) in either DLS (AP +0.5, ML +/-2.25, DV -2.95) or TS (AP -1.25, ML +/-2.9, DV -3.45).
+    A fiber (200-um core, 0.39 NA, L = 6 mm, 1.25-mm white ceramic ferrule, RWD) was implanted in DLS (AP +0.5, ML +/- 2.25, DV -2.75) or TS (AP -1.25, ML +/2.9, DV -3.25).
     For optogenetic stimulation, 150-200 nl of AAV5-Syn-FLEX-ChrimsonR-tdTomato (4 - 8.5e12 vg/ml, Addgene 62723) was injected in STN (AP -2.00, ML +/-1.6, DV -4.5).
-    A fiber (400-um core, 0.39 NA, L = 4 mm, 1.25-mm black ceramic ferrule, RWD) was implanted in DLS (AP +0.5, ML +/- 2.25, DV -2.75) or TS (AP -1.25, ML +/2.9, DV -3.25).
 Subject:
   species: Mus musculus
   description:
@@ -33,34 +33,25 @@ Subject:
     VGLUT2-PhiC31 (Jeong et al. 2024) mice were generously provided by Dr. Lim (UC San Diego).
     DAT-Flp (Slc6a3em1(flpo)NW Jax and RRID) and Anxa1-Cre (RRID:MMRRC_069931-MU) were generously provided by Dr.Awatramani (Northwestern).
   age: P6W
-  sex: U
   strain: C57BL/6J
   genotype: VGlut2-cre x DAT-flp
-Behavior:
-  ExternalVideos:
-    BehavioralVideo:
-      description: |
-        Video recording of the mouse's behavior. Recorded using a camera mounted on the ceiling above the chambers.
-      device:
-        name: BehavioralCamera
-        description: Camera mounted on ceiling above chambers for behavioral recording
 Ophys:
   FiberPhotometry:
     OpticalFiberModels:
-      - name: optical_fiber_model_2
+      - name: optical_fiber_model_1
         description: Chronically implantable optic fiber.
         manufacturer: RWD
-        model_number: <model of the optical fiber>
+        model_number: <model of the optical fiber> # TODO add model number
         numerical_aperture: 0.39
         core_diameter_in_um: 400.0
-        active_length_in_mm: 4.0
+        active_length_in_mm: 6.0
         ferrule_diameter_in_mm: 1.25
         ferrule_name: black ceramic ferrule
     OpticalFibers:
       - name: optical_fiber_DLS
         description: Chronically implanted optic fiber.
-        model: optical_fiber_model_2
-        serial_number: <serial number of the optical fiber>
+        model: optical_fiber_model_1
+        serial_number: <serial number of the optical fiber> # TODO add serial number
         fiber_insertion:
           insertion_position_ap_in_mm: 0.5
           insertion_position_ml_in_mm: 2.25
@@ -69,8 +60,8 @@ Ophys:
           hemisphere: right
       - name: optical_fiber_TS
         description: Chronically implanted optic fiber.
-        model: optical_fiber_model_2
-        serial_number: <serial number of the optical fiber>
+        model: optical_fiber_model_1
+        serial_number: <serial number of the optical fiber> # TODO add serial number
         fiber_insertion:
           insertion_position_ap_in_mm: -1.25
           insertion_position_ml_in_mm: 2.9
@@ -81,14 +72,14 @@ Ophys:
       - name: excitation_source_model_calcium
         description: excitation source for the sensor's fluorescence signal.
         manufacturer: Tucker-Davis Technologies
-        model_number: RZ5P or RZ10x
+        model_number: RZ5P or RZ10x # TODO confirm model number depend on FP1 or FP3 rig
         source_type: LED
         excitation_mode: one-photon
-        wavelength_range_in_nm: [460.0, 470.0]
+        wavelength_range_in_nm: [460.0, 490.0]
       - name: excitation_source_model_isosbestic
         description: excitation source for the sensor's isosbestic control.
         manufacturer: Tucker-Davis Technologies
-        model_number: RZ5P or RZ10x
+        model_number: RZ5P or RZ10x # TODO confirm model number depend on FP1 or FP3 rig
         source_type: LED
         excitation_mode: one-photon
         wavelength_range_in_nm: [400.0, 410.0]
@@ -96,20 +87,18 @@ Ophys:
       - name: excitation_source_calcium_signal
         description: excitation source for the sensor's fluorescence signal (465nm) modulated at 210 Hz.
         model: excitation_source_model_calcium
-        power_in_W: 0.0002
       - name: excitation_source_isosbestic_control
         description: excitation source for the sensor's isosbestic control (405nm) modulated at 330 Hz.
         model: excitation_source_model_isosbestic
-        power_in_W: 0.0002
     PhotodetectorModels:
       - name: photodetector_model
         description: <description of the photodetector model> # TODO add description
         manufacturer: <manufacturer of the photodetector> # TODO add manufacturer
         model_number: <model of the photodetector> # TODO add model number
-        detector_type: photodiode # TODO check detector type
-        wavelength_range_in_nm: [500.0, 550.0] #TODO check wavelength range
-        gain: -1.0
-        gain_unit: V/W
+        detector_type: Silicon photodiode
+        wavelength_range_in_nm: [500.0, 540.0]
+        gain: 0.38
+        gain_unit: A/W
     Photodetectors:
       - name: photodetector
         description: <description of the photodetector> # TODO add description
@@ -117,19 +106,19 @@ Ophys:
         serial_number: <serial number of the photodetector> # TODO add serial number
     BandOpticalFilterModels:
       - name: emission_filter_model
-        description: <description of emission filter model> # TODO add description
+        description: emission filter model for GCaMP6f fluorescence signal.
         manufacturer: <manufacturer of the emission filter> # TODO add manufacturer
         model_number: <model of the emission filter> # TODO add model number
         filter_type: Bandpass
-        center_wavelength_in_nm: -1.0
-        bandwidth_in_nm: -1.0
+        center_wavelength_in_nm: 520.0 #TODO confirm center wavelength
+        bandwidth_in_nm: [500.0, 540.0] #TODO confirm bandwidth
       - name: excitation_filter_model
-        description: <description of excitation filter model> # TODO add description
+        description: excitation filter model for GCaMP6f fluorescence signal.
         manufacturer: <manufacturer of the excitation filter> # TODO add manufacturer
         model_number: <model of the excitation filter> # TODO add model number
         filter_type: Bandpass
-        center_wavelength_in_nm: -1.0
-        bandwidth_in_nm: -1.0
+        center_wavelength_in_nm: 445.0 #TODO confirm center wavelength
+        bandwidth_in_nm: [400.0, 490.0] #TODO confirm bandwidth
     BandOpticalFilters:
       - name: emission_filter
         description: <description of emission filter> # TODO add description
@@ -142,11 +131,6 @@ Ophys:
         description: <description of the dichroic mirror model> # TODO add description
         manufacturer: <manufacturer of the dichroic mirror> # TODO add manufacturer
         model_number: <model of the dichroic mirror> # TODO add model number
-        cut_on_wavelength_in_nm: -1.0
-        cut_off_wavelength_in_nm: -1.0
-        reflection_band_in_nm: [-1.0, -1.0]
-        transmission_band_in_nm: [-1.0, -1.0]
-        angle_of_incidence_in_degrees: -1.0
     DichroicMirrors:
       - name: dichroic_mirror
         description: <description of the dichroic mirror> # TODO add description
@@ -198,7 +182,7 @@ Ophys:
         - name: 0
           location: DLS
           excitation_wavelength_in_nm: 465.0
-          emission_wavelength_in_nm: 515.0 #TODO check emission wavelength
+          emission_wavelength_in_nm: 515.0
           indicator: GCaMP6f_DLS
           optical_fiber: optical_fiber_DLS
           excitation_source: excitation_source_calcium_signal
@@ -209,8 +193,7 @@ Ophys:
         - name: 1
           location: DLS
           excitation_wavelength_in_nm: 405.0
-          emission_wavelength_in_nm: 515.0 #TODO check emission wavelength
-          indicator: GCaMP6f_DLS
+          emission_wavelength_in_nm: 515.0
           optical_fiber: optical_fiber_DLS
           excitation_source: excitation_source_isosbestic_control
           photodetector: photodetector
@@ -220,7 +203,7 @@ Ophys:
         - name: 2
           location: TS
           excitation_wavelength_in_nm: 465.0
-          emission_wavelength_in_nm: 515.0 #TODO check emission wavelength
+          emission_wavelength_in_nm: 515.0
           indicator: GCaMP6f_TS
           optical_fiber: optical_fiber_TS
           excitation_source: excitation_source_calcium_signal
@@ -231,7 +214,7 @@ Ophys:
         - name: 3
           location: TS
           excitation_wavelength_in_nm: 405.0
-          emission_wavelength_in_nm: 515.0 #TODO check emission wavelength
+          emission_wavelength_in_nm: 515.0
           indicator: GCaMP6f_TS
           optical_fiber: optical_fiber_TS
           excitation_source: excitation_source_isosbestic_control
@@ -243,7 +226,7 @@ Ophys:
     FiberPhotometryResponseSeries:
       - name: raw_signal_DLS
         description: The raw modulated fluorescence signal from GCaMP6f dopamine indicator in DLS neurons, excited at 465nm and 405nm, respectively.
-        stream_name: Fi1r # TODO check stream name
+        stream_name: Fi1r
         stream_indices: None
         target_area: DLS
         unit: a.u.
@@ -251,7 +234,7 @@ Ophys:
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal in DLS.
       - name: raw_signal_TS
         description: The raw modulated fluorescence signal from GCaMP6f dopamine indicator in TS neurons, excited at 465nm and 405nm, respectively.
-        stream_name: Fi1r # TODO check stream name
+        stream_name: Fi1r
         stream_indices: None
         target_area: TS
         unit: a.u.
@@ -325,7 +308,7 @@ Ophys:
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of TS.
       - name: deltaF_over_F_DLS
         description: The deltaF/F signal from GCaMP6f dopamine indicator in DLS neurons, excited at 465nm and calculated as (Gc - fitted_af) / fitted_af.
-        stream_name: dF # TODO check stream name
+        stream_name: dF
         target_area: DLS
         sampling_frequency: 100.0
         unit: a.u.
@@ -333,7 +316,7 @@ Ophys:
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal of DLS.
       - name: deltaF_over_F_TS
         description: The deltaF/F signal from GCaMP6f dopamine indicator in TS neurons, excited at 465nm and calculated as (Gc - fitted_af) / fitted_af.
-        stream_name: dF # TODO check stream name
+        stream_name: dF
         target_area: TS
         sampling_frequency: 100.0
         unit: a.u.
@@ -342,25 +325,25 @@ Ophys:
 
 Optogenetics:
   stimulation_software: TDT Synapse
-  excitation_wavelength_in_nm: 635.0 # LED wavelength for ChrimsonR
-  power_in_mW: 5.0 # LED power for optogenetic stimulation
+  excitation_wavelength_in_nm: 635.0
+  power_in_mW: 5.0
   OptogeneticViruses:
     - name: viral_vector_ogen
       description: pAAV-Syn-FLEX-rc[ChrimsonR-tdTomato] (AAV5) viral vector was used for optogenetic experiments.
       manufacturer: Addgene (catalog number 62723)
       construct_name: pAAV-Syn-FLEX-rc[ChrimsonR-tdTomato] (AAV5)
-      titer_in_vg_per_ml: 4.0e+12 # TODO check titer, a range of 4 - 8.5e12 is reported in the paper.
+      titer_in_vg_per_ml: 4.0e+12
   OptogeneticVirusInjections:
     - name: viral_vector_injection_STN
       description: Viral injection into the Subthalamic Nucleus (STN).
       viral_vector: viral_vector_ogen
       location: STN
-      hemisphere: right # TODO: get hemisphere from a subject-wise map
+      hemisphere: right
       reference: bregma at the cortical surface
       ap_in_mm: -2.00
-      ml_in_mm: 1.6 # TODO: get ML coordinate from a subject-wise map (depends on hemisphere)
+      ml_in_mm: 1.6
       dv_in_mm: -4.5
-      volume_in_uL: 0.150 # TODO check volume, a range of 150 - 200 nl is reported in the paper.
+      volume_in_uL: 0.150
   OptogeneticEffectors:
     - name: chrimsonR_STN
       description: ChrimsonR opsin used for optogenetic stimulation injected into the STN.
@@ -374,11 +357,11 @@ Optogenetics:
       model_number: <model of the LED device> # TODO add model number
       source_type: LED
       excitation_mode: one-photon
+      wavelength_range_in_nm: [580.0, 680.0]
   ExcitationSources:
     - name: optogenetic_excitation_source
       description: Red LED device used for optogenetic stimulation.
       model: optogenetic_excitation_source_model
-      power_in_W: 0.005 # 5mW
   OptogeneticSitesTable:
     name: optogenetic_sites_table
     description: Information about each optogenetic site, including the excitation source, and targeted effector.
