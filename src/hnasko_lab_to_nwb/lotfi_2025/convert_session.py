@@ -43,8 +43,59 @@ def get_target_area_for_subject(file_path: Path, subject_id: str) -> str:
     except Exception as e:
         raise RuntimeError(f"Error extracting the target area for subject {subject_id}: {e}.")
 
-def update_coordinates(metadata: dict, hemisphere: str = "left"):
-    
+
+def update_coordinates_for_left_hemisphere(metadata: dict) -> dict:
+    """
+    Update medio-lateral coordinates and hemisphere references in metadata dictionary.
+
+    This function converts all positive ML (medio-lateral) coordinates to negative values
+    and updates hemisphere references from "right" to the specified hemisphere (default "left").
+
+    Parameters
+    ----------
+    metadata : dict
+        The metadata dictionary to update (typically loaded from YAML file)
+
+    Returns
+    -------
+    dict
+        The updated metadata dictionary with modified coordinates and hemisphere references
+    """
+    import copy
+
+    # Create a deep copy to avoid modifying the original
+    updated_metadata = copy.deepcopy(metadata)
+
+    def update_value(value):
+        """Recursively update values in nested structures."""
+        if isinstance(value, dict):
+            # Check for hemisphere field
+            if "hemisphere" in value and isinstance(value["hemisphere"], str):
+                if value["hemisphere"].lower() == "right":
+                    value["hemisphere"] = "left"
+
+            # Check for ML coordinate fields and convert positive to negative
+            ml_fields = ["insertion_position_ml_in_mm", "ml_in_mm"]
+            for field in ml_fields:
+                if field in value and isinstance(value[field], (int, float)):
+                    if value[field] > 0:
+                        value[field] = -value[field]
+
+            # Recursively process nested dictionaries
+            for key, nested_value in value.items():
+                value[key] = update_value(nested_value)
+
+        elif isinstance(value, list):
+            # Recursively process list items
+            return [update_value(item) for item in value]
+
+        return value
+
+    # Update the metadata in place
+    update_value(updated_metadata)
+    return updated_metadata
+
+
 def varying_frequencies_session_to_nwb(
     output_dir_path: Union[str, Path],
     subject_metadata: dict,
@@ -117,6 +168,8 @@ def varying_frequencies_session_to_nwb(
         raise ValueError(f"Unknown recording type: {recording_type}")
     editable_metadata_path = Path(__file__).parent / f"metadata/{recording_type.replace(' ', '_')}_metadata.yaml"
     editable_metadata = load_dict_from_file(editable_metadata_path)
+    if subject_metadata["Hemisphere"] == "Left":
+        editable_metadata = update_coordinates_for_left_hemisphere(editable_metadata)
 
     if stimulus_location is None:
         stimulus_location = protocol_folder_path.parts[-3]
@@ -259,9 +312,6 @@ def varying_frequencies_session_to_nwb(
 
     metadata["Subject"]["subject_id"] = subject_id
     metadata["Subject"]["sex"] = subject_metadata["Sex"]
-    if subject_metadata["Hemisphere"] == "Left":
-        update_coordinates(metadata, hemisphere="left")
-
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
     metadata["NWBFile"]["session_start_time"] = session_start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
@@ -367,6 +417,8 @@ def varying_durations_session_to_nwb(  #
         raise ValueError(f"Unknown recording type: {recording_type}")
     editable_metadata_path = Path(__file__).parent / f"metadata/{recording_type.replace(' ', '_')}_metadata.yaml"
     editable_metadata = load_dict_from_file(editable_metadata_path)
+    if subject_metadata["Hemisphere"] == "Left":
+        editable_metadata = update_coordinates_for_left_hemisphere(editable_metadata)
 
     if stimulus_location is None:
         stimulus_location = protocol_folder_path.parts[-3]
@@ -484,8 +536,6 @@ def varying_durations_session_to_nwb(  #
 
     metadata["Subject"]["subject_id"] = subject_id
     metadata["Subject"]["sex"] = subject_metadata["Sex"]
-    if subject_metadata["Hemisphere"] == "Left":
-        update_coordinates(metadata, hemisphere="left")
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
     metadata["NWBFile"]["session_start_time"] = session_start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
@@ -530,8 +580,8 @@ if __name__ == "__main__":
     recording_type = recording_types[0]
     subjects_metadata = pd.read_excel(subjects_metadata_file_path, sheet_name=recording_type)
     # Select a subject to convert
-    subject_metadata = subjects_metadata.iloc[0]
-    stimulus_location = subjects_metadata["Input"]
+    subject_metadata = subjects_metadata.iloc[6]  # Change the index to select different subjects
+    stimulus_location = subject_metadata["Input"]
     parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
 
     varying_frequencies_session_to_nwb(
