@@ -113,14 +113,14 @@ Ophys:
         model_number: <model of the emission filter> # TODO add model number
         filter_type: Bandpass
         center_wavelength_in_nm: 520.0 #TODO confirm center wavelength
-        bandwidth_in_nm: [500.0, 540.0] #TODO confirm bandwidth
+        bandwidth_in_nm: 40.0 #TODO confirm bandwidth
       - name: excitation_filter_model
         description: excitation filter model for GCaMP6f fluorescence signal.
         manufacturer: <manufacturer of the excitation filter> # TODO add manufacturer
         model_number: <model of the excitation filter> # TODO add model number
         filter_type: Bandpass
         center_wavelength_in_nm: 445.0 #TODO confirm center wavelength
-        bandwidth_in_nm: [400.0, 490.0] #TODO confirm bandwidth
+        bandwidth_in_nm: 90.0 #TODO confirm bandwidth
     BandOpticalFilters:
       - name: emission_filter
         description: emission filter for GCaMP6f fluorescence signal.
