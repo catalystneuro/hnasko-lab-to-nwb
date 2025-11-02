@@ -9,7 +9,7 @@ import natsort
 import pandas as pd
 import numpy as np
 
-from src.hnasko_lab_to_nwb.lotfi_2025.convert_session import (
+from hnasko_lab_to_nwb.lotfi_2025.convert_session import (
     varying_durations_session_to_nwb,
     varying_frequencies_session_to_nwb,
 )
@@ -61,14 +61,19 @@ def dataset_to_nwb(
         # Create meaningful error file name using subject and session info
         subject_id = f"{session_to_nwb_kwargs['subject_metadata']['Animal ID']}"
         session_id = session_to_nwb_kwargs["session_id"]
+        del session_to_nwb_kwargs["session_id"]
 
         exception_file_path = output_dir_path / f"ERROR_sub_{subject_id}-ses_{session_id}.txt"
 
         try:
-            varying_frequencies_session_to_nwb(
-                **session_to_nwb_kwargs,
-                protocol_folder_path=session_to_nwb_kwargs["parent_protocol_folder_path"] / "Varying frequencies",
-            )
+            if session_id == "Varying durations":
+                varying_durations_session_to_nwb(
+                    **session_to_nwb_kwargs,
+                )
+            elif session_id == "Varying frequencies":
+                varying_frequencies_session_to_nwb(
+                    **session_to_nwb_kwargs,
+                )
         except Exception as e:
             with open(
                 exception_file_path,
@@ -76,18 +81,6 @@ def dataset_to_nwb(
             ) as f:
                 f.write(f"Varying frequencies session_to_nwb_kwargs: \n {pformat(session_to_nwb_kwargs)}\n\n")
                 f.write(traceback.format_exc())
-
-        try:
-            varying_durations_session_to_nwb(
-                **session_to_nwb_kwargs,
-                protocol_folder_path=session_to_nwb_kwargs["parent_protocol_folder_path"] / "Varying durations",
-            )
-        except Exception as e:
-            with open(
-                exception_file_path,
-                mode="w",
-            ) as f:
-                f.write(f"Varying durations session_to_nwb_kwargs: \n {pformat(session_to_nwb_kwargs)}\n\n")
                 f.write(traceback.format_exc())
 
 
@@ -119,80 +112,56 @@ def get_session_to_nwb_kwargs_per_session(
     data_dir_path = Path(data_dir_path)
     subjects_metadata_file_path = Path(subjects_metadata_file_path)
     exception_file_path = data_dir_path / f"exceptions.txt"
-
-    excel_sheet_names = pd.ExcelFile(subjects_metadata_file_path).sheet_names
-    subjects_metadata = pd.read_excel(subjects_metadata_file_path)
-
     session_to_nwb_kwargs_per_session = []
-
-    for subject_metadata in subjects_metadata:
-        subject_id = subject_metadata["Animal ID"]
-        with open(exception_file_path, mode="a") as f:
-            f.write(f"Subject {subject_id}\n")
-
-        cohort_folder_path = Path(data_dir_path) / line / f"{cohort_id}_{task_acronym}"
-        if not cohort_folder_path.exists():
-            # raise FileNotFoundError(f"Folder {cohort_folder_path} does not exist")
-            with open(exception_file_path, mode="a") as f:
-                f.write(f"Folder {cohort_folder_path} does not exist\n\n")
+    session_ids = ["Varying durations", "Varying frequencies"]
+    excel_sheet_names = pd.ExcelFile(subjects_metadata_file_path).sheet_names
+    for recording_type in excel_sheet_names:
+        if recording_type == "Cell_type recordings":
+            # TODO implement cell type recordings conversion
             continue
-        for session_id in session_ids:
-            video_folder_path = cohort_folder_path / session_id
-            if not video_folder_path.exists():
-                # raise FileNotFoundError(f"Folder {video_folder_path} does not exist")
-                with open(exception_file_path, mode="a") as f:
-                    f.write(f"Session {session_id}\n")
-                    f.write(f"Folder {video_folder_path} does not exist\n\n")
-                continue
-            video_file_paths = natsort.natsorted(video_folder_path.glob(f"*{subject_id}*.ffii"))
-            if len(video_file_paths) == 0:
-                with open(exception_file_path, mode="a") as f:
-                    f.write(f"Session {session_id}\n")
-                    f.write(
-                        f"No .ffii files found for subject '{subject_id}' session '{session_id}' in '{cohort_folder_path}'."
-                    )
-                continue
-            elif len(video_file_paths) > 1:
-                with open(exception_file_path, mode="a") as f:
-                    f.write(f"Session {session_id}\n")
-                    f.write(
-                        f"Multiple video files found for subject '{subject_id}' session '{session_id}' in '{cohort_folder_path}'."
-                    )
-                continue
+        with open(exception_file_path, mode="a") as f:
+            f.write(f"Recording type: {recording_type}\n")
+        subjects_metadata = pd.read_excel(subjects_metadata_file_path, sheet_name=recording_type).to_dict(
+            orient="records"
+        )
+        for subject_metadata in subjects_metadata:
+            with open(exception_file_path, mode="a") as f:
+                f.write(f"Subject {subject_metadata['Animal ID']}\n")
 
-            freeze_scores_file_paths = list(video_folder_path.glob(f"*{subject_metadata['line']}*.csv"))
-            if len(freeze_scores_file_paths):
-                freeze_scores_file_path = freeze_scores_file_paths[0]
-            else:
-                freeze_scores_file_path = None
-
-            freeze_log_file_path = video_folder_path / "Freeze_Log.xls"
-            if not freeze_log_file_path.exists():
+            stimulus_location = subject_metadata["Input"]
+            parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
+            if not parent_protocol_folder_path.exists():
+                # raise FileNotFoundError(f"Folder {cohort_folder_path} does not exist")
                 with open(exception_file_path, mode="a") as f:
-                    f.write(f"Session {session_id}\n")
-                    f.write(
-                        f"Freeze log file not found for subject '{subject_id}' session '{session_id}' in '{cohort_folder_path}'."
-                    )
+                    f.write(f"Folder {parent_protocol_folder_path} does not exist\n\n")
                 continue
+            for session_id in session_ids:
+                protocol_folder_path = parent_protocol_folder_path / session_id
+                if not protocol_folder_path.exists():
+                    # raise FileNotFoundError(f"Folder {video_folder_path} does not exist")
+                    with open(exception_file_path, mode="a") as f:
+                        f.write(f"Session {session_id}\n")
+                        f.write(f"Folder {protocol_folder_path} does not exist\n\n")
+                    continue
 
-            session_to_nwb_kwargs_per_session.append(
-                {
-                    "session_id": f"{task_acronym}_{session_id}",
-                    "subject_metadata": subject_metadata,
-                    "video_file_path": video_file_paths[0],
-                    "freeze_log_file_path": freeze_log_file_path,
-                    "freeze_scores_file_path": freeze_scores_file_path,
-                }
-            )
+                session_to_nwb_kwargs_per_session.append(
+                    {
+                        "session_id": session_id,
+                        "subject_metadata": subject_metadata,
+                        "protocol_folder_path": protocol_folder_path,
+                        "recording_type": recording_type,
+                        "stimulus_location": stimulus_location,
+                    }
+                )
 
     return session_to_nwb_kwargs_per_session
 
 
 if __name__ == "__main__":
     # Parameters for conversion
-    data_dir_path = Path("E:/Kind-CN-data-share/behavioural_pipeline/Auditory Fear Conditioning")
-    output_dir_path = Path("E:/kind_lab_conversion_nwb/behavioural_pipeline/auditory_fear_conditioning")
-    subjects_metadata_file_path = Path("E:/Kind-CN-data-share/behavioural_pipeline/general_metadata.xlsx")
+    data_dir_path = Path("F:/Hnasko-CN-data-share/")
+    output_dir_path = Path("F:/hnasko_lab_conversion_nwb")
+    subjects_metadata_file_path = data_dir_path / "ASAP FP Overview.xlsx"
     dataset_to_nwb(
         data_dir_path=data_dir_path,
         output_dir_path=output_dir_path,
