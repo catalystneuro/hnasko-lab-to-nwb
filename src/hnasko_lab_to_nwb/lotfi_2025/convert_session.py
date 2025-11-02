@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Union
 
+import pandas as pd
 import pytz
 
 from hnasko_lab_to_nwb.lotfi_2025.interfaces.concatenated_tdt_fp_interface import (
@@ -42,10 +43,11 @@ def get_target_area_for_subject(file_path: Path, subject_id: str) -> str:
     except Exception as e:
         raise RuntimeError(f"Error extracting the target area for subject {subject_id}: {e}.")
 
-
+def update_coordinates(metadata: dict, hemisphere: str = "left"):
+    
 def varying_frequencies_session_to_nwb(
     output_dir_path: Union[str, Path],
-    subject_id: str,
+    subject_metadata: dict,
     protocol_folder_path: Union[str, Path],
     recording_type: None | str = None,
     stimulus_location: None | str = None,
@@ -58,8 +60,8 @@ def varying_frequencies_session_to_nwb(
     ----------
     output_dir_path : Union[str, Path]
         Path to the output directory where the NWB file will be saved.
-    subject_id : str
-        Subject identifier.
+    subject_metadata : dict
+        Subject metadata dictionary.
     protocol_folder_path : Union[str, Path]
         Path to the protocol folder containing TDT data and processed .mat file.
     recording_type : None | str = None
@@ -85,6 +87,7 @@ def varying_frequencies_session_to_nwb(
     tdt stimulation channel names: ["H10_", "H20_", "H40_", "H05_"]
     stimulation frequencies: [10.0, 20.0, 40.0, 5.0]
     """
+    subject_id = subject_metadata["Animal ID"]
     protocol_folder_path = Path(protocol_folder_path)
 
     output_dir_path = Path(output_dir_path)
@@ -255,6 +258,10 @@ def varying_frequencies_session_to_nwb(
     metadata = dict_deep_update(metadata, editable_metadata)
 
     metadata["Subject"]["subject_id"] = subject_id
+    metadata["Subject"]["sex"] = subject_metadata["Sex"]
+    if subject_metadata["Hemisphere"] == "Left":
+        update_coordinates(metadata, hemisphere="left")
+
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
     metadata["NWBFile"]["session_start_time"] = session_start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
@@ -291,7 +298,7 @@ def varying_frequencies_session_to_nwb(
 
 def varying_durations_session_to_nwb(  #
     output_dir_path: Union[str, Path],
-    subject_id: str,
+    subject_metadata: dict,
     protocol_folder_path: Union[str, Path],
     recording_type: None | str = None,
     stimulus_location: None | str = None,
@@ -304,8 +311,8 @@ def varying_durations_session_to_nwb(  #
     ----------
     output_dir_path : Union[str, Path]
         Path to the output directory where the NWB file will be saved.
-    subject_id : str
-        Subject identifier.
+    subject_metadata : dict
+        Subject metadata dictionary.
     protocol_folder_path : Union[str, Path]
         Path to the protocol folder containing TDT data and processed .mat file.
     recording_type : None | str = None
@@ -331,6 +338,7 @@ def varying_durations_session_to_nwb(  #
     tdt stimulation channel names: ["sms_", "s1s_", "s4s_"]
     stimulation frequencies: [40.0, 40.0, 40.0]
     """
+    subject_id = subject_metadata["Animal ID"]
     protocol_folder_path = Path(protocol_folder_path)
 
     output_dir_path = Path(output_dir_path)
@@ -475,6 +483,9 @@ def varying_durations_session_to_nwb(  #
     metadata = dict_deep_update(metadata, editable_metadata)
 
     metadata["Subject"]["subject_id"] = subject_id
+    metadata["Subject"]["sex"] = subject_metadata["Sex"]
+    if subject_metadata["Hemisphere"] == "Left":
+        update_coordinates(metadata, hemisphere="left")
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
     metadata["NWBFile"]["session_start_time"] = session_start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
@@ -514,15 +525,18 @@ if __name__ == "__main__":
     # Parameters for conversion
     data_dir_path = Path("F:/Hnasko-CN-data-share/")
     output_dir_path = Path("F:/hnasko_lab_conversion_nwb")
-
-    recording_type = "GRABDA recordings"  # "GRABDA recordings"  "SN pan DA recordings" "Str_DA_terminal recordings" "SN pan GABA recordings"
-    stimulus_location = "PPN"  # "PPN" "STN"
-    subject_id = "C2618"  # "C2618" "C2659" "B8627" "C4550" "B7514"
+    subjects_metadata_file_path = data_dir_path / "ASAP FP Overview.xlsx"
+    recording_types = pd.ExcelFile(subjects_metadata_file_path).sheet_names
+    recording_type = recording_types[0]
+    subjects_metadata = pd.read_excel(subjects_metadata_file_path, sheet_name=recording_type)
+    # Select a subject to convert
+    subject_metadata = subjects_metadata.iloc[0]
+    stimulus_location = subjects_metadata["Input"]
     parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
 
     varying_frequencies_session_to_nwb(
         output_dir_path=output_dir_path,
-        subject_id=subject_id,
+        subject_metadata=subject_metadata,
         protocol_folder_path=parent_protocol_folder_path / "Varying frequencies",
         recording_type=recording_type,
         stimulus_location=stimulus_location,
@@ -533,7 +547,7 @@ if __name__ == "__main__":
 
     varying_durations_session_to_nwb(
         output_dir_path=output_dir_path,
-        subject_id=subject_id,
+        subject_metadata=subject_metadata,
         protocol_folder_path=parent_protocol_folder_path / "Varying durations",
         recording_type=recording_type,
         stimulus_location=stimulus_location,
