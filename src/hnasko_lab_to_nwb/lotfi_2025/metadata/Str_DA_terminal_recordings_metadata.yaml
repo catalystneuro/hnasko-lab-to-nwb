@@ -1,15 +1,17 @@
-# Metadata for Lofti 2025 --> 2. Striatal DA terminal GCaMP6f recordings, STN stim
+# Metadata for Lofti 2025 --> Striatal DA terminal GCaMP6f recordings, STN stim
 NWBFile:
   related_publications:
     - https://doi.org/10.1101/2025.06.03.657460
   keywords:
-    - fiber photometry
-    - Striatal DA terminal
-    - dopaminergic neurons
-    - GCaMP6f
-    - calcium imaging
+    - DLS fiber photometry recordings
+    - TS fiber photometry recordings
+    - dopaminergic axon terminals
+    - VGLUT2-Cre x DAT-Flp
+    - STN optogenetic stimulation
+    - PPN optogenetic stimulation
     - Parkinson's disease
-  experiment_description: Mice were freely moving on a plastic tub.
+  experiment_description:
+    Dopaminergic axon terminals recordings. Mice were freely moving on a plastic tub.
     Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the first two days.
     Excitatory inputs from either the STN or PPN to SN were stimulated.
     Recordings of GCaMP6f fluorescence signal captured striatal DA terminal activity in VGLUT2-Cre x DAT-Flp mice.

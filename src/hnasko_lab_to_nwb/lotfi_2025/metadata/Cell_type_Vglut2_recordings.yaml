@@ -1,15 +1,16 @@
-# Metadata for Lofti 2025 --> 2. SNc pan-DA GCaMP6f recordings, STN & PPN stim
+# Metadata for Lofti 2025 --> Parkinson's resilient Vglut2+ dopamine subtypes recordings, STN & PPN stim
 NWBFile:
   related_publications:
     - https://doi.org/10.1101/2025.06.03.657460
   keywords:
-    - fiber photometry
-    - SNc
-    - dopaminergic neurons
-    - GCaMP6f
-    - calcium imaging
+    - SNc fiber photometry recordings
+    - Vglut2+ dopamine subtypes
+    - VGLUT2-Cre x DAT-Flp
+    - STN optogenetic stimulation
+    - PPN optogenetic stimulation
     - Parkinson's disease
-  experiment_description: Mice were freely moving on a plastic tub.
+  experiment_description:
+    Parkinson's resilient Vglut2+ dopamine subtypes recordings. Mice were freely moving on a plastic tub.
     Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the first two days.
     Excitatory inputs from either the STN or PPN to SN were stimulated.
     Recordings of GCaMP6f fluorescence signal captured Vglut2+ DA neurons activity in SNc in VGLUT2-Cre x DAT-Flp mice.

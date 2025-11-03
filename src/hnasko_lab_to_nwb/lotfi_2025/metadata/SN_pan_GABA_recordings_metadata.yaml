@@ -1,15 +1,16 @@
-# Metadata for Lofti 2025 --> 2. SNr pan-GABA GCaMP6f recordings, STN & PPN stim
+# Metadata for Lofti 2025 --> SNr pan-GABA GCaMP6f recordings, STN & PPN stim
 NWBFile:
   related_publications:
     - https://doi.org/10.1101/2025.06.03.657460
   keywords:
-    - fiber photometry
-    - SNr
-    - dopaminergic neurons
-    - GCaMP6f
-    - calcium imaging
+    - SNc fiber photometry recordings
+    - SNr GABAergic neurons
+    - VGLUT2-Cre x VGAT-Flp
+    - STN optogenetic stimulation
+    - PPN optogenetic stimulation
     - Parkinson's disease
-  experiment_description: Mice were freely moving on a plastic tub.
+  experiment_description:
+    SNr GABAergic neurons recordings. Mice were freely moving on a plastic tub.
     Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the first two days.
     Excitatory inputs from either the STN or PPN to SN were stimulated.
     Recordings of GCaMP6f fluorescence signal captured pan-GABA activity in the SNr in VGLUT2-Cre x VGAT-Flp mice.

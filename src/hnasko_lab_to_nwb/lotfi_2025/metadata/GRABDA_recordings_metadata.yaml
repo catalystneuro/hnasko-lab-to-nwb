@@ -3,14 +3,15 @@ NWBFile:
   related_publications:
     - https://doi.org/10.1101/2025.06.03.657460
   keywords:
-    - optogenetics
-    - fiber photometry
-    - SNr
-    - STN
-    - PPN
-    - GABAergic neurons
+    - DLS fiber photometry recordings
+    - TS fiber photometry recordings
+    - Dopamine release
+    - VGLUT2-Cre
+    - STN optogenetic stimulation
+    - PPN optogenetic stimulation
     - Parkinson's disease
-  experiment_description: Mice were freely moving on a plastic tub.
+  experiment_description:
+    Striatal dopamine release in dorsolateral and tail striatum recordings. Mice were freely moving on a plastic tub.
     Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the first two days.
     Excitatory inputs from either the STN or PPN to SN were stimulated and the DA release in striatal subregions (DLS or TS) in VGLUT2-Cre mice were recorded.
   institution: UC San Diego School of Medicine

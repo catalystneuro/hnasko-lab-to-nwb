@@ -1,17 +1,17 @@
-# Metadata for Lofti 2025 --> 4. SNc DA subtype recordings (Anxa1 & Vglut2), STN & PPN stim
+# Metadata for Lofti 2025 --> Parkinson's-vulnerable Anxa1+ dopamine subtypes, STN & PPN stim
 NWBFile:
   related_publications:
     - https://doi.org/10.1101/2025.06.03.657460
   keywords:
-    - fiber photometry
-    - SNc
-    - DLS
-    - dopaminergic neurons
-    - GCaMP8f
-    - calcium imaging
+    - SNc fiber photometry recordings
+    - DLS fiber photometry recordings
+    - Anxa1+ dopamine subtypes
+    - VGLUT2-PhiC x Anxa1-Cre
+    - STN optogenetic stimulation
+    - PPN optogenetic stimulation
     - Parkinson's disease
-    - Anxa1
-  experiment_description: Mice were freely moving on a plastic tub.
+  experiment_description:
+    Parkinson's-vulnerable Anxa1+ dopamine subtypes recordings. Mice were freely moving on a plastic tub.
     Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the first two days.
     Excitatory inputs from either the STN or PPN to SN were stimulated.
     Recordings of GCaMP8f fluorescence signal captured Anxa1+ neurons and terminals projecting to DLS in VGLUT2-PhiC x Anxa1-Cre mice.
