@@ -24,6 +24,9 @@ dependencies = [
   "opencv-python-headless",
   "tdt",
   "dandi",
+  "remfile",
+  "ipykernel",
+  "remfile",
 ]
 
 [project.urls]
