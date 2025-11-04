@@ -26,6 +26,7 @@ dependencies = [
   "dandi",
   "remfile",
   "ipykernel",
+  "remfile",
 ]
 
 [project.urls]
