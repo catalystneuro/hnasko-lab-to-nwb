@@ -1,23 +1,26 @@
-"""Primary script to run to convert all sessions in a dataset using session_to_nwb."""
+"""Script to convert all Water Maze sessions to NWB format, following the structure of auditory_fear_conditioning/convert_all_sessions.py."""
 
 import traceback
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from datetime import datetime
 from pathlib import Path
 from pprint import pformat
 from typing import Union
-
 from tqdm import tqdm
+import natsort
+import pandas as pd
+import numpy as np
 
-from hnasko_lab_to_nwb.lotfi_2025.convert_session import session_to_nwb
-from neuroconv.tools.path_expansion import LocalPathExpander
+from hnasko_lab_to_nwb.lotfi_2025.convert_session import (
+    varying_durations_session_to_nwb,
+    varying_frequencies_session_to_nwb,
+)
 
 
 def dataset_to_nwb(
     *,
     data_dir_path: Union[str, Path],
     output_dir_path: Union[str, Path],
-    max_workers: int = 1,
+    subjects_metadata_file_path: Union[str, Path],
+    overwrite: bool = False,
     verbose: bool = True,
 ):
     """Convert the entire dataset to NWB.
@@ -28,61 +31,63 @@ def dataset_to_nwb(
         The path to the directory containing the raw data.
     output_dir_path : Union[str, Path]
         The path to the directory where the NWB files will be saved.
-    max_workers : int, optional
-        The number of workers to use for parallel processing, by default 1
+    subjects_metadata_file_path : Union[str, Path], optional
+        The path to the Excel file containing subject metadata, by default None
+    overwrite : bool, optional
+        Whether to overwrite existing NWB files, by default False
     verbose : bool, optional
         Whether to print verbose output, by default True
     """
     data_dir_path = Path(data_dir_path)
     output_dir_path = Path(output_dir_path)
-    session_to_nwb_kwargs_per_session = get_session_to_nwb_kwargs_per_session(
-        data_dir_path=data_dir_path,
+    if not data_dir_path.exists():
+        raise FileNotFoundError(f"Data directory {data_dir_path} does not exist.")
+    if not Path(subjects_metadata_file_path).exists():
+        raise FileNotFoundError(f"Metadata file {subjects_metadata_file_path} does not exist.")
+
+    output_dir_path.mkdir(
+        parents=True,
+        exist_ok=True,
     )
+    session_to_nwb_kwargs_per_session = get_session_to_nwb_kwargs_per_session(
+        data_dir_path=data_dir_path, subjects_metadata_file_path=subjects_metadata_file_path
+    )
+    if verbose:
+        print(f"Found {len(session_to_nwb_kwargs_per_session)} sessions to convert")
 
-    futures = []
-    with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        for session_to_nwb_kwargs in session_to_nwb_kwargs_per_session:
-            session_to_nwb_kwargs["output_dir_path"] = output_dir_path
-            session_to_nwb_kwargs["verbose"] = verbose
+    for session_to_nwb_kwargs in tqdm(session_to_nwb_kwargs_per_session, desc="Converting sessions"):
+        session_to_nwb_kwargs["output_dir_path"] = output_dir_path
 
-            # Create meaningful error file name based on session info
-            subject_id = session_to_nwb_kwargs["subject_id"]
-            protocol_type = session_to_nwb_kwargs["protocol_type"].replace(" ", "_").lower()
-            exception_file_path = output_dir_path / f"ERROR_sub-{subject_id}_ses-{protocol_type}.txt"
+        # Create meaningful error file name using subject and session info
+        subject_id = f"{session_to_nwb_kwargs['subject_metadata']['Animal ID']}"
+        session_id = session_to_nwb_kwargs["session_id"]
+        del session_to_nwb_kwargs["session_id"]
 
-            futures.append(
-                executor.submit(
-                    safe_session_to_nwb,
-                    session_to_nwb_kwargs=session_to_nwb_kwargs,
-                    exception_file_path=exception_file_path,
+        exception_file_path = output_dir_path / f"ERROR_sub_{subject_id}-ses_{session_id}.txt"
+
+        try:
+            if session_id == "Varying durations":
+                varying_durations_session_to_nwb(
+                    **session_to_nwb_kwargs,
                 )
-            )
-        for _ in tqdm(as_completed(futures), total=len(futures)):
-            pass
-
-
-def safe_session_to_nwb(*, session_to_nwb_kwargs: dict, exception_file_path: Union[Path, str]):
-    """Convert a session to NWB while handling any errors by recording error messages to the exception_file_path.
-
-    Parameters
-    ----------
-    session_to_nwb_kwargs : dict
-        The arguments for session_to_nwb.
-    exception_file_path : Path
-        The path to the file where the exception messages will be saved.
-    """
-    exception_file_path = Path(exception_file_path)
-    try:
-        session_to_nwb(**session_to_nwb_kwargs)
-    except Exception as e:
-        with open(exception_file_path, mode="w") as f:
-            f.write(f"session_to_nwb_kwargs: \n {pformat(session_to_nwb_kwargs)}\n\n")
-            f.write(traceback.format_exc())
+            elif session_id == "Varying frequencies":
+                varying_frequencies_session_to_nwb(
+                    **session_to_nwb_kwargs,
+                )
+        except Exception as e:
+            with open(
+                exception_file_path,
+                mode="w",
+            ) as f:
+                f.write(f"Varying frequencies session_to_nwb_kwargs: \n {pformat(session_to_nwb_kwargs)}\n\n")
+                f.write(traceback.format_exc())
+                f.write(traceback.format_exc())
 
 
 def get_session_to_nwb_kwargs_per_session(
     *,
     data_dir_path: Union[str, Path],
+    subjects_metadata_file_path: Union[str, Path],
 ):
     """Get the kwargs for session_to_nwb for each session in the dataset.
 
@@ -90,72 +95,77 @@ def get_session_to_nwb_kwargs_per_session(
     ----------
     data_dir_path : Union[str, Path]
         The path to the directory containing the raw data.
+    subjects_metadata_file_path : Union[str, Path]
+        The path to the file containing subject metadata.
 
     Returns
     -------
     list[dict[str, Any]]
         A list of dictionaries containing the kwargs for session_to_nwb for each session.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the data directory or metadata file does not exist.
     """
+
     data_dir_path = Path(data_dir_path)
-
-    # Specify source data spec for path expansion (adapted from convert_session.py)
-    source_data_spec = {
-        "FiberPhotometry": {
-            "base_directory": data_dir_path,
-            "folder_path": "{ogen_stimulus_location}/Fiber photometry_TDT/{protocol_type}/{subject_id}-{session_starting_time_string}",
-        }
-    }
-
-    # Instantiate LocalPathExpander and expand paths
-    path_expander = LocalPathExpander()
-    metadata_list = path_expander.expand_paths(source_data_spec)
-
+    subjects_metadata_file_path = Path(subjects_metadata_file_path)
+    exception_file_path = data_dir_path / f"exceptions.txt"
     session_to_nwb_kwargs_per_session = []
-
-    for metadata in metadata_list:
-        # Extract metadata from path expansion
-        protocol_type = metadata["metadata"]["extras"]["protocol_type"]
-        session_starting_time_string = metadata["metadata"]["extras"]["session_starting_time_string"]
-        session_starting_time = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
-        ogen_stimulus_location = metadata["metadata"]["extras"]["ogen_stimulus_location"]
-        subject_id = metadata["metadata"]["Subject"]["subject_id"]
-
-        # Build video file paths
-        video_folder_path = (
-            data_dir_path / ogen_stimulus_location / "AnyMaze videos_slk/converted_video" / protocol_type
+    session_ids = ["Varying durations", "Varying frequencies"]
+    excel_sheet_names = pd.ExcelFile(subjects_metadata_file_path).sheet_names
+    for recording_type in excel_sheet_names:
+        if recording_type == "Cell_type recordings":
+            # TODO implement cell type recordings conversion
+            continue
+        with open(exception_file_path, mode="a") as f:
+            f.write(f"Recording type: {recording_type}\n")
+        subjects_metadata = pd.read_excel(subjects_metadata_file_path, sheet_name=recording_type).to_dict(
+            orient="records"
         )
-        video_metadata_file_path = video_folder_path / "video_metadata.xlsx"
-        video_file_paths = list(video_folder_path.glob(f"{subject_id}*.mp4"))
+        for subject_metadata in subjects_metadata:
+            with open(exception_file_path, mode="a") as f:
+                f.write(f"Subject {subject_metadata['Animal ID']}\n")
 
-        # Build kwargs dictionary for this session
-        session_kwargs = {
-            "session_starting_time": session_starting_time,
-            "subject_id": subject_id,
-            "protocol_type": protocol_type,
-            "ogen_stimulus_location": ogen_stimulus_location,
-            "tdt_folder_path": metadata["source_data"]["FiberPhotometry"]["folder_path"],
-            "video_file_paths": video_file_paths,
-            "video_metadata_file_path": video_metadata_file_path,
-            "stub_test": False,
-            "overwrite": True,
-        }
+            stimulus_location = subject_metadata["Input"]
+            parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
+            if not parent_protocol_folder_path.exists():
+                # raise FileNotFoundError(f"Folder {cohort_folder_path} does not exist")
+                with open(exception_file_path, mode="a") as f:
+                    f.write(f"Folder {parent_protocol_folder_path} does not exist\n\n")
+                continue
+            for session_id in session_ids:
+                protocol_folder_path = parent_protocol_folder_path / session_id
+                if not protocol_folder_path.exists():
+                    # raise FileNotFoundError(f"Folder {video_folder_path} does not exist")
+                    with open(exception_file_path, mode="a") as f:
+                        f.write(f"Session {session_id}\n")
+                        f.write(f"Folder {protocol_folder_path} does not exist\n\n")
+                    continue
 
-        session_to_nwb_kwargs_per_session.append(session_kwargs)
+                session_to_nwb_kwargs_per_session.append(
+                    {
+                        "session_id": session_id,
+                        "subject_metadata": subject_metadata,
+                        "protocol_folder_path": protocol_folder_path,
+                        "recording_type": recording_type,
+                        "stimulus_location": stimulus_location,
+                    }
+                )
 
     return session_to_nwb_kwargs_per_session
 
 
 if __name__ == "__main__":
-
     # Parameters for conversion
-    data_dir_path = Path("D:/Hnasko-CN-data-share/SN pan GABA recordings/")
-    output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
-    max_workers = 1
-    verbose = True
-
+    data_dir_path = Path("F:/Hnasko-CN-data-share/")
+    output_dir_path = Path("F:/hnasko_lab_conversion_nwb")
+    subjects_metadata_file_path = data_dir_path / "ASAP FP Overview.xlsx"
     dataset_to_nwb(
         data_dir_path=data_dir_path,
         output_dir_path=output_dir_path,
-        max_workers=max_workers,
-        verbose=verbose,
+        subjects_metadata_file_path=subjects_metadata_file_path,
+        verbose=False,
+        overwrite=True,
     )

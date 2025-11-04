@@ -15,11 +15,14 @@ classifiers = [
 ]
 
 dependencies = [
-  "neuroconv",
+  "neuroconv==0.8.2",
   "nwbinspector",
-  "ndx-fiber-photometry==0.1.0",
+  "ndx-fiber-photometry==0.2.2",
+  "ndx-ophys-devices==0.3.1",
+  "ndx-optogenetics @ git+https://github.com/alessandratrapani/ndx-optogenetics.git@optical_fiber_column_optional",
   "openpyxl",
   "opencv-python-headless",
+  "tdt",
   "dandi",
   "remfile",
   "ipykernel",

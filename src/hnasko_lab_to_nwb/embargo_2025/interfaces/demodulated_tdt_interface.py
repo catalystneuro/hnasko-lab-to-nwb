@@ -106,7 +106,7 @@ class TDTDemodulatedFiberPhotometryInterface(TDTFiberPhotometryInterface):
             raise ValueError("Fiber photometry metadata not found in NWB file.")
 
         # Create a new processing module for fiber photometry signals if it doesn't exist
-        get_module(nwbfile=nwbfile, name="ophys", description="Processed fiber photometry signals")
+        ophys_module = get_module(nwbfile=nwbfile, name="ophys", description="Processed fiber photometry signals")
 
         # Retrieve the name of the demodulated signal from the function arguments or Raise an Error
         signal_name = name

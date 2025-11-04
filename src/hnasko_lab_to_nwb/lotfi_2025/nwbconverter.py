@@ -5,12 +5,11 @@ from typing import Optional
 from pynwb import NWBFile
 
 from hnasko_lab_to_nwb.lotfi_2025.interfaces import (
-    TDTDemodulatedFiberPhotometryInterface,
-)
-from hnasko_lab_to_nwb.lotfi_2025.utils import (
-    add_auditory_stimuli,
-    add_optogenetic_stimulation,
-    add_shock_stimuli,
+    ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
+    ConcatenatedTDTFiberPhotometryInterface,
+    Lofti2025ProcessedFiberPhotometryInterface,
+    Lofti2025TDTOptogeneticStimulusInterface,
+    ConcatenatedLofti2025TDTOptogeneticStimulusInterface,
 )
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import ExternalVideoInterface, TDTFiberPhotometryInterface
@@ -18,16 +17,6 @@ from neuroconv.datainterfaces import ExternalVideoInterface, TDTFiberPhotometryI
 
 class Lofti2025NWBConverter(NWBConverter):
     """Primary conversion class for my extracellular electrophysiology dataset."""
-
-    data_interface_classes = dict(
-        FiberPhotometry=TDTFiberPhotometryInterface,
-        DemodulatedFiberPhotometry_Calcium=TDTDemodulatedFiberPhotometryInterface,
-        DemodulatedFiberPhotometry_Isosbestic=TDTDemodulatedFiberPhotometryInterface,
-        Video=ExternalVideoInterface,
-        Video_250ms=ExternalVideoInterface,
-        Video_1s=ExternalVideoInterface,
-        Video_4s=ExternalVideoInterface,
-    )
 
     def __init__(self, source_data: dict, verbose: bool = True, video_time_alignment_dict: Optional[dict] = None):
         """
@@ -42,6 +31,32 @@ class Lofti2025NWBConverter(NWBConverter):
         video_time_alignment_dict : Optional[dict], optional
             Dictionary for aligning video timestamps with session metadata, by default None.
         """
+        data_interface_name_mapping = {
+            "Video": ExternalVideoInterface,
+            "RawFiberPhotometry": TDTFiberPhotometryInterface,
+            "DemodulatedFiberPhotometry": Lofti2025ProcessedFiberPhotometryInterface,
+            "DownsampledFiberPhotometry": Lofti2025ProcessedFiberPhotometryInterface,
+            "DeltaFOverF": Lofti2025ProcessedFiberPhotometryInterface,
+            "OptogeneticStimulus": Lofti2025TDTOptogeneticStimulusInterface,
+        }
+        concatenated_data_interface_name_mapping = {
+            "ConcatenatedRawFiberPhotometry": ConcatenatedTDTFiberPhotometryInterface,
+            "ConcatenatedDemodulatedFiberPhotometry": ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
+            "ConcatenatedDownsampledFiberPhotometry": ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
+            "ConcatenatedDeltaFOverF": ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
+            "ConcatenatedOptogeneticStimulus": ConcatenatedLofti2025TDTOptogeneticStimulusInterface,
+        }
+
+        for interface_name in source_data.keys():
+            if "Concatenated" in interface_name:
+                for key, interface_class in concatenated_data_interface_name_mapping.items():
+                    if key in interface_name:
+                        self.data_interface_classes[interface_name] = interface_class
+            else:
+                for key, interface_class in data_interface_name_mapping.items():
+                    if key in interface_name:
+                        self.data_interface_classes[interface_name] = interface_class
+
         super().__init__(source_data=source_data, verbose=verbose)
         self.video_time_alignment_dict = video_time_alignment_dict or {}
 
@@ -59,18 +74,15 @@ class Lofti2025NWBConverter(NWBConverter):
 
     def add_to_nwbfile(self, nwbfile: NWBFile, metadata, conversion_options: Optional[dict] = None) -> None:
         super().add_to_nwbfile(nwbfile=nwbfile, metadata=metadata, conversion_options=conversion_options)
-        if "FiberPhotometry" in self.data_interface_objects.keys():
-            tdt_interface = self.data_interface_objects["FiberPhotometry"]
-            tdt_events = tdt_interface.get_events()
+        # if "FiberPhotometry" in self.data_interface_objects.keys():
+        #     tdt_interface = self.data_interface_objects["FiberPhotometry"]
+        #     tdt_events = tdt_interface.get_events()
 
-            if "OptogeneticStimulusInterval" in metadata["Stimulus"]:
-                add_optogenetic_stimulation(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
-            if "ShockStimulusInterval" in metadata["Stimulus"]:
-                add_shock_stimuli(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
-                add_auditory_stimuli(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
+        #     if "OptogeneticStimulusInterval" in metadata["Stimulus"]:
+        #         add_optogenetic_stimulation(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
 
-        for video_interface_name, video_interface in self.data_interface_objects.items():
-            if video_interface_name in ["Video_250ms", "Video_1s", "Video_4s"]:
-                start = video_interface._timestamps[0][0]
-                stop = video_interface._timestamps[0][-1]
-                nwbfile.add_trial(start_time=start, stop_time=stop, tags=video_interface_name.replace("Video_", ""))
+        for interface_name, interface in self.data_interface_objects.items():
+            if interface_name in ["Video_250ms", "Video_1s", "Video_4s"]:
+                start = interface._timestamps[0][0]
+                stop = interface._timestamps[0][-1]
+                nwbfile.add_trial(start_time=start, stop_time=stop, tags=interface_name.replace("Video_", ""))
