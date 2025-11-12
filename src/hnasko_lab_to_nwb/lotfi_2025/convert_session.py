@@ -139,6 +139,9 @@ def varying_frequencies_session_to_nwb(
     stimulation frequencies: [10.0, 20.0, 40.0, 5.0]
     """
     subject_id = subject_metadata["Animal ID"]
+    if subject_id in ["C4708", "C4709", "C4977", "C4978", "C3015", "C3016", "C4379", "C5113"]:
+        subject_id = subject_id.lower()
+
     protocol_folder_path = Path(protocol_folder_path)
 
     output_dir_path = Path(output_dir_path)
@@ -207,7 +210,7 @@ def varying_frequencies_session_to_nwb(
 
     # Extract session starting time from TDT data
     # Assume that the tdt folders are named as {subject_id}-{session_starting_time_string}
-    session_starting_time_string = tdt_folder_paths[0].name.upper().replace(f"{subject_id}-", "")
+    session_starting_time_string = tdt_folder_paths[0].name.replace(f"{subject_id}-", "")
     session_start_datetime = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
 
     # Add processed fp series
@@ -376,6 +379,9 @@ def varying_durations_session_to_nwb(  #
     stimulation frequencies: [40.0, 40.0, 40.0]
     """
     subject_id = subject_metadata["Animal ID"]
+    if subject_id in ["C4708", "C4709", "C4977", "C4978", "C3015", "C3016", "C4379", "C5113"]:
+        subject_id = subject_id.lower()
+
     protocol_folder_path = Path(protocol_folder_path)
 
     output_dir_path = Path(output_dir_path)
@@ -399,7 +405,14 @@ def varying_durations_session_to_nwb(  #
     if subject_metadata["Hemisphere"] == "Left":
         editable_metadata = update_coordinates_for_left_hemisphere(editable_metadata)
 
-    tdt_stimulus_channel_to_frequency = {"sms_": 40.0, "s1s_": 40.0, "s4s_": 40.0, "ssm_": 40.0}  # include typo
+    tdt_stimulus_channel_to_frequency = {
+        "sms_": 40.0,
+        "s1s_": 40.0,
+        "s4s_": 40.0,
+        "ssm_": 40.0,
+        "ss1_": 40.0,
+        "ss4_": 40.0,
+    }  # include typos
     mat_stim_ch_name = "LP5mW"
     stream_indices = None
     raw_sampling_frequency = 6103.5156
@@ -430,7 +443,7 @@ def varying_durations_session_to_nwb(  #
     # Extract session starting time from TDT data
     # Assume that the tdt folders are named as {subject_id}-{session_starting_time_string}
     # handle lower case subject IDs
-    session_starting_time_string = tdt_folder_path.name.upper().replace(f"{subject_id}-", "")
+    session_starting_time_string = tdt_folder_path.name.replace(f"{subject_id}-", "")
     session_start_datetime = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
 
     # Add processed fp series

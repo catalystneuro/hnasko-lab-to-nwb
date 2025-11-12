@@ -113,7 +113,7 @@ def get_session_to_nwb_kwargs_per_session(
     subjects_metadata_file_path = Path(subjects_metadata_file_path)
     exception_file_path = data_dir_path / f"exceptions.txt"
     session_to_nwb_kwargs_per_session = []
-    session_ids = ["Varying durations", "Varying frequencies"]
+    session_ids = ["Varying durations"]  # , "Varying frequencies"]
     excel_sheet_names = pd.ExcelFile(subjects_metadata_file_path).sheet_names
     for recording_type in excel_sheet_names:
         if recording_type == "Cell_type recordings":
@@ -127,7 +127,6 @@ def get_session_to_nwb_kwargs_per_session(
         for subject_metadata in subjects_metadata:
             with open(exception_file_path, mode="a") as f:
                 f.write(f"Subject {subject_metadata['Animal ID']}\n")
-
             stimulus_location = subject_metadata["Input"]
             parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
             if not parent_protocol_folder_path.exists():
@@ -159,8 +158,8 @@ def get_session_to_nwb_kwargs_per_session(
 
 if __name__ == "__main__":
     # Parameters for conversion
-    data_dir_path = Path("F:/Hnasko-CN-data-share/")
-    output_dir_path = Path("F:/hnasko_lab_conversion_nwb")
+    data_dir_path = Path("D:/Hnasko-CN-data-share/")
+    output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
     subjects_metadata_file_path = data_dir_path / "ASAP FP Overview.xlsx"
     dataset_to_nwb(
         data_dir_path=data_dir_path,
