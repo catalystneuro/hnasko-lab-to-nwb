@@ -190,6 +190,10 @@ def varying_frequencies_session_to_nwb(
             stream_indices = [2]
             raw_sampling_frequency = 24414.0625
             fill_gaps = False
+        elif recording_type == "Cell_type recordings_Vglut2" and subject_id in ["C1496", "C1498", "C1499", "C4891"]:
+            stream_indices = [2]
+            raw_sampling_frequency = 24414.0625
+            fill_gaps = False
 
         tdt_folder_paths = list(protocol_folder_path.glob(f"varFreq_*/{subject_id}-*"))
         # Sort the folders based on the session_starting_time_string. Under the assumption that the folders are named as {subject_id}-{day_string:%y%m%d}-{%H%M%S}
@@ -574,10 +578,10 @@ if __name__ == "__main__":
     output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
     subjects_metadata_file_path = data_dir_path / "ASAP FP Overview.xlsx"
     recording_types = pd.ExcelFile(subjects_metadata_file_path).sheet_names
-    recording_type = recording_types[4]
+    recording_type = recording_types[3]
     subjects_metadata = pd.read_excel(subjects_metadata_file_path, sheet_name=recording_type)
     # Select a subject to convert
-    subject_metadata = subjects_metadata.iloc[0]  # Change the index to select different subjects
+    subject_metadata = subjects_metadata.iloc[27]  # Change the index to select different subjects
     stimulus_location = subject_metadata["Input"]
     parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
 
@@ -588,17 +592,17 @@ if __name__ == "__main__":
         recording_type=recording_type,
         stimulus_location=stimulus_location,
         stub_test=False,
-        overwrite=True,
+        overwrite=False,
         verbose=True,
     )
 
-    varying_durations_session_to_nwb(
-        output_dir_path=output_dir_path,
-        subject_metadata=subject_metadata,
-        protocol_folder_path=parent_protocol_folder_path / "Varying durations",
-        recording_type=recording_type,
-        stimulus_location=stimulus_location,
-        stub_test=False,
-        overwrite=True,
-        verbose=True,
-    )
+    # varying_durations_session_to_nwb(
+    #     output_dir_path=output_dir_path,
+    #     subject_metadata=subject_metadata,
+    #     protocol_folder_path=parent_protocol_folder_path / "Varying durations",
+    #     recording_type=recording_type,
+    #     stimulus_location=stimulus_location,
+    #     stub_test=False,
+    #     overwrite=False,
+    #     verbose=True,
+    # )
