@@ -181,7 +181,7 @@ Ophys:
         description: The raw modulated fluorescence signal from GCaMP6f calcium indicator in SNc Vglut2+ DA neurons, excited at 465nm and 405nm, respectively.
         stream_name: Fi1r
         stream_indices: None
-        target_area: SNc
+        target_area: VG2
         unit: a.u.
         fiber_photometry_table_region: [0]
         fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
@@ -189,7 +189,7 @@ Ophys:
       - name: demodulated_calcium_signal_SNc
         description: The demodulated fluorescence signal from GCaMP6f calcium indicator in SNc Vglut2+ DA neurons, excited at 465nm and demodulated at 330Hz.
         stream_name: Gc_raw
-        target_area: SNc
+        target_area: VG2
         sampling_frequency: 6103.5156
         unit: a.u.
         fiber_photometry_table_region: [0]
@@ -197,7 +197,7 @@ Ophys:
       - name: demodulated_isosbestic_control_SNc
         description: The demodulated fluorescence signal from GCaMP6f for isosbestic control in SNc Vglut2+ DA neurons, excited at 405nm and demodulated at 210Hz.
         stream_name: af_raw
-        target_area: SNc
+        target_area: VG2
         sampling_frequency: 6103.5156
         unit: a.u.
         fiber_photometry_table_region: [1]
@@ -205,7 +205,7 @@ Ophys:
       - name: downsampled_calcium_signal_SNc
         description: The downsampled fluorescence signal from GCaMP6f calcium indicator in SNc Vglut2+ DA neurons, excited at 465nm and downsampled at 100Hz.
         stream_name: Gc
-        target_area: SNc
+        target_area: VG2
         sampling_frequency: 100.0
         unit: a.u.
         fiber_photometry_table_region: [0]
@@ -213,7 +213,7 @@ Ophys:
       - name: downsampled_isosbestic_control_SNc
         description: The downsampled fluorescence signal from GCaMP6f for isosbestic control in SNc Vglut2+ DA neurons, excited at 405nm and downsampled at 100Hz.
         stream_name: af
-        target_area: SNc
+        target_area: VG2
         sampling_frequency: 100.0
         unit: a.u.
         fiber_photometry_table_region: [1]
@@ -221,7 +221,7 @@ Ophys:
       - name: deltaF_over_F_SNc
         description: The deltaF/F signal from GCaMP6f calcium indicator in SNc Vglut2+ DA neurons, excited at 465nm and calculated as (Gc - fitted_af) / fitted_af.
         stream_name: dF
-        target_area: SNc
+        target_area: VG2
         sampling_frequency: 100.0
         unit: a.u.
         fiber_photometry_table_region: [0]

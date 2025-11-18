@@ -194,7 +194,7 @@ Ophys:
           location: SNc
           excitation_wavelength_in_nm: 465.0
           emission_wavelength_in_nm: 515.0
-          indicator: GCaMP8f
+          indicator: GCaMP8f_SNc
           optical_fiber: optical_fiber_SNc
           excitation_source: excitation_source_calcium_signal
           photodetector: photodetector
@@ -205,7 +205,7 @@ Ophys:
           location: SNc
           excitation_wavelength_in_nm: 405.0
           emission_wavelength_in_nm: 515.0
-          indicator: GCaMP8f
+          indicator: GCaMP8f_SNc
           optical_fiber: optical_fiber_SNc
           excitation_source: excitation_source_isosbestic_control
           photodetector: photodetector

@@ -57,6 +57,8 @@ def dataset_to_nwb(
 
     for session_to_nwb_kwargs in tqdm(session_to_nwb_kwargs_per_session, desc="Converting sessions"):
         session_to_nwb_kwargs["output_dir_path"] = output_dir_path
+        session_to_nwb_kwargs["overwrite"] = overwrite
+        session_to_nwb_kwargs["verbose"] = verbose
 
         # Create meaningful error file name using subject and session info
         subject_id = f"{session_to_nwb_kwargs['subject_metadata']['Animal ID']}"
@@ -113,22 +115,20 @@ def get_session_to_nwb_kwargs_per_session(
     subjects_metadata_file_path = Path(subjects_metadata_file_path)
     exception_file_path = data_dir_path / f"exceptions.txt"
     session_to_nwb_kwargs_per_session = []
-    session_ids = ["Varying durations"]  # , "Varying frequencies"]
+    session_ids = ["Varying durations", "Varying frequencies"]
     excel_sheet_names = pd.ExcelFile(subjects_metadata_file_path).sheet_names
-    for recording_type in excel_sheet_names:
-        if recording_type == "Cell_type recordings":
+    for sheet_name in excel_sheet_names:
+        if not sheet_name == "Cell_type recordings":
             # TODO implement cell type recordings conversion
             continue
         with open(exception_file_path, mode="a") as f:
-            f.write(f"Recording type: {recording_type}\n")
-        subjects_metadata = pd.read_excel(subjects_metadata_file_path, sheet_name=recording_type).to_dict(
-            orient="records"
-        )
+            f.write(f"Recording type: {sheet_name}\n")
+        subjects_metadata = pd.read_excel(subjects_metadata_file_path, sheet_name=sheet_name).to_dict(orient="records")
         for subject_metadata in subjects_metadata:
             with open(exception_file_path, mode="a") as f:
                 f.write(f"Subject {subject_metadata['Animal ID']}\n")
             stimulus_location = subject_metadata["Input"]
-            parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
+            parent_protocol_folder_path = data_dir_path / sheet_name / stimulus_location / "Fiber photometry_TDT"
             if not parent_protocol_folder_path.exists():
                 # raise FileNotFoundError(f"Folder {cohort_folder_path} does not exist")
                 with open(exception_file_path, mode="a") as f:
@@ -136,6 +136,17 @@ def get_session_to_nwb_kwargs_per_session(
                 continue
             for session_id in session_ids:
                 protocol_folder_path = parent_protocol_folder_path / session_id
+                if sheet_name == "Cell_type recordings":
+                    genotype = subject_metadata["Genotype"]
+                    if "Anxa1" in genotype:
+                        genotype = "Anxa1"
+                    if "VGlut2" in genotype:
+                        genotype = "Vglut2"
+                    recording_site = subject_metadata["Recording Site"]
+                    protocol_folder_path = protocol_folder_path / f"{genotype} {recording_site}"
+                    recording_type = f"{sheet_name}_{genotype}"
+                else:
+                    recording_type = sheet_name
                 if not protocol_folder_path.exists():
                     # raise FileNotFoundError(f"Folder {video_folder_path} does not exist")
                     with open(exception_file_path, mode="a") as f:
@@ -166,5 +177,5 @@ if __name__ == "__main__":
         output_dir_path=output_dir_path,
         subjects_metadata_file_path=subjects_metadata_file_path,
         verbose=False,
-        overwrite=True,
+        overwrite=False,
     )
