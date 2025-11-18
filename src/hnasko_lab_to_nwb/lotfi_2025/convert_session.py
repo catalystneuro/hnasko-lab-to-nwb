@@ -142,14 +142,16 @@ def varying_frequencies_session_to_nwb(
     if subject_id in ["C4708", "C4709", "C4977", "C4978", "C3015", "C3016", "C4379", "C5113"]:
         subject_id = subject_id.lower()
 
+    session_id = "varying_frequencies"
+    if subject_id in ["C5904", "C5966", "C5964", "C6609", "C6299", "C6612", "C6901", "C7241", "C7242"]:
+        session_id = f"{session_id}_{subject_metadata['Recording Site']}"
+
     protocol_folder_path = Path(protocol_folder_path)
 
     output_dir_path = Path(output_dir_path)
     if stub_test:
         output_dir_path = output_dir_path / "nwb_stub"
     output_dir_path.mkdir(parents=True, exist_ok=True)
-
-    session_id = "varying_frequencies"
 
     nwbfile_path = output_dir_path / f"sub-{subject_id}_ses-{session_id}.nwb"
 
@@ -386,14 +388,16 @@ def varying_durations_session_to_nwb(  #
     if subject_id in ["C4708", "C4709", "C4977", "C4978", "C3015", "C3016", "C4379", "C5113"]:
         subject_id = subject_id.lower()
 
+    session_id = "varying_durations"
+    if subject_id in ["C5904", "C5966", "C5964", "C6609", "C6299", "C6612", "C6901", "C7241", "C7242"]:
+        session_id = f"{session_id}_{subject_metadata['Recording Site']}"
+
     protocol_folder_path = Path(protocol_folder_path)
 
     output_dir_path = Path(output_dir_path)
     if stub_test:
         output_dir_path = output_dir_path / "nwb_stub"
     output_dir_path.mkdir(parents=True, exist_ok=True)
-
-    session_id = "varying_durations"
 
     nwbfile_path = output_dir_path / f"sub-{subject_id}_ses-{session_id}.nwb"
 
