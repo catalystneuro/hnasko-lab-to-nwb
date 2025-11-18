@@ -509,8 +509,14 @@ class Lofti2025ProcessedFiberPhotometryInterface(BaseTemporalAlignmentInterface)
         )
 
         # Get series metadata
+        if self._target_area == "STN_to_Anxa1" or self._target_area == "PPN_to_Anxa1":
+            # Adjust target area for metadata retrieval for Anxa1 recordings
+            genotype_area = self.source_data["file_path"].parent.name
+            target_area = genotype_area.replace("Anxa1 ", "")
+        else:
+            target_area = self._target_area
         fiber_photometry_response_series_metadata = get_fp_series_metadata(
-            metadata=metadata, stream_name=self._stream_name, target_area=self._target_area
+            metadata=metadata, stream_name=self._stream_name, target_area=target_area
         )
 
         # Get or create FiberPhotometryTable
@@ -649,8 +655,14 @@ class ConcatenatedLofti2025ProcessedFiberPhotometryInterface(Lofti2025ProcessedF
         )
 
         # Get series metadata
+        if self._target_area == "STN_to_Anxa1" or self._target_area == "PPN_to_Anxa1":
+            # Adjust target area for metadata retrieval for Anxa1 recordings
+            genotype_area = self.source_data["file_path"].parent
+            target_area = genotype_area.replace("Anxa1 ", "")
+        else:
+            target_area = self._target_area
         fiber_photometry_response_series_metadata = get_fp_series_metadata(
-            metadata=metadata, stream_name=self._stream_name, target_area=self._target_area
+            metadata=metadata, stream_name=self._stream_name, target_area=target_area
         )
 
         # Get or create FiberPhotometryTable

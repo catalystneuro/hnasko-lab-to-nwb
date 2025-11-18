@@ -538,6 +538,8 @@ def varying_durations_session_to_nwb(  #
     metadata["NWBFile"]["session_start_time"] = session_start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
 
     # Remove entries for other target areas from metadata
+    if target_area == "STN_to_Anxa1" or target_area == "PPN_to_Anxa1":
+        target_area = subject_metadata["Recording Site"]
     for key in metadata["Ophys"]["FiberPhotometry"].keys():
         if "FiberPhotometryResponseSeries" in key:
             fp_response_series = metadata["Ophys"]["FiberPhotometry"][key]
