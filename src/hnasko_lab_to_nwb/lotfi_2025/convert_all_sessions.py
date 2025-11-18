@@ -118,9 +118,6 @@ def get_session_to_nwb_kwargs_per_session(
     session_ids = ["Varying durations", "Varying frequencies"]
     excel_sheet_names = pd.ExcelFile(subjects_metadata_file_path).sheet_names
     for sheet_name in excel_sheet_names:
-        if not sheet_name == "Cell_type recordings":
-            # TODO implement cell type recordings conversion
-            continue
         with open(exception_file_path, mode="a") as f:
             f.write(f"Recording type: {sheet_name}\n")
         subjects_metadata = pd.read_excel(subjects_metadata_file_path, sheet_name=sheet_name).to_dict(orient="records")

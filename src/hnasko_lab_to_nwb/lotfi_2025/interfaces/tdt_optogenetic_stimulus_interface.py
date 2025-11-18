@@ -2,6 +2,7 @@ from copy import deepcopy
 from datetime import datetime
 from logging import warning
 from typing import List
+import numpy as np
 
 from pydantic import DirectoryPath, validate_call
 from pynwb.file import NWBFile
@@ -265,6 +266,9 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
                 warning(f"Stream name {stream_name} not found in TDT events. Skipping.")
                 continue
             for start_time, stop_time in zip(tdt_events[stream_name]["onset"], tdt_events[stream_name]["offset"]):
+                if np.isinf(start_time) or np.isinf(stop_time):
+                    warning(f"Found infinite start or stop time for stream {stream_name}. Skipping this event.")
+                    continue
                 number_pulses_per_pulse_train = int((stop_time - start_time) * stimulus_frequency)
                 opto_epochs_table.add_row(
                     start_time=start_time,
@@ -424,6 +428,9 @@ class ConcatenatedLofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
                 warning(f"Stream name {stream_name} not found in TDT events. Skipping.")
                 continue
             for start_time, stop_time in zip(tdt_events[stream_name]["onset"], tdt_events[stream_name]["offset"]):
+                if np.isinf(start_time) or np.isinf(stop_time):
+                    warning(f"Found infinite start or stop time for stream {stream_name}. Skipping this event.")
+                    continue
                 number_pulses_per_pulse_train = int((stop_time - start_time) * stimulus_frequency)
                 opto_epochs_table.add_row(
                     start_time=start_time,

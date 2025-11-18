@@ -190,7 +190,7 @@ def varying_frequencies_session_to_nwb(
             stream_indices = [2]
             raw_sampling_frequency = 24414.0625
             fill_gaps = False
-        elif recording_type == "Cell_type recordings_Vglut2" and subject_id in ["C1496", "C1498", "C1499", "C4891"]:
+        elif recording_type == "Cell_type recordings_Vglut2" and subject_id in ["C1496", "C1498", "C1499"]:
             stream_indices = [2]
             raw_sampling_frequency = 24414.0625
             fill_gaps = False
@@ -596,13 +596,13 @@ if __name__ == "__main__":
         verbose=True,
     )
 
-    # varying_durations_session_to_nwb(
-    #     output_dir_path=output_dir_path,
-    #     subject_metadata=subject_metadata,
-    #     protocol_folder_path=parent_protocol_folder_path / "Varying durations",
-    #     recording_type=recording_type,
-    #     stimulus_location=stimulus_location,
-    #     stub_test=False,
-    #     overwrite=False,
-    #     verbose=True,
-    # )
+    varying_durations_session_to_nwb(
+        output_dir_path=output_dir_path,
+        subject_metadata=subject_metadata,
+        protocol_folder_path=parent_protocol_folder_path / "Varying durations",
+        recording_type=recording_type,
+        stimulus_location=stimulus_location,
+        stub_test=False,
+        overwrite=False,
+        verbose=True,
+    )
