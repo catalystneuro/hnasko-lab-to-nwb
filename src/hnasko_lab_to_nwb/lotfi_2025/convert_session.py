@@ -178,12 +178,15 @@ def varying_frequencies_session_to_nwb(
         add_video_conversion = True
         tdt_folder_paths = list(protocol_folder_path.glob(f"{subject_id}-*"))
         ordered_mat_stim_ch_names = ["AllDurs"]
-    else:
-        if recording_type == "SN pan GABA recordings" and stimulus_location == "STN":
-            mat_stim_ch_names = ["s250ms5mW", "s1s10mW"]
-            stream_indices = [2]
-            raw_sampling_frequency = 24414.0625
-            fill_gaps = False
+    elif recording_type == "SN pan GABA recordings" and stimulus_location == "STN":
+        mat_stim_ch_names = ["s250ms5mW", "s1s10mW"]
+        stream_indices = [2]
+        raw_sampling_frequency = 24414.0625
+        fill_gaps = False
+    elif recording_type == "Str_DA_terminal recordings":
+        stream_indices = [2]
+        raw_sampling_frequency = 24414.0625
+        fill_gaps = False
 
         tdt_folder_paths = list(protocol_folder_path.glob(f"varFreq_*/{subject_id}-*"))
         # Sort the folders based on the session_starting_time_string. Under the assumption that the folders are named as {subject_id}-{day_string:%y%m%d}-{%H%M%S}
@@ -421,12 +424,13 @@ def varying_durations_session_to_nwb(  #
     # Handle exception for SN pan GABA recordings
     if recording_type == "SN pan GABA recordings" and stimulus_location == "PPN":
         add_video_conversion = True
-    if recording_type == "SN pan GABA recordings" and stimulus_location == "STN":
+    elif (recording_type == "SN pan GABA recordings" and stimulus_location == "STN") or (
+        recording_type == "Str_DA_terminal recordings"
+    ):
         # Update the TDT stimulus channel to frequency mapping for this specific case
         tdt_stimulus_channel_to_frequency = {"S1s_": 40.0, "S4s_": 40.0, "S6s_": 40.0, "Sms_": 40.0}
         stream_indices = [2]
         raw_sampling_frequency = 24414.0625
-
     source_data = dict()
     conversion_options = dict()
 
@@ -559,14 +563,14 @@ def varying_durations_session_to_nwb(  #
 if __name__ == "__main__":
 
     # Parameters for conversion
-    data_dir_path = Path("F:/Hnasko-CN-data-share/")
-    output_dir_path = Path("F:/hnasko_lab_conversion_nwb")
+    data_dir_path = Path("D:/Hnasko-CN-data-share/")
+    output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
     subjects_metadata_file_path = data_dir_path / "ASAP FP Overview.xlsx"
     recording_types = pd.ExcelFile(subjects_metadata_file_path).sheet_names
-    recording_type = recording_types[2]
+    recording_type = recording_types[4]
     subjects_metadata = pd.read_excel(subjects_metadata_file_path, sheet_name=recording_type)
     # Select a subject to convert
-    subject_metadata = subjects_metadata.iloc[23]  # Change the index to select different subjects
+    subject_metadata = subjects_metadata.iloc[0]  # Change the index to select different subjects
     stimulus_location = subject_metadata["Input"]
     parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
 
