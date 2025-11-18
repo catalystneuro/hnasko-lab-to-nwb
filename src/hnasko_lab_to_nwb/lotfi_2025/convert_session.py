@@ -178,15 +178,16 @@ def varying_frequencies_session_to_nwb(
         add_video_conversion = True
         tdt_folder_paths = list(protocol_folder_path.glob(f"{subject_id}-*"))
         ordered_mat_stim_ch_names = ["AllDurs"]
-    elif recording_type == "SN pan GABA recordings" and stimulus_location == "STN":
-        mat_stim_ch_names = ["s250ms5mW", "s1s10mW"]
-        stream_indices = [2]
-        raw_sampling_frequency = 24414.0625
-        fill_gaps = False
-    elif recording_type == "Str_DA_terminal recordings":
-        stream_indices = [2]
-        raw_sampling_frequency = 24414.0625
-        fill_gaps = False
+    else:
+        if recording_type == "SN pan GABA recordings" and stimulus_location == "STN":
+            mat_stim_ch_names = ["s250ms5mW", "s1s10mW"]
+            stream_indices = [2]
+            raw_sampling_frequency = 24414.0625
+            fill_gaps = False
+        elif recording_type == "Str_DA_terminal recordings":
+            stream_indices = [2]
+            raw_sampling_frequency = 24414.0625
+            fill_gaps = False
 
         tdt_folder_paths = list(protocol_folder_path.glob(f"varFreq_*/{subject_id}-*"))
         # Sort the folders based on the session_starting_time_string. Under the assumption that the folders are named as {subject_id}-{day_string:%y%m%d}-{%H%M%S}
