@@ -225,9 +225,11 @@ class Lofti2025ProcessedFiberPhotometryInterface(BaseTemporalAlignmentInterface)
     the Hnasko lab analysis pipeline, then parses into the ndx-fiber-photometry format.
 
     Verified to work with:
-    - SNr GABA recordings (PPN stimulation)
-    - GRAB-DA recordings (DLS & TS sites, PPN stimulation)
-    - SNc pan-DA recordings (STN stimulation)
+    - SNr GABA recordings
+    - GRAB-DA recordings
+    - SNc pan-DA recordings
+    - Str_DA terminal recordings
+    - Cell-type specific recordings
     """
 
     keywords = ("processed fiber photometry",)
