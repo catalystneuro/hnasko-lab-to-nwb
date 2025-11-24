@@ -38,7 +38,7 @@ plt.rcParams["font.size"] = 10
 
 DANDISET_ID = "001528"
 SUBJECT_ID = "C4561"  # Example subject (SNr GABA neuron recording)
-SESSION_ID = "varying-duration"  # or "varying-frequencies"
+SESSION_ID = "varying-durations"  # or "varying-frequencies"
 
 print("=" * 100)
 print("REPRODUCING LOTFI 2025 MATLAB FIBER PHOTOMETRY ANALYSIS IN PYTHON")
@@ -249,6 +249,92 @@ print(f"  Range: [{np.nanmin(dff_reproduced):.2f}, {np.nanmax(dff_reproduced):.2
 print(f"\nBaseline fit parameters:")
 print(f"  Slope: {slope:.4f}")
 print(f"  Intercept: {intercept:.4f}")
+
+# %% Section 6b: Validate Reproduced dF/F against NWB-Stored dF/F
+
+print("\n" + "=" * 100)
+print("VALIDATION 2: COMPARE REPRODUCED dF/F WITH NWB-STORED dF/F")
+print("=" * 100)
+
+# Find dF/F signal in NWB
+dff_nwb_name = None
+for name in ophys_module.data_interfaces.keys():
+    if "deltaf_over_f" in name.lower() or "dff" in name.lower():
+        dff_nwb_name = name
+        break
+
+if dff_nwb_name is None:
+    print("\n⚠ WARNING: Could not find dF/F signal in NWB file for validation.")
+    print("Skipping dF/F validation step.")
+else:
+    dff_nwb = ophys_module[dff_nwb_name].data[:]
+
+    # Handle potential length differences
+    min_len_dff = min(len(dff_reproduced), len(dff_nwb))
+    dff_reproduced_trim = dff_reproduced[:min_len_dff]
+    dff_nwb_trim = dff_nwb[:min_len_dff]
+
+    # Calculate correlation and RMSE
+    corr_dff = np.corrcoef(dff_reproduced_trim, dff_nwb_trim)[0, 1]
+    rmse_dff = np.sqrt(np.mean((dff_reproduced_trim - dff_nwb_trim) ** 2))
+    mean_diff_dff = np.mean(dff_reproduced_trim - dff_nwb_trim)
+
+    print(f"\ndF/F Signal Comparison:")
+    print(f"  NWB signal: {dff_nwb_name}")
+    print(f"  Length: {len(dff_nwb)} samples")
+    print(f"  Correlation: {corr_dff:.6f}")
+    print(f"  RMSE: {rmse_dff:.4f}%")
+    print(f"  Mean difference: {mean_diff_dff:.4f}%")
+    print(f"  Max absolute difference: {np.max(np.abs(dff_reproduced_trim - dff_nwb_trim)):.4f}%")
+
+    if corr_dff > 0.99:
+        print(f"\n✓ VALIDATION PASSED: Reproduced dF/F matches NWB-stored dF/F (r > 0.99)")
+    else:
+        print(f"\n⚠ WARNING: Correlation < 0.99. Some differences detected in dF/F calculation.")
+
+    # Visualize dF/F comparison
+    fig, axes = plt.subplots(3, 1, figsize=(15, 10))
+
+    time_min_dff = t_downsampled[:min_len_dff] / 60
+
+    # Plot 1: Full trace comparison
+    axes[0].plot(time_min_dff, dff_nwb_trim, "k-", linewidth=1, alpha=0.7, label="NWB Stored")
+    axes[0].plot(time_min_dff, dff_reproduced_trim, "r--", linewidth=1, alpha=0.7, label="Reproduced")
+    axes[0].set_ylabel("dF/F (%)")
+    axes[0].set_title(f"dF/F Signal Comparison (r={corr_dff:.6f})")
+    axes[0].legend()
+    axes[0].grid(True, alpha=0.3)
+
+    # Plot 2: Zoomed view (first 2 minutes)
+    zoom_samples = min(int(2 * 60 * TARGET_FS), min_len_dff)
+    axes[1].plot(
+        time_min_dff[:zoom_samples], dff_nwb_trim[:zoom_samples], "k-", linewidth=1, alpha=0.7, label="NWB Stored"
+    )
+    axes[1].plot(
+        time_min_dff[:zoom_samples],
+        dff_reproduced_trim[:zoom_samples],
+        "r--",
+        linewidth=1,
+        alpha=0.7,
+        label="Reproduced",
+    )
+    axes[1].set_ylabel("dF/F (%)")
+    axes[1].set_title("dF/F Signal Comparison - Zoomed (First 2 minutes)")
+    axes[1].legend()
+    axes[1].grid(True, alpha=0.3)
+
+    # Plot 3: Difference (residuals)
+    axes[2].plot(time_min_dff, dff_reproduced_trim - dff_nwb_trim, "purple", linewidth=0.8)
+    axes[2].axhline(0, color="black", linestyle="--", linewidth=1, alpha=0.5)
+    axes[2].set_xlabel("Time (minutes)")
+    axes[2].set_ylabel("Difference (%)")
+    axes[2].set_title(f"Residuals (Reproduced - NWB Stored) | RMSE={rmse_dff:.4f}%")
+    axes[2].grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    plt.show()
+
+    print("\ndF/F validation plots displayed.")
 
 # %% Section 7: Extract and Analyze Trials
 
