@@ -367,7 +367,7 @@ def calculate_summary_statistics(
         for trial_idx in range(n_trials):
             trial_segment = window_data[trial_idx, :]
             if not np.all(np.isnan(trial_segment)):
-                auc = np.trapz(trial_segment, dx=1 / sampling_rate)
+                auc = np.trapezoid(trial_segment, dx=1 / sampling_rate)
                 aucs.append(auc)
 
         if aucs:
