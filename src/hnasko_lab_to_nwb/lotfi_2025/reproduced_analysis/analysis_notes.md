@@ -1,11 +1,9 @@
 # MATLAB Analysis Report: Lotfi 2025 Fiber Photometry Analysis
 
 ## Overview
-This document provides a comprehensive analysis of the MATLAB scripts used in the Lotfi 2025 study for fiber photometry data analysis. The analysis processes TDT-acquired fiber photometry signals to examine responses of different dopaminergic and GABAergic neuron subtypes to optogenetic stimulation.
+The analysis processes TDT-acquired fiber photometry signals to examine responses of different dopaminergic and GABAergic neuron subtypes to optogenetic stimulation.
 
 ## File Organization
-
-### Total Files: 26 MATLAB scripts
 
 **Categories by Stimulation Source:**
 - **STN stimulation**: 10 files
