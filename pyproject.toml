@@ -28,13 +28,20 @@ dependencies = [
   "tdt",
   "dandi>=0.60",
   "remfile",
-  "ipykernel",
   "h5py",
   "numpy",
   "pandas",
   "pydantic",
   "pytz",
   "tqdm",
+]
+
+[project.optional-dependencies]
+analysis = [
+  "ipykernel",
+  "matplotlib",
+  "scipy",
+  "statsmodels",
 ]
 
 [dependency-groups]

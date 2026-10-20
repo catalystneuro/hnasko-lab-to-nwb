@@ -6,4 +6,4 @@ dependencies:
   - python==3.13
   - pip
   - pip:
-      - --editable . # This calls the setup and therefore requirements minimal
+      - --editable .[analysis] # Installs the package with the notebook dependencies
