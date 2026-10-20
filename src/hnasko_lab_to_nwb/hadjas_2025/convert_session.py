@@ -96,6 +96,27 @@ def update_coordinates_for_left_hemisphere(metadata: dict) -> dict:
     return updated_metadata
 
 
+def filter_optogenetics_metadata(metadata: dict, stimulus_location: str) -> None:
+    """Remove optogenetics entries for stimulus sites other than stimulus_location, in place.
+
+    Parameters
+    ----------
+    metadata : dict
+        The metadata dictionary with an "Optogenetics" section.
+    stimulus_location : str
+        Location of the stimulus (e.g., "PPN", "STN").
+    """
+    for item in metadata["Optogenetics"]["OptogeneticEffectors"]:
+        if stimulus_location not in item["name"]:
+            metadata["Optogenetics"]["OptogeneticEffectors"].remove(item)
+    for item in metadata["Optogenetics"]["OptogeneticVirusInjections"]:
+        if stimulus_location not in item["name"]:
+            metadata["Optogenetics"]["OptogeneticVirusInjections"].remove(item)
+    for row in metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"]:
+        if stimulus_location not in row["effector"]:
+            metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"].remove(row)
+
+
 def varying_frequencies_session_to_nwb(
     output_dir_path: Union[str, Path],
     subject_metadata: dict,
@@ -328,15 +349,7 @@ def varying_frequencies_session_to_nwb(
         metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"][i]["stream_indices"] = stream_indices
 
     # Remove entries for other stimulus sites from metadata
-    for item in metadata["Optogenetics"]["OptogeneticEffectors"]:
-        if stimulus_location not in item["name"]:
-            metadata["Optogenetics"]["OptogeneticEffectors"].remove(item)
-    for item in metadata["Optogenetics"]["OptogeneticVirusInjections"]:
-        if stimulus_location not in item["name"]:
-            metadata["Optogenetics"]["OptogeneticVirusInjections"].remove(item)
-    for row in metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"]:
-        if stimulus_location not in row["effector"]:
-            metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"].remove(row)
+    filter_optogenetics_metadata(metadata=metadata, stimulus_location=stimulus_location)
 
     # Run conversion
     converter.run_conversion(
@@ -555,15 +568,7 @@ def varying_durations_session_to_nwb(  #
         metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"][i]["stream_indices"] = stream_indices
 
     # Remove entries for other stimulus sites from metadata
-    for item in metadata["Optogenetics"]["OptogeneticEffectors"]:
-        if stimulus_location not in item["name"]:
-            metadata["Optogenetics"]["OptogeneticEffectors"].remove(item)
-    for item in metadata["Optogenetics"]["OptogeneticVirusInjections"]:
-        if stimulus_location not in item["name"]:
-            metadata["Optogenetics"]["OptogeneticVirusInjections"].remove(item)
-    for row in metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"]:
-        if stimulus_location not in row["effector"]:
-            metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"].remove(row)
+    filter_optogenetics_metadata(metadata=metadata, stimulus_location=stimulus_location)
 
     # Run conversion
     converter.run_conversion(
