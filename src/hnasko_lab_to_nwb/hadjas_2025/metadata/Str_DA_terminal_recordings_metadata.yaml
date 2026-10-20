@@ -230,7 +230,7 @@ Ophys:
       - name: raw_signal_DLS
         description: The raw modulated fluorescence signal from GCaMP6f dopamine indicator in DLS neurons, excited at 465nm and 405nm, respectively.
         stream_name: Fi1r
-        stream_indices: None
+        stream_indices: null
         target_area: DLS
         unit: a.u.
         fiber_photometry_table_region: [0]
@@ -238,7 +238,7 @@ Ophys:
       - name: raw_signal_TS
         description: The raw modulated fluorescence signal from GCaMP6f dopamine indicator in TS neurons, excited at 465nm and 405nm, respectively.
         stream_name: Fi1r
-        stream_indices: None
+        stream_indices: null
         target_area: TS
         unit: a.u.
         fiber_photometry_table_region: [2]

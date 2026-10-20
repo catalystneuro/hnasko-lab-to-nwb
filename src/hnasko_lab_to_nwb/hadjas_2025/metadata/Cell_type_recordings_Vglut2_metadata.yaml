@@ -180,7 +180,7 @@ Ophys:
       - name: raw_signal_SNc
         description: The raw modulated fluorescence signal from GCaMP6f calcium indicator in SNc Vglut2+ DA neurons, excited at 465nm and 405nm, respectively.
         stream_name: Fi1r
-        stream_indices: None
+        stream_indices: null
         target_area: VG2
         unit: a.u.
         fiber_photometry_table_region: [0]
