@@ -16,7 +16,7 @@ from neuroconv.datainterfaces import TDTFiberPhotometryInterface
 
 
 class Hadjas2025NWBConverter(NWBConverter):
-    """Primary conversion class for my extracellular electrophysiology dataset."""
+    """Primary conversion class for the fiber photometry shock sessions."""
 
     data_interface_classes = dict(
         FiberPhotometry=TDTFiberPhotometryInterface,

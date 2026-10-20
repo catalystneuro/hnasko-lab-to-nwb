@@ -16,7 +16,7 @@ from neuroconv.datainterfaces import ExternalVideoInterface, TDTFiberPhotometryI
 
 
 class Hadjas2025NWBConverter(NWBConverter):
-    """Primary conversion class for my extracellular electrophysiology dataset."""
+    """Primary conversion class for the Hadjas 2025 fiber photometry and optogenetics dataset."""
 
     def __init__(self, source_data: dict, verbose: bool = True, video_time_alignment_dict: Optional[dict] = None):
         """
