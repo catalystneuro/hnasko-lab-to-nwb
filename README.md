@@ -120,7 +120,7 @@ Once you have installed the package, you can run any of the conversion scripts i
 ```python
 from pathlib import Path
 from datetime import datetime
-from hnasko_lab_to_nwb.lotfi_2025.convert_session import session_to_nwb
+from hnasko_lab_to_nwb.hadjas_2025.convert_session import session_to_nwb
 
 # Define your data paths
 output_dir_path = Path("./nwb_output")
@@ -148,7 +148,7 @@ session_to_nwb(
 For converting multiple sessions, you can use the batch processing script:
 
 ```bash
-python src/hnasko_lab_to_nwb/lotfi_2025/convert_session.py
+python src/hnasko_lab_to_nwb/hadjas_2025/convert_session.py
 ```
 
 This script uses the `LocalPathExpander` to automatically discover and convert all sessions in your data directory. Modify the `data_dir_path` and `output_dir_path` variables in the script to match your setup.
@@ -184,7 +184,7 @@ hnasko-lab-to-nwb/
 ├── README.md
 └── src/
     └── hnasko_lab_to_nwb/
-        └── lotfi_2025/
+        └── hadjas_2025/
             ├── __init__.py
             ├── convert_session.py          # Main conversion script
             ├── convert_all_sessions.py     # Batch processing script

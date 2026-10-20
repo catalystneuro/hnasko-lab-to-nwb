@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Union
 
-from hnasko_lab_to_nwb.lotfi_2025.nwbconverter import Lofti2025NWBConverter
+from hnasko_lab_to_nwb.hadjas_2025.nwbconverter import Lofti2025NWBConverter
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 

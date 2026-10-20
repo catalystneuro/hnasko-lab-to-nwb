@@ -4,7 +4,7 @@ from typing import Optional
 
 from pynwb import NWBFile
 
-from hnasko_lab_to_nwb.lotfi_2025.interfaces import (
+from hnasko_lab_to_nwb.hadjas_2025.interfaces import (
     ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
     ConcatenatedTDTFiberPhotometryInterface,
     Lofti2025ProcessedFiberPhotometryInterface,

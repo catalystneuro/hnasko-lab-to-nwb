@@ -696,7 +696,7 @@ class ConcatenatedLofti2025ProcessedFiberPhotometryInterface(Lofti2025ProcessedF
 
         # Fill gaps with NaNs
         if fill_gaps:
-            from hnasko_lab_to_nwb.lotfi_2025.utils import fill_gaps_w_nans
+            from hnasko_lab_to_nwb.hadjas_2025.utils import fill_gaps_w_nans
 
             concatenated_data, concatenated_timestamps = fill_gaps_w_nans(
                 data=concatenated_data,

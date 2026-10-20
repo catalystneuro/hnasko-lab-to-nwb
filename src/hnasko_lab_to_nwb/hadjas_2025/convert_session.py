@@ -7,10 +7,10 @@ from typing import Union
 import pandas as pd
 import pytz
 
-from hnasko_lab_to_nwb.lotfi_2025.interfaces.concatenated_tdt_fp_interface import (
+from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface import (
     ConcatenatedTDTFiberPhotometryInterface,
 )
-from hnasko_lab_to_nwb.lotfi_2025.nwbconverter import Lofti2025NWBConverter
+from hnasko_lab_to_nwb.hadjas_2025.nwbconverter import Lofti2025NWBConverter
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 
@@ -271,7 +271,7 @@ def varying_frequencies_session_to_nwb(
 
     # Add Behavioral Video if needed
     if add_video_conversion:
-        from hnasko_lab_to_nwb.lotfi_2025.utils import get_video_aligned_starting_time
+        from hnasko_lab_to_nwb.hadjas_2025.utils import get_video_aligned_starting_time
 
         video_time_alignment_dict = dict()
         video_folder_path = protocol_folder_path.parents[1] / "AnyMaze videos_mp4" / "Varying frequencies"
@@ -502,7 +502,7 @@ def varying_durations_session_to_nwb(  #
 
     # Add Behavioral Video if needed
     if add_video_conversion:
-        from hnasko_lab_to_nwb.lotfi_2025.utils import get_video_aligned_starting_time
+        from hnasko_lab_to_nwb.hadjas_2025.utils import get_video_aligned_starting_time
 
         video_time_alignment_dict = dict()
         video_folder_path = protocol_folder_path.parents[1] / "AnyMaze videos_mp4" / "Varying durations"

@@ -9,7 +9,7 @@ import natsort
 import pandas as pd
 import numpy as np
 
-from hnasko_lab_to_nwb.lotfi_2025.convert_session import (
+from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     varying_durations_session_to_nwb,
     varying_frequencies_session_to_nwb,
 )
