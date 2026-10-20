@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 from pynwb.testing.mock.file import mock_NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.processed_fp_interface import (
@@ -7,7 +6,6 @@ from hnasko_lab_to_nwb.hadjas_2025.interfaces.processed_fp_interface import (
 )
 
 
-@pytest.mark.xfail(strict=True, reason="t2 is set inside the segment loop and the next segment fails the stub assert")
 def test_concatenated_processed_interface_stub_test_keeps_one_second_per_segment(
     tmp_path, anxa1_metadata, write_processed_mat_file
 ):
@@ -35,7 +33,6 @@ def test_concatenated_processed_interface_stub_test_keeps_one_second_per_segment
     assert len(nwbfile.processing["ophys"]["deltaF_over_F_DLS"].data) == 3 * 100
 
 
-@pytest.mark.xfail(strict=True, reason="t2 is set inside the segment loop and the next segment fails the stub assert")
 def test_concatenated_tdt_interface_stub_test_keeps_one_second_per_segment(
     anxa1_metadata, make_concatenated_tdt_interface
 ):
