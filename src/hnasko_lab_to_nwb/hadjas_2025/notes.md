@@ -28,7 +28,7 @@ During day 3, animals were placed in a shock chamber and recorded for 6 minutes.
 Uncued shocks (0.3 mA) at various durations (250ms, 1s and 4s, 5 times for each duration) were delivered
 in a randomized order and ISI.
 
-This conversion pipeline convert only the "Varying duration" and "Varying frequencies" sessions. Refer to embargo_2025 for converting the "Shock" sessions.
+This conversion pipeline convert only the "Varying duration" and "Varying frequencies" sessions. Refer to shock_sessions for converting the "Shock" sessions.
 
 ## Optogenetic stimulation protocols
 Optogenetic stimulations were delivered by a red laser (Shanghai laser, 635nm) at 5 mW power.  The mice received 40 Hz stimulations at various durations (i.e. 250 ms, 1 s and 4 s), 5 trials for each duration, with an inter-stimulation interval (ISI) of 10 s, and trials within session and subject were averaged. In subsequent recording sessions, mice received optogenetic stimulation at varying frequencies (5 Hz, 10 Hz , 20 Hz and 40 Hz), 5 trials for each, with an ISI of 20 s. For a given session block, the stimulation durations were again either 250 ms, 1 s, or 4 s, with the order of stimulation duration blocks (ascending or descending) counterbalanced across animals.

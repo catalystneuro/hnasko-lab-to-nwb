@@ -1,4 +1,4 @@
-from ...embargo_2025.utils.add_shock_stimuli import (
+from ...shock_sessions.utils.add_shock_stimuli import (
     add_auditory_stimuli,
     add_shock_stimuli,
 )

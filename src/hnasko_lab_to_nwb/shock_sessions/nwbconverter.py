@@ -4,10 +4,10 @@ from typing import Optional
 
 from pynwb import NWBFile
 
-from hnasko_lab_to_nwb.embargo_2025.interfaces import (
+from hnasko_lab_to_nwb.shock_sessions.interfaces import (
     TDTDemodulatedFiberPhotometryInterface,
 )
-from hnasko_lab_to_nwb.embargo_2025.utils import (
+from hnasko_lab_to_nwb.shock_sessions.utils import (
     add_auditory_stimuli,
     add_shock_stimuli,
 )
