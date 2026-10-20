@@ -29,7 +29,12 @@ dependencies = [
   "dandi",
   "remfile",
   "ipykernel",
-  "remfile",
+  "h5py",
+  "numpy",
+  "pandas",
+  "pydantic",
+  "pytz",
+  "tqdm",
 ]
 
 [dependency-groups]
