@@ -106,15 +106,16 @@ def filter_optogenetics_metadata(metadata: dict, stimulus_location: str) -> None
     stimulus_location : str
         Location of the stimulus (e.g., "PPN", "STN").
     """
-    for item in metadata["Optogenetics"]["OptogeneticEffectors"]:
-        if stimulus_location not in item["name"]:
-            metadata["Optogenetics"]["OptogeneticEffectors"].remove(item)
-    for item in metadata["Optogenetics"]["OptogeneticVirusInjections"]:
-        if stimulus_location not in item["name"]:
-            metadata["Optogenetics"]["OptogeneticVirusInjections"].remove(item)
-    for row in metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"]:
-        if stimulus_location not in row["effector"]:
-            metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"].remove(row)
+    optogenetics = metadata["Optogenetics"]
+    optogenetics["OptogeneticEffectors"] = [
+        item for item in optogenetics["OptogeneticEffectors"] if stimulus_location in item["name"]
+    ]
+    optogenetics["OptogeneticVirusInjections"] = [
+        item for item in optogenetics["OptogeneticVirusInjections"] if stimulus_location in item["name"]
+    ]
+    optogenetics["OptogeneticSitesTable"]["rows"] = [
+        row for row in optogenetics["OptogeneticSitesTable"]["rows"] if stimulus_location in row["effector"]
+    ]
 
 
 def varying_frequencies_session_to_nwb(

@@ -1,9 +1,6 @@
-import pytest
-
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import filter_optogenetics_metadata
 
 
-@pytest.mark.xfail(strict=True, reason="list.remove while iterating skips the entry after each removal")
 def test_filter_optogenetics_metadata_keeps_only_stimulus_location():
     metadata = {
         "Optogenetics": {
