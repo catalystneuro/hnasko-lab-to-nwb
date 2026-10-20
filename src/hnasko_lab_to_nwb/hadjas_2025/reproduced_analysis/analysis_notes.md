@@ -7,7 +7,7 @@ The analysis processes TDT-acquired fiber photometry signals to examine response
 
 **Categories by Stimulation Source:**
 - **STN stimulation**: 10 files
-- **PPN stimulation**: 12 files  
+- **PPN stimulation**: 12 files
 - **Anxa1 subtype analysis**: 4 files (both STN and PPN)
 
 **Categories by Recording Target:**
@@ -69,7 +69,7 @@ For each driver frequency:
 **Target Sampling Rate:** 100 Hz
 **Method:** Gridded interpolation (`griddedInterpolant`)
 
-**Rationale:** 
+**Rationale:**
 - Reduces computational load
 - 100 Hz is sufficient for capturing calcium dynamics
 - Performed before baseline fitting to improve robustness
@@ -290,7 +290,7 @@ Results are stored in nested structures indexed by recording site, subject and l
 
 ### Time Windows
 - **Pre-stimulus baseline:** 5 seconds
-- **Post-stimulus window:** 10 seconds  
+- **Post-stimulus window:** 10 seconds
 - **Normalization baseline:** 1 second before stimulus (-1 to 0s)
 
 ### Quality Control
@@ -320,7 +320,7 @@ Results are stored in nested structures indexed by recording site, subject and l
 
 **Data Available in NWB:**
 - Raw modulated signal (Fi1r) ✓
-- Demodulated signals (465nm, 405nm) ✓  
+- Demodulated signals (465nm, 405nm) ✓
 - Downsampled signals (100 Hz) ✓
 - Optogenetic stimulation timestamps ✓
 - Session metadata ✓

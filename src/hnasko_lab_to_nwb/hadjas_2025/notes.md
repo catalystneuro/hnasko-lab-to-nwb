@@ -61,7 +61,7 @@ Gcamp6f was excited by amplitude modulated signals from two light-emitting diode
 
 #### Fiber photometry
 
-* Setup FP1 
+* Setup FP1
 * Optical fiber model: 400-um core, 0.39 NA, 6-mm length, 1.25-mm diameter black ceramic ferrule, RWD
 * Optical fiber location: **SNc** (AP -3.2, ML +/-1.4, DV -4.1).
 * Targeted neurons: **SNc pan-DA Neurons** in VGLUT2-Cre x DAT-Flp mice
@@ -81,12 +81,12 @@ Gcamp6f was excited by amplitude modulated signals from two light-emitting diode
 
 * Setup FP3
 * Optical fiber model: 200-um core, 0.39 NA, L = 6 mm, 1.25-mm diameter white ceramic ferrule, RWD
-* Optical fiber locations: 
+* Optical fiber locations:
     * **DLS** (AP +0.5, ML +/- 2.25, DV -2.75)
     * **TS** (AP -1.25, ML +/-2.9, DV -3.25)
 * Targeted neurons: **DA release in striatal subregions (DLS and TS)** in VGLUT2-Cre mice
 * Indicator: 300 nl of AAV9-EF1a-GRABDA2m (2e12 vg/mL, Addgene: 140553)
-* Indicator injection sites: 
+* Indicator injection sites:
     * **DLS** (AP +0.5, ML +/-2.25, DV -2.95)
     * **TS** (AP -1.25, ML +/-2.9, DV -3.45)
 
@@ -101,9 +101,9 @@ Gcamp6f was excited by amplitude modulated signals from two light-emitting diode
 
 #### Fiber photometry Anxa1
 
-* Setup FP3 
+* Setup FP3
 * Optical fiber model: 400-um core, 0.39 NA, 6-mm length, 1.25-mm diameter black ceramic ferrule, RWD
-* Optical fiber locations: 
+* Optical fiber locations:
     * **SNc** (AP -3.2, ML +/-1.4, DV -4.1).
     * **DLS** (AP +0.5, ML +/- 2.25, DV -2.75)
 * Targeted neurons: **DA neurons and terminals projecting to DLS** in VGLUT2-PhiC x Anxa1Cre mice
@@ -119,7 +119,7 @@ Gcamp6f was excited by amplitude modulated signals from two light-emitting diode
 
 #### Fiber photometry Vglut2
 
-* Setup FP1 
+* Setup FP1
 * Optical fiber model: 400-um core, 0.39 NA, 6-mm length, 1.25-mm diameter black ceramic ferrule, RWD
 * Optical fiber location: **SNc** (AP -3.2, ML +/-1.6, DV -4.0).
 * Targeted neurons: **SNc Vglut2+ DA Neurons** in VGLUT2-Cre x DAT-Flp mice
@@ -139,12 +139,12 @@ Gcamp6f was excited by amplitude modulated signals from two light-emitting diode
 
 * Setup FP3
 * Optical fiber model: 200-um core, 0.39 NA, L = 6 mm, 1.25-mm diameter white ceramic ferrule, RWD
-* Optical fiber locations: 
+* Optical fiber locations:
     * **DLS** (AP +0.5, ML +/- 2.25, DV -2.75)
     * **TS** (AP -1.25, ML +/-2.9, DV -3.25)
 * Targeted neurons: **DA axon terminal (DLS and TS)** in VGlut2-cre x DAT-flp
 * Indicator: 300 nl of AAV1-Ef1a-fDIO-**GCaMP6f** (4e12 vg/mL, Addgene 1283125)
-* Indicator injection sites: 
+* Indicator injection sites:
     * **DLS** (AP +0.5, ML +/-2.25, DV -2.95)
     * **TS** (AP -1.25, ML +/-2.9, DV -3.45)
 
