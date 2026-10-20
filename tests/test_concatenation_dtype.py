@@ -1,13 +1,7 @@
-from pathlib import Path
-from types import SimpleNamespace
-
 import numpy as np
 import pytest
 from pynwb.testing.mock.file import mock_NWBFile
 
-from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface import (
-    ConcatenatedTDTFiberPhotometryInterface,
-)
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.processed_fp_interface import (
     ConcatenatedHadjas2025ProcessedFiberPhotometryInterface,
 )
@@ -51,28 +45,9 @@ def test_concatenated_processed_series_keeps_float32(tmp_path, anxa1_metadata, w
     assert nwbfile.processing["ophys"]["deltaF_over_F_DLS"].data.dtype == np.float32
 
 
-class FakeTDTInterface:
-    """Stands in for a TDTFiberPhotometryInterface of one block with a float32 Fi1r stream."""
-
-    def __init__(self, folder_path: Path, data: np.ndarray, sampling_frequency: float):
-        self.source_data = dict(folder_path=folder_path)
-        self._stream = SimpleNamespace(data=data, fs=sampling_frequency)
-
-    def load(self, t1: float = 0.0, t2: float = 0.0):
-        return SimpleNamespace(streams=dict(Fi1r=self._stream))
-
-    def get_timestamps(self, t1: float = 0.0, t2: float = 0.0) -> dict:
-        return dict(Fi1r=np.arange(len(self._stream.data)) / self._stream.fs)
-
-
 @pytest.mark.parametrize("fill_gaps", [False, True])
-def test_concatenated_tdt_series_keeps_float32(anxa1_metadata, fill_gaps):
-    interface = ConcatenatedTDTFiberPhotometryInterface.__new__(ConcatenatedTDTFiberPhotometryInterface)
-    interface._tdt_interfaces = [
-        FakeTDTInterface(Path(f"varFreq_{duration}") / "C0001-240101-120000", np.ones(5, dtype="float32"), 100.0)
-        for duration in ("250ms", "1s", "4s")
-    ]
-    interface.segment_starting_times = SEGMENT_STARTING_TIMES
+def test_concatenated_tdt_series_keeps_float32(anxa1_metadata, make_concatenated_tdt_interface, fill_gaps):
+    interface = make_concatenated_tdt_interface(num_samples=5)
     nwbfile = mock_NWBFile()
 
     interface.add_to_nwbfile(nwbfile=nwbfile, metadata=anxa1_metadata, stream_name="Fi1r", fill_gaps=fill_gaps)
