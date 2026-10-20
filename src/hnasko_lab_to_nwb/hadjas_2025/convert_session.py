@@ -96,6 +96,22 @@ def update_coordinates_for_left_hemisphere(metadata: dict) -> dict:
     return updated_metadata
 
 
+def localize_session_start_time(session_start_datetime: datetime) -> datetime:
+    """Attach the lab's time zone to a session start time read from a TDT block folder name.
+
+    Parameters
+    ----------
+    session_start_datetime : datetime
+        Naive session start time, in the local time of the recording computer.
+
+    Returns
+    -------
+    datetime
+        The session start time with its time zone.
+    """
+    return session_start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
+
+
 def filter_optogenetics_metadata(metadata: dict, stimulus_location: str) -> None:
     """Remove optogenetics entries for stimulus sites other than stimulus_location, in place.
 
@@ -336,7 +352,7 @@ def varying_frequencies_session_to_nwb(
     metadata["Subject"]["sex"] = subject_metadata["Sex"]
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
-    metadata["NWBFile"]["session_start_time"] = session_start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
+    metadata["NWBFile"]["session_start_time"] = localize_session_start_time(session_start_datetime)
 
     # Remove entries for other target areas from metadata
     for key in metadata["Ophys"]["FiberPhotometry"].keys():
@@ -553,7 +569,7 @@ def varying_durations_session_to_nwb(  #
     metadata["Subject"]["sex"] = subject_metadata["Sex"]
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
-    metadata["NWBFile"]["session_start_time"] = session_start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
+    metadata["NWBFile"]["session_start_time"] = localize_session_start_time(session_start_datetime)
 
     # Remove entries for other target areas from metadata
     if target_area == "STN_to_Anxa1" or target_area == "PPN_to_Anxa1":
