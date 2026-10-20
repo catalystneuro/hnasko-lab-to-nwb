@@ -67,8 +67,6 @@ class FakeTDTInterface:
 
 @pytest.mark.parametrize("fill_gaps", [False, True])
 def test_concatenated_tdt_series_keeps_float32(anxa1_metadata, fill_gaps):
-    for series_metadata in anxa1_metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"]:
-        series_metadata["stream_indices"] = None
     interface = ConcatenatedTDTFiberPhotometryInterface.__new__(ConcatenatedTDTFiberPhotometryInterface)
     interface._tdt_interfaces = [
         FakeTDTInterface(Path(f"varFreq_{duration}") / "C0001-240101-120000", np.ones(5, dtype="float32"), 100.0)
