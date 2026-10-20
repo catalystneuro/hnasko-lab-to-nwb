@@ -305,14 +305,13 @@ class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
         fiber_photometry_table = get_fiber_photometry_table(nwbfile, metadata)
         data_segments = []
         timestamps_segments = []
+        if stub_test:
+            assert t2 == 0.0, (
+                f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
+            )
+            t2 = t1 + 1.0
         for i, tdt_interface in enumerate(self._tdt_interfaces):
             # Load Data
-            if stub_test:
-                assert t2 == 0.0, (
-                    f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
-                )
-                t2 = t1 + 1.0
-
             tdt_photometry = tdt_interface.load(t1=t1, t2=t2)
 
             # timing_source is used to avoid loading the data twice if alignment is NOT used.

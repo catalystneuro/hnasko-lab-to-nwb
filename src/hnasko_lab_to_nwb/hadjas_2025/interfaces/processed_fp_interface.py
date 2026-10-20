@@ -689,6 +689,11 @@ class ConcatenatedHadjas2025ProcessedFiberPhotometryInterface(Hadjas2025Processe
         # Validate stimulus channel name
         data_segments = []
         timestamps_segments = []
+        if stub_test:
+            assert t2 == 0.0, (
+                f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
+            )
+            t2 = t1 + 1.0
         for i, stimulus_channel_name in enumerate(stimulus_channel_names):
             if stimulus_channel_name not in self.available_stimulus_channel_names[self._target_area][self._subject_id]:
                 raise ValueError(
@@ -696,16 +701,10 @@ class ConcatenatedHadjas2025ProcessedFiberPhotometryInterface(Hadjas2025Processe
                     f"Available: {self.available_stimulus_channel_names[self._target_area][self._subject_id]}"
                 )
             # Load Data
-            if stub_test:
-                assert t2 == 0.0, (
-                    f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
-                )
-                t2 = t1 + 1.0
             data = self._extract_signal(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
 
             # Get the timing information
-            self._starting_time = segment_starting_times[i]
-            timestamps = self.get_timestamps(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
+            timestamps = segment_starting_times[i] + t1 + np.arange(len(data)) / self.get_sampling_frequency()
             data_segments.append(data)
             timestamps_segments.append(timestamps)
 
