@@ -338,7 +338,7 @@ Each conversion should be self-contained within its directory and follow the est
 ### Common Issues
 
 **Installation Problems:**
-- Ensure you have Python 3.9+ installed
+- Ensure you have Python 3.10 or later installed
 - Use a fresh conda environment to avoid dependency conflicts
 - Check that all required packages are installed: `pip list | grep neuroconv`
 
