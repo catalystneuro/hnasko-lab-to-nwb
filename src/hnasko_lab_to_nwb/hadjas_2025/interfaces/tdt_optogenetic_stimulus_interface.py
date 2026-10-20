@@ -37,8 +37,6 @@ def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
     )
     from ndx_ophys_devices import (
         Effector,
-        ExcitationSourceModel,
-        ExcitationSource,
         ViralVector,
         ViralVectorInjection,
         OpticalFiber,

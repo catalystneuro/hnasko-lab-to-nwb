@@ -5,9 +5,7 @@ from pathlib import Path
 from pprint import pformat
 from typing import Union
 from tqdm import tqdm
-import natsort
 import pandas as pd
-import numpy as np
 
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     varying_durations_session_to_nwb,
@@ -76,7 +74,7 @@ def dataset_to_nwb(
                 varying_frequencies_session_to_nwb(
                     **session_to_nwb_kwargs,
                 )
-        except Exception as e:
+        except Exception:
             with open(
                 exception_file_path,
                 mode="w",
@@ -113,7 +111,7 @@ def get_session_to_nwb_kwargs_per_session(
 
     data_dir_path = Path(data_dir_path)
     subjects_metadata_file_path = Path(subjects_metadata_file_path)
-    exception_file_path = data_dir_path / f"exceptions.txt"
+    exception_file_path = data_dir_path / "exceptions.txt"
     session_to_nwb_kwargs_per_session = []
     session_ids = ["Varying durations", "Varying frequencies"]
     excel_sheet_names = pd.ExcelFile(subjects_metadata_file_path).sheet_names
