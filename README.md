@@ -209,7 +209,7 @@ hnasko-lab-to-nwb/
 ### Key Files
 
 - **`convert_session.py`**: Main script that defines the function to convert one full session
-- **`nwbconverter.py`**: Contains the `Lofti2025NWBConverter` class that combines all data interfaces
+- **`nwbconverter.py`**: Contains the `Hadjas2025NWBConverter` class that combines all data interfaces
 - **`metadata/`**: YAML files containing experimental metadata for different protocols
 - **`interfaces/`**: Custom data interfaces, including demodulated fiber photometry
 - **`utils/`**: Utility functions for signal processing and stimulus addition
@@ -228,7 +228,7 @@ In neuroconv, a [DataInterface](https://neuroconv.readthedocs.io/en/main/user_gu
 
 ### NWBConverter
 
-In neuroconv, a [NWBConverter](https://neuroconv.readthedocs.io/en/main/user_guide/nwbconverter.html) is a class that combines many data interfaces and specifies the relationships between them, such as temporal alignment. The `Lofti2025NWBConverter` combines:
+In neuroconv, a [NWBConverter](https://neuroconv.readthedocs.io/en/main/user_guide/nwbconverter.html) is a class that combines many data interfaces and specifies the relationships between them, such as temporal alignment. The `Hadjas2025NWBConverter` combines:
 
 - Fiber photometry data (raw and demodulated)
 - Behavioral videos with temporal alignment

@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Union
 
-from hnasko_lab_to_nwb.hadjas_2025.nwbconverter import Lofti2025NWBConverter
+from hnasko_lab_to_nwb.hadjas_2025.nwbconverter import Hadjas2025NWBConverter
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 
@@ -58,7 +58,7 @@ def shock_session_to_nwb(
         )
     )
 
-    converter = Lofti2025NWBConverter(source_data=source_data, verbose=verbose)
+    converter = Hadjas2025NWBConverter(source_data=source_data, verbose=verbose)
 
     # Update default metadata with the editable in the corresponding yaml file
     metadata = converter.get_metadata()

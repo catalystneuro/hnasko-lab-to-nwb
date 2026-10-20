@@ -10,7 +10,7 @@ import pytz
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface import (
     ConcatenatedTDTFiberPhotometryInterface,
 )
-from hnasko_lab_to_nwb.hadjas_2025.nwbconverter import Lofti2025NWBConverter
+from hnasko_lab_to_nwb.hadjas_2025.nwbconverter import Hadjas2025NWBConverter
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 
@@ -302,7 +302,7 @@ def varying_frequencies_session_to_nwb(
         dict(ConcatenatedOptogeneticStimulus=dict(tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency))
     )
 
-    converter = Lofti2025NWBConverter(
+    converter = Hadjas2025NWBConverter(
         source_data=source_data, verbose=verbose, video_time_alignment_dict=video_time_alignment_dict
     )
 
@@ -527,7 +527,7 @@ def varying_durations_session_to_nwb(  #
         dict(OptogeneticStimulus=dict(tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency))
     )
 
-    converter = Lofti2025NWBConverter(
+    converter = Hadjas2025NWBConverter(
         source_data=source_data, verbose=verbose, video_time_alignment_dict=video_time_alignment_dict
     )
 

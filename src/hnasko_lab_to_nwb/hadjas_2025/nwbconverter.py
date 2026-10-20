@@ -5,17 +5,17 @@ from typing import Optional
 from pynwb import NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.interfaces import (
-    ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
+    ConcatenatedHadjas2025ProcessedFiberPhotometryInterface,
     ConcatenatedTDTFiberPhotometryInterface,
-    Lofti2025ProcessedFiberPhotometryInterface,
-    Lofti2025TDTOptogeneticStimulusInterface,
-    ConcatenatedLofti2025TDTOptogeneticStimulusInterface,
+    Hadjas2025ProcessedFiberPhotometryInterface,
+    Hadjas2025TDTOptogeneticStimulusInterface,
+    ConcatenatedHadjas2025TDTOptogeneticStimulusInterface,
 )
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import ExternalVideoInterface, TDTFiberPhotometryInterface
 
 
-class Lofti2025NWBConverter(NWBConverter):
+class Hadjas2025NWBConverter(NWBConverter):
     """Primary conversion class for my extracellular electrophysiology dataset."""
 
     def __init__(self, source_data: dict, verbose: bool = True, video_time_alignment_dict: Optional[dict] = None):
@@ -34,17 +34,17 @@ class Lofti2025NWBConverter(NWBConverter):
         data_interface_name_mapping = {
             "Video": ExternalVideoInterface,
             "RawFiberPhotometry": TDTFiberPhotometryInterface,
-            "DemodulatedFiberPhotometry": Lofti2025ProcessedFiberPhotometryInterface,
-            "DownsampledFiberPhotometry": Lofti2025ProcessedFiberPhotometryInterface,
-            "DeltaFOverF": Lofti2025ProcessedFiberPhotometryInterface,
-            "OptogeneticStimulus": Lofti2025TDTOptogeneticStimulusInterface,
+            "DemodulatedFiberPhotometry": Hadjas2025ProcessedFiberPhotometryInterface,
+            "DownsampledFiberPhotometry": Hadjas2025ProcessedFiberPhotometryInterface,
+            "DeltaFOverF": Hadjas2025ProcessedFiberPhotometryInterface,
+            "OptogeneticStimulus": Hadjas2025TDTOptogeneticStimulusInterface,
         }
         concatenated_data_interface_name_mapping = {
             "ConcatenatedRawFiberPhotometry": ConcatenatedTDTFiberPhotometryInterface,
-            "ConcatenatedDemodulatedFiberPhotometry": ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
-            "ConcatenatedDownsampledFiberPhotometry": ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
-            "ConcatenatedDeltaFOverF": ConcatenatedLofti2025ProcessedFiberPhotometryInterface,
-            "ConcatenatedOptogeneticStimulus": ConcatenatedLofti2025TDTOptogeneticStimulusInterface,
+            "ConcatenatedDemodulatedFiberPhotometry": ConcatenatedHadjas2025ProcessedFiberPhotometryInterface,
+            "ConcatenatedDownsampledFiberPhotometry": ConcatenatedHadjas2025ProcessedFiberPhotometryInterface,
+            "ConcatenatedDeltaFOverF": ConcatenatedHadjas2025ProcessedFiberPhotometryInterface,
+            "ConcatenatedOptogeneticStimulus": ConcatenatedHadjas2025TDTOptogeneticStimulusInterface,
         }
 
         for interface_name in source_data.keys():

@@ -151,7 +151,7 @@ def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
     return optogenetic_experiment_metadata
 
 
-class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
+class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
     """
     Data Interface for converting optogenetic stimulus data from a Hnasko Lab tdt files.
 
@@ -164,7 +164,7 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
     """
 
     keywords = ("optogenetic stimulus",)
-    display_name = "Lofti2025TDTOptogeneticStimulus"
+    display_name = "Hadjas2025TDTOptogeneticStimulus"
     info = "Data Interface for converting optogenetic stimulus data from .tdt files from Hnasko Lab."
     associated_suffixes = ("Tbk", "Tdx", "tev", "tin", "tsq")
 
@@ -174,7 +174,7 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         folder_path: DirectoryPath,
         verbose: bool = True,
     ):
-        """Initialize the Lofti2025TDTOptogeneticStimulusInterface.
+        """Initialize the Hadjas2025TDTOptogeneticStimulusInterface.
 
         Parameters
         ----------
@@ -191,7 +191,7 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
 
     def get_metadata(self) -> DeepDict:
         """
-        Get metadata for the Lofti2025TDTOptogeneticStimulusInterface.
+        Get metadata for the Hadjas2025TDTOptogeneticStimulusInterface.
 
         Returns
         -------
@@ -203,7 +203,7 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
 
     def get_metadata_schema(self) -> dict:
         """
-        Get the metadata schema for the Lofti2025TDTOptogeneticStimulusInterface.
+        Get the metadata schema for the Hadjas2025TDTOptogeneticStimulusInterface.
 
         Returns
         -------
@@ -215,7 +215,7 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
 
     def get_events(self) -> dict:
         """
-        Get the events from the Lofti2025TDTOptogeneticStimulusInterface.
+        Get the events from the Hadjas2025TDTOptogeneticStimulusInterface.
 
         Returns
         -------
@@ -288,7 +288,7 @@ class Lofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         nwbfile.add_time_intervals(opto_epochs_table)
 
 
-class ConcatenatedLofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
+class ConcatenatedHadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
     """
     Data Interface for converting and concatenating optogenetic stimulus data from multiple Hnasko Lab tdt folders.
 
@@ -301,7 +301,7 @@ class ConcatenatedLofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
     """
 
     keywords = ("processed optogenetic stimulus",)
-    display_name = "Lofti2025TDTOptogeneticStimulus"
+    display_name = "Hadjas2025TDTOptogeneticStimulus"
     info = "Data Interface for converting optogenetic stimulus data from .tdt files from Hnasko Lab."
     associated_suffixes = ("Tbk", "Tdx", "tev", "tin", "tsq")
 
@@ -311,7 +311,7 @@ class ConcatenatedLofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         folder_paths: List[DirectoryPath],
         verbose: bool = True,
     ):
-        """Initialize the ConcatenatedLofti2025TDTOptogeneticStimulusInterface.
+        """Initialize the ConcatenatedHadjas2025TDTOptogeneticStimulusInterface.
 
         Parameters
         ----------
@@ -328,7 +328,7 @@ class ConcatenatedLofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
 
     def get_metadata(self) -> DeepDict:
         """
-        Get metadata for the ConcatenatedLofti2025TDTOptogeneticStimulusInterface.
+        Get metadata for the ConcatenatedHadjas2025TDTOptogeneticStimulusInterface.
 
         Returns
         -------
@@ -340,7 +340,7 @@ class ConcatenatedLofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
 
     def get_metadata_schema(self) -> dict:
         """
-        Get the metadata schema for the Lofti2025TDTOptogeneticStimulusInterface.
+        Get the metadata schema for the Hadjas2025TDTOptogeneticStimulusInterface.
 
         Returns
         -------
@@ -352,7 +352,7 @@ class ConcatenatedLofti2025TDTOptogeneticStimulusInterface(BaseDataInterface):
 
     def get_concatenated_events(self) -> dict:
         """
-        Get the events from the Lofti2025TDTOptogeneticStimulusInterface.
+        Get the events from the Hadjas2025TDTOptogeneticStimulusInterface.
 
         Returns
         -------

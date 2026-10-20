@@ -1,4 +1,4 @@
-# MATLAB Analysis Report: Lotfi 2025 Fiber Photometry Analysis
+# MATLAB Analysis Report: Hadjas 2025 Fiber Photometry Analysis
 
 ## Overview
 The analysis processes TDT-acquired fiber photometry signals to examine responses of different dopaminergic and GABAergic neuron subtypes to optogenetic stimulation.

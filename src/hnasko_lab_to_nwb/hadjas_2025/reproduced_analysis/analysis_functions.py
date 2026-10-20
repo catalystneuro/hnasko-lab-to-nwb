@@ -1,5 +1,5 @@
 """
-Modular functions for reproducing Lotfi 2025 fiber photometry analysis.
+Modular functions for reproducing Hadjas 2025 fiber photometry analysis.
 
 This module provides functions to process fiber photometry data from NWB files,
 following the analysis pipeline from the original MATLAB scripts.
