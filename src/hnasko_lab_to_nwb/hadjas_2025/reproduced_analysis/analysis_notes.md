@@ -46,14 +46,13 @@ All MATLAB scripts follow a consistent processing pipeline with minor variations
 - Isosbestic channel (405nm): 210 Hz
 
 **Demodulation Steps:**
-```matlab
-% For each driver frequency:
-1. Multiply raw signal by sin(2π*freq*t) and cos(2π*freq*t)
-2. Apply 2nd-order Butterworth lowpass filter (6 Hz cutoff)
+
+For each driver frequency:
+1. Multiply the raw signal by a sine and a cosine at the driver frequency
+2. Lowpass filter both products (2nd-order Butterworth, 6 Hz cutoff)
 3. Square the filtered components
-4. Sum the squared components  
-5. Take square root to get demodulated signal
-```
+4. Sum the squared components
+5. Take the square root to get the demodulated signal
 
 **Filter Design:**
 - Type: 2nd-order Butterworth lowpass
@@ -84,26 +83,19 @@ All MATLAB scripts follow a consistent processing pipeline with minor variations
 **Two-Step Fitting Process:**
 
 **Step 1: Exponential Fit to Isosbestic (405nm) Signal**
-```matlab
-% Bi-exponential fit excluding first 1s of recording
-FP.fit1 = fit(temp_x, af, 'exp2', 'Exclude', [1:101])
-```
+
+The downsampled 405nm signal is fit with a bi-exponential model, excluding the first 101 samples (about 1 s).
 - Model: `f(x) = a*exp(b*x) + c*exp(d*x)`
 - Excludes first 1s to avoid artifacts
 - Captures slow photobleaching dynamics
 
 **Step 2: Linear Regression to Match 465nm Signal**
-```matlab
-% Robust linear fit
-FP.fit2 = robustfit(FP.fit1(temp_x), Gc)
-% Final fitted baseline
-FP.lin_fit = FP.fit1(temp_x) * FP.fit2(2) + FP.fit2(1)
-```
+
+A robust linear regression of the 465nm signal on the fitted 405nm curve gives a slope and an intercept. The baseline is the fitted 405nm curve scaled by that slope plus the intercept.
 
 **dF/F Calculation:**
-```matlab
-dF = 100 * (Gc - FP.lin_fit) / FP.lin_fit
-```
+
+dF/F is the 465nm signal minus the baseline, divided by the baseline, times 100.
 - Units: Percentage (%)
 - Baseline: Fitted 405nm signal scaled to match 465nm
 - Corrects for motion artifacts and photobleaching
@@ -121,21 +113,16 @@ dF = 100 * (Gc - FP.lin_fit) / FP.lin_fit
 - **Total window**: 15 seconds per trial
 
 **Extraction Steps:**
-```matlab
-% For each stimulus event:
-1. Get onset time from TDT epocs
-2. Convert to sample indices (floor(onset_time * 100))
-3. Extract dF/F from [onset - 5s] to [onset + 10s]
-4. Store in trial matrix: (timepoints × trials)
-```
+
+For each stimulus event:
+1. Get the onset time from the TDT epocs
+2. Convert it to a sample index at 100 Hz (rounded down)
+3. Extract dF/F from 5 s before to 10 s after onset
+4. Store the trials in a matrix of timepoints by trials
 
 **Baseline Normalization:**
-```matlab
-% Use 1s baseline period (from -1s to 0s relative to stimulus)
-BASELINE_NORM = floor([4*fs, 5*fs])  % Indices [400:500]
-baseline_mean = mean(dF_trials(BASELINE_NORM, :), 1)
-norm_dF = dF_trials - repmat(baseline_mean, n_timepoints, 1)
-```
+
+Each trial is normalized by subtracting its mean dF/F over the 1 s before stimulus onset (samples 400 to 500 of the trial window).
 
 **Output:**
 - `dF_trials`: Raw dF/F traces aligned to stimulus onset
@@ -172,9 +159,8 @@ Time windows vary by stimulus duration:
 - `stm_n4_0s`: -4 to 0s (4s pre-stimulus baseline)
 
 **B. Area Under the Curve (AUC)**
-```matlab
-AUC_dF = mean(trapz(norm_dF(time_indices, :)) / fs)
-```
+
+The normalized dF/F of each trial is integrated over the time window and the result is averaged across trials.
 - Trapezoidal integration
 - Normalized by sampling rate
 - Averaged across trials
@@ -183,31 +169,21 @@ AUC_dF = mean(trapz(norm_dF(time_indices, :)) / fs)
 **C. Peak Response Metrics**
 
 **Peak from Mean Trace:**
-```matlab
-peak_dF_mnTrace = max(mean(norm_dF(time_indices, :), 2))
-```
+
+The maximum of the trial-averaged normalized dF/F within the time window.
 
 **Maximum Absolute Deviation:**
-```matlab
-% Per trial
-[maxAbsDev, maxInd] = max(abs(norm_dF(time_indices, :)))
-% From mean trace
-[maxAbsDev_mnTrace, maxInd_mnTrace] = max(abs(mean(norm_dF(time_indices, :), 2)))
-```
+
+The maximum of the absolute normalized dF/F within the time window and its time index, computed per trial and on the trial-averaged trace.
 - Captures both positive and negative peaks
 - Important for inhibitory responses
 
 **D. Derived Metrics**
 
 **Pre- vs Post-Stimulus Comparisons:**
-```matlab
-% Post-offset vs Pre-offset (rebound analysis)
-Delta_Post1sVsLate250ms = mean_dF.postStimOff1s - mean_dF.preStimOff250ms
-
-% Post-stimulus vs Pre-stimulus baseline
-preStimOnVsStim1s = mean(during_stim) - mean(pre_stim_baseline)
-preStimOnVsStimOff1s = mean(post_stim) - mean(pre_stim_baseline)
-```
+- Rebound: mean dF/F in the 1 s after stimulus offset minus mean dF/F in the last 250 ms of the stimulus
+- Mean dF/F during the stimulus minus mean dF/F in the pre-stimulus baseline
+- Mean dF/F in the 1 s after stimulus offset minus mean dF/F in the pre-stimulus baseline
 
 ### 7. Special Handling for Varying Frequency Sessions
 
@@ -226,41 +202,20 @@ preStimOnVsStimOff1s = mean(post_stim) - mean(pre_stim_baseline)
 
 ### 8. Output Data Structure
 
+Results are stored in nested structures indexed by recording site, subject and laser power.
+
 **Per-Subject Data:**
-```matlab
-% Raw demodulated signals
-Gc_raw.(site).(subject).(laserPower)
-af_raw.(site).(subject).(laserPower)
-
-% Downsampled signals  
-Gc.(site).(subject).(laserPower)
-af.(site).(subject).(laserPower)
-
-% Baseline-corrected dF/F
-dF.(site).(subject).(laserPower)
-
-% Trial-aligned data
-dF_trials.(site).(subject).(laserPower).(stimulus)
-norm_dF.(site).(subject).(laserPower).(stimulus)
-```
+- Raw demodulated 465nm and 405nm signals
+- Downsampled 465nm and 405nm signals
+- Baseline-corrected dF/F
+- Trial-aligned dF/F, raw and baseline-normalized, per stimulus condition
 
 **Group-Level Outputs:**
-```matlab
-% Mean traces for plotting (timepoints × subjects)
-out_dFs.(site).(laserPower).(stimulus)
-
-% Summary statistics (stimulus_type × subjects)
-mean_dF.(site).(laserPower).(timeWindow)
-AUC_dF.(site).(laserPower).(timeWindow)
-peak_dF_mnTrace.(site).(laserPower).(timeWindow)
-maxAbsDev_dF_mnTrace.(site).(laserPower).(timeWindow)
-```
+- Mean traces for plotting (timepoints by subjects), per stimulus condition
+- Summary statistics (stimulus condition by subjects), per time window: mean dF/F, AUC, peak of the mean trace, and maximum absolute deviation of the mean trace
 
 **Concatenated for Export:**
-```matlab
-% All durations/frequencies concatenated for easy export to Prism
-out_dFs.(site).(laserPower).concatAllDurs  % or .concatAllFreqs
-```
+- Mean traces of all durations or all frequencies concatenated, for export to Prism
 
 ## Key Differences Across Scripts
 
