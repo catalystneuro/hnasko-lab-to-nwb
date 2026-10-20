@@ -687,8 +687,8 @@ class ConcatenatedHadjas2025ProcessedFiberPhotometryInterface(Hadjas2025Processe
             region=fiber_photometry_response_series_metadata["fiber_photometry_table_region"],
         )
         # Validate stimulus channel name
-        concatenated_data = np.array([])
-        concatenated_timestamps = np.array([])
+        data_segments = []
+        timestamps_segments = []
         for i, stimulus_channel_name in enumerate(stimulus_channel_names):
             if stimulus_channel_name not in self.available_stimulus_channel_names[self._target_area][self._subject_id]:
                 raise ValueError(
@@ -706,8 +706,11 @@ class ConcatenatedHadjas2025ProcessedFiberPhotometryInterface(Hadjas2025Processe
             # Get the timing information
             self._starting_time = segment_starting_times[i]
             timestamps = self.get_timestamps(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
-            concatenated_data = np.concatenate((concatenated_data, data))
-            concatenated_timestamps = np.concatenate((concatenated_timestamps, timestamps))
+            data_segments.append(data)
+            timestamps_segments.append(timestamps)
+
+        concatenated_data = np.concatenate(data_segments)
+        concatenated_timestamps = np.concatenate(timestamps_segments)
 
         # Fill gaps with NaNs
         if fill_gaps:

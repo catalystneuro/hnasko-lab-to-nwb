@@ -16,7 +16,6 @@ from hnasko_lab_to_nwb.hadjas_2025.utils import fill_gaps_w_nans
 SEGMENT_STARTING_TIMES = [0.0, 10.0, 20.0]
 
 
-@pytest.mark.xfail(strict=True, reason="NaN padding is float64")
 def test_fill_gaps_w_nans_keeps_float32():
     data = np.ones(10, dtype="float32")
     timestamps = np.concatenate([np.arange(5), 10 + np.arange(5)]) / 100.0
@@ -26,7 +25,6 @@ def test_fill_gaps_w_nans_keeps_float32():
     assert filled_data.dtype == np.float32
 
 
-@pytest.mark.xfail(strict=True, reason="concatenation starts from a float64 array")
 @pytest.mark.parametrize("fill_gaps", [False, True])
 def test_concatenated_processed_series_keeps_float32(tmp_path, anxa1_metadata, write_processed_mat_file, fill_gaps):
     segments = {name: np.ones(5, dtype="float32") for name in ("s250ms", "s1s", "s4s")}
@@ -67,7 +65,6 @@ class FakeTDTInterface:
         return dict(Fi1r=np.arange(len(self._stream.data)) / self._stream.fs)
 
 
-@pytest.mark.xfail(strict=True, reason="concatenation starts from an empty list, which numpy reads as float64")
 @pytest.mark.parametrize("fill_gaps", [False, True])
 def test_concatenated_tdt_series_keeps_float32(anxa1_metadata, fill_gaps):
     for series_metadata in anxa1_metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"]:
