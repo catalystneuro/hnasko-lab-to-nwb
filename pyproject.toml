@@ -69,3 +69,6 @@ select = ["E4", "E7", "E9", "F"]
 
 [project.urls]
 Repository="https://github.com/catalystneuro/hnasko-lab-to-nwb"
+
+[tool.codespell]
+ignore-regex = '"image/png": ".*"'
