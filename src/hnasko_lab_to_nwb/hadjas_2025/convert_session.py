@@ -572,7 +572,6 @@ def varying_durations_session_to_nwb(  #
 
 
 if __name__ == "__main__":
-
     # Parameters for conversion
     data_dir_path = Path("D:/Hnasko-CN-data-share/")
     output_dir_path = Path("D:/hnasko_lab_conversion_nwb")

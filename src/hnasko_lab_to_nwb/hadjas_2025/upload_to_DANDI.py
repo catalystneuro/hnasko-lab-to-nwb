@@ -96,7 +96,6 @@ def dandi_upload(
 
 
 if __name__ == "__main__":
-
     dandi_upload(
         nwb_folder_path=Path(r"D:\hnasko_lab_conversion_nwb"),  # Replace with actual path
         dandiset_folder_path=Path(r"D:\hnasko_lab_conversion_nwb"),  # Replace with actual path

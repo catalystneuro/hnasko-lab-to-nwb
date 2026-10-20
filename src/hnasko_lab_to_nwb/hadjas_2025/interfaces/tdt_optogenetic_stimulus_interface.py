@@ -77,9 +77,9 @@ def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
         fiber_insertion = FiberInsertion(**fiber_insertion_metadata)
         optical_fiber_metadata = deepcopy(optical_fiber_metadata)
         optical_fiber_metadata["fiber_insertion"] = fiber_insertion
-        assert (
-            optical_fiber_metadata["model"] in nwbfile.device_models
-        ), f"Device model {optical_fiber_metadata['model']} not found in NWBFile device_models for {optical_fiber_metadata['name']}."
+        assert optical_fiber_metadata["model"] in nwbfile.device_models, (
+            f"Device model {optical_fiber_metadata['model']} not found in NWBFile device_models for {optical_fiber_metadata['name']}."
+        )
         optical_fiber_metadata["model"] = nwbfile.device_models[optical_fiber_metadata["model"]]
         optical_fiber = OpticalFiber(**optical_fiber_metadata)
         nwbfile.add_device(optical_fiber)
@@ -372,9 +372,9 @@ class ConcatenatedHadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
             tdt_interfaces.append(tdt_interface)
             session_start_datetimes.append(session_start_datetime)
 
-        assert session_start_datetimes == sorted(
-            session_start_datetimes
-        ), "Session start times are not in chronological order. Please provide folder paths in chronological order."
+        assert session_start_datetimes == sorted(session_start_datetimes), (
+            "Session start times are not in chronological order. Please provide folder paths in chronological order."
+        )
         # Calculate segment start times based on the session start datetimes
         # E.g. we have three consecutive sessions starting at times 10:00, 10:20, and 10:40 on the same day
         # we want segment_starting_times to be [0, 1200, 2400] (in seconds)

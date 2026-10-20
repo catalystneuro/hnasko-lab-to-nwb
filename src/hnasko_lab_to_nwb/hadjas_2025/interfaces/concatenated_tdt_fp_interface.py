@@ -94,9 +94,9 @@ def get_fiber_photometry_table(nwbfile: NWBFile, metadata: dict):
         fiber_insertion = FiberInsertion(**fiber_insertion_metadata)
         optical_fiber_metadata = deepcopy(optical_fiber_metadata)
         optical_fiber_metadata["fiber_insertion"] = fiber_insertion
-        assert (
-            optical_fiber_metadata["model"] in nwbfile.device_models
-        ), f"Device model {optical_fiber_metadata['model']} not found in NWBFile device_models for {optical_fiber_metadata['name']}."
+        assert optical_fiber_metadata["model"] in nwbfile.device_models, (
+            f"Device model {optical_fiber_metadata['model']} not found in NWBFile device_models for {optical_fiber_metadata['name']}."
+        )
         optical_fiber_metadata["model"] = nwbfile.device_models[optical_fiber_metadata["model"]]
         optical_fiber = OpticalFiber(**optical_fiber_metadata)
         nwbfile.add_device(optical_fiber)
@@ -166,9 +166,9 @@ def get_fiber_photometry_table(nwbfile: NWBFile, metadata: dict):
     ]
     for row_metadata in metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryTable"]["rows"]:
         for field in required_fields:
-            assert (
-                field in row_metadata
-            ), f"FiberPhotometryTable metadata row {row_metadata['name']} is missing required field {field}."
+            assert field in row_metadata, (
+                f"FiberPhotometryTable metadata row {row_metadata['name']} is missing required field {field}."
+            )
         row_data = {field: nwbfile.devices[row_metadata[field]] for field in device_fields if field in row_metadata}
         row_data["location"] = row_metadata["location"]
         row_data["excitation_wavelength_in_nm"] = row_metadata["excitation_wavelength_in_nm"]
@@ -252,9 +252,9 @@ class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
             session_start_datetimes.append(session_start_datetime)
             self._tdt_interfaces.append(tdt_interface)
         # check that the session start times are in chronological order
-        assert session_start_datetimes == sorted(
-            session_start_datetimes
-        ), "Session start times are not in chronological order. Please provide folder paths in chronological order."
+        assert session_start_datetimes == sorted(session_start_datetimes), (
+            "Session start times are not in chronological order. Please provide folder paths in chronological order."
+        )
         # Calculate segment start times based on the session start datetimes
         # E.g. we have three consecutive sessions starting at times 10:00, 10:20, and 10:40 on the same day
         # we want segment_starting_times to be [0, 1200, 2400] (in seconds)
@@ -306,12 +306,11 @@ class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
         concatenated_timestamps = []
         concatenated_data = []
         for i, tdt_interface in enumerate(self._tdt_interfaces):
-
             # Load Data
             if stub_test:
-                assert (
-                    t2 == 0.0
-                ), f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
+                assert t2 == 0.0, (
+                    f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
+                )
                 t2 = t1 + 1.0
 
             tdt_photometry = tdt_interface.load(t1=t1, t2=t2)

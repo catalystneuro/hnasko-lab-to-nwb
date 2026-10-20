@@ -62,9 +62,7 @@ def calculate_dff_with_biexponential_fit(
     """
     # Validate inputs
     if len(calcium_signal) != len(isosbestic_signal):
-        raise ValueError(
-            f"Signal length mismatch: calcium={len(calcium_signal)}, " f"isosbestic={len(isosbestic_signal)}"
-        )
+        raise ValueError(f"Signal length mismatch: calcium={len(calcium_signal)}, isosbestic={len(isosbestic_signal)}")
 
     n_samples = len(isosbestic_signal)
     time_points = np.arange(n_samples)
@@ -142,7 +140,7 @@ def calculate_dff_with_biexponential_fit(
     # Check for negative slope (indicates potential issue)
     if slope < 0:
         warnings.warn(
-            f"Negative regression coefficient ({slope:.4f}). " "This may indicate signal quality issues.",
+            f"Negative regression coefficient ({slope:.4f}). This may indicate signal quality issues.",
             RuntimeWarning,
         )
 
@@ -466,7 +464,7 @@ def get_standard_time_windows(
 
     else:
         warnings.warn(
-            f"Stimulus duration {stimulus_duration}s not standard. " "Using generic windows.",
+            f"Stimulus duration {stimulus_duration}s not standard. Using generic windows.",
             RuntimeWarning,
         )
         windows.update(

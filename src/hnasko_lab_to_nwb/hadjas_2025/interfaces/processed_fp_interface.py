@@ -95,9 +95,9 @@ def get_fiber_photometry_table(nwbfile: NWBFile, metadata: dict):
         fiber_insertion = FiberInsertion(**fiber_insertion_metadata)
         optical_fiber_metadata = deepcopy(optical_fiber_metadata)
         optical_fiber_metadata["fiber_insertion"] = fiber_insertion
-        assert (
-            optical_fiber_metadata["model"] in nwbfile.device_models
-        ), f"Device model {optical_fiber_metadata['model']} not found in NWBFile device_models for {optical_fiber_metadata['name']}."
+        assert optical_fiber_metadata["model"] in nwbfile.device_models, (
+            f"Device model {optical_fiber_metadata['model']} not found in NWBFile device_models for {optical_fiber_metadata['name']}."
+        )
         optical_fiber_metadata["model"] = nwbfile.device_models[optical_fiber_metadata["model"]]
         optical_fiber = OpticalFiber(**optical_fiber_metadata)
         nwbfile.add_device(optical_fiber)
@@ -167,9 +167,9 @@ def get_fiber_photometry_table(nwbfile: NWBFile, metadata: dict):
     ]
     for row_metadata in metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryTable"]["rows"]:
         for field in required_fields:
-            assert (
-                field in row_metadata
-            ), f"FiberPhotometryTable metadata row {row_metadata['name']} is missing required field {field}."
+            assert field in row_metadata, (
+                f"FiberPhotometryTable metadata row {row_metadata['name']} is missing required field {field}."
+            )
         row_data = {field: nwbfile.devices[row_metadata[field]] for field in device_fields if field in row_metadata}
         row_data["location"] = row_metadata["location"]
         row_data["excitation_wavelength_in_nm"] = row_metadata["excitation_wavelength_in_nm"]
@@ -532,9 +532,9 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseTemporalAlignmentInterface
             )
         # Load Data
         if stub_test:
-            assert (
-                t2 == 0.0
-            ), f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
+            assert t2 == 0.0, (
+                f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
+            )
             t2 = t1 + 1.0
         data = self._extract_signal(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
         # Get the timing information
@@ -546,9 +546,9 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseTemporalAlignmentInterface
             starting_time = self.get_timestamps(t1=t1, t2=t2)[0]
             timing_kwargs = dict(starting_time=starting_time, rate=rate)
         else:
-            assert (
-                timing_source == "original"
-            ), "timing_source must be one of 'original', 'aligned_timestamps', or 'aligned_starting_time_and_rate'."
+            assert timing_source == "original", (
+                "timing_source must be one of 'original', 'aligned_timestamps', or 'aligned_starting_time_and_rate'."
+            )
             rate = self.get_sampling_frequency()
             starting_time = 0.0
             timing_kwargs = dict(starting_time=starting_time, rate=rate)
@@ -682,9 +682,9 @@ class ConcatenatedHadjas2025ProcessedFiberPhotometryInterface(Hadjas2025Processe
                 )
             # Load Data
             if stub_test:
-                assert (
-                    t2 == 0.0
-                ), f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
+                assert t2 == 0.0, (
+                    f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
+                )
                 t2 = t1 + 1.0
             data = self._extract_signal(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
 
