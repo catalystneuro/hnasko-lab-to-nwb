@@ -3,9 +3,9 @@
 from datetime import datetime
 from pathlib import Path
 from typing import Union
+from zoneinfo import ZoneInfo
 
 import pandas as pd
-import pytz
 
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface import (
     ConcatenatedTDTFiberPhotometryInterface,
@@ -97,7 +97,7 @@ def update_coordinates_for_left_hemisphere(metadata: dict) -> dict:
 
 
 def localize_session_start_time(session_start_datetime: datetime) -> datetime:
-    """Attach the lab's time zone to a session start time read from a TDT block folder name.
+    """Attach the lab's time zone (America/Los_Angeles) to a session start time read from a TDT block folder name.
 
     Parameters
     ----------
@@ -109,7 +109,7 @@ def localize_session_start_time(session_start_datetime: datetime) -> datetime:
     datetime
         The session start time with its time zone.
     """
-    return session_start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
+    return session_start_datetime.replace(tzinfo=ZoneInfo("America/Los_Angeles"))
 
 
 def filter_optogenetics_metadata(metadata: dict, stimulus_location: str) -> None:
