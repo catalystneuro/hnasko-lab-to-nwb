@@ -26,7 +26,7 @@ dependencies = [
   "openpyxl",
   "opencv-python-headless",
   "tdt",
-  "dandi",
+  "dandi>=0.60",
   "remfile",
   "ipykernel",
   "h5py",
