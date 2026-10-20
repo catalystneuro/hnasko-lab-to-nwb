@@ -8,7 +8,6 @@ from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
 )
 
 
-@pytest.mark.xfail(strict=True, reason="start time is given the Europe/London LMT offset of -00:01")
 @pytest.mark.parametrize(
     "session_start_datetime, utc_offset_in_hours",
     [(datetime(2024, 1, 17, 10, 15, 0), -8), (datetime(2022, 4, 26, 13, 9, 9), -7)],
