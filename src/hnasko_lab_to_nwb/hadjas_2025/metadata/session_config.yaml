@@ -66,3 +66,12 @@ protocols:
       H20_: 20.0
       H40_: 40.0
       H05_: 5.0
+# Per-subject exceptions.
+subjects:
+  # The processed signals of the 2022 SN pan DA STN subjects are in the SN pan GABA STN .mat files (site SNc).
+  B8364: {mat_cohort_folder: SN pan GABA recordings}
+  B8369: {mat_cohort_folder: SN pan GABA recordings}
+  B8370: {mat_cohort_folder: SN pan GABA recordings}
+  B8427: {mat_cohort_folder: SN pan GABA recordings}
+  B8429: {mat_cohort_folder: SN pan GABA recordings}
+  B8612: {mat_cohort_folder: SN pan GABA recordings}

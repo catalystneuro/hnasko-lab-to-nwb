@@ -166,6 +166,35 @@ def update_coordinates_for_left_hemisphere(metadata: dict) -> dict:
     return updated_metadata
 
 
+def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_cohort_folder: str) -> Path:
+    """Find the lab's processed .mat file of a protocol folder, possibly in another cohort's folder.
+
+    Parameters
+    ----------
+    protocol_folder_path : Path
+        Protocol folder of the session, <data folder>/<cohort data folder>/<input>/Fiber photometry_TDT/<protocol>,
+        possibly followed by a subgroup folder (e.g. "Anxa1 DLS").
+    cohort_data_folder : str
+        Data folder of the session's cohort.
+    mat_cohort_folder : str
+        Data folder of the cohort whose protocol folder holds the .mat file (the session's own by default).
+
+    Returns
+    -------
+    Path
+        The only .mat file in the matching protocol folder.
+    """
+    parts = protocol_folder_path.parts
+    cohort_index = len(parts) - 1 - parts[::-1].index(cohort_data_folder)
+    data_dir_path = Path(*parts[:cohort_index])
+    relative_protocol_folder_path = Path(*parts[cohort_index + 1 :])
+    mat_folder_path = data_dir_path / mat_cohort_folder / relative_protocol_folder_path
+    mat_file_paths = list(mat_folder_path.glob("*.mat"))
+    if len(mat_file_paths) != 1:
+        raise FileNotFoundError(f"Expected one .mat file in {mat_folder_path}, found {len(mat_file_paths)}.")
+    return mat_file_paths[0]
+
+
 def localize_session_start_time(session_start_datetime: datetime) -> datetime:
     """Attach the lab's time zone (America/Los_Angeles) to a session start time read from a TDT block folder name.
 
@@ -255,6 +284,8 @@ def session_to_nwb(
     session_config = load_session_config()
     protocol_config = session_config["protocols"][protocol]
     cohort_config = session_config["cohorts"][recording_type]
+    subject_config = session_config["subjects"].get(subject_metadata["Animal ID"], {})
+    mat_cohort_folder = subject_config.get("mat_cohort_folder", cohort_config["data_folder"])
     session_id = protocol_config["session_id"]
     if subject_id in ["C5904", "C5966", "C5964", "C6609", "C6299", "C6612", "C6901", "C7241", "C7242"]:
         session_id = f"{session_id}_{subject_metadata['Recording Site']}"
@@ -284,7 +315,7 @@ def session_to_nwb(
         mat_segment_names = ["AllDurs"]
     else:
         duration_mat_segment_names = ["s250ms", "s1s", "s4s"]
-        if recording_type == "SN pan GABA recordings" and stimulus_location == "STN":
+        if mat_cohort_folder == "SN pan GABA recordings" and stimulus_location == "STN":
             duration_mat_segment_names = ["s250ms5mW", "s1s10mW"]
         folder_name_to_index = dict(varFreq_250ms=0, varFreq_1s=1, varFreq_4s=2)
         mat_segment_names = []
@@ -299,12 +330,11 @@ def session_to_nwb(
     # Gaps between blocks are NaN-padded on the 6 kHz rig only, as before
     fill_gaps = raw_stream_settings["rig_name"] == "RZ10x"
 
-    mat_file_path = list(protocol_folder_path.glob("*.mat"))
-    if len(mat_file_path) == 0:
-        raise FileNotFoundError(f"No .mat files found in {protocol_folder_path}")
-    elif len(mat_file_path) > 1:
-        raise ValueError(f"Multiple .mat files found in {protocol_folder_path}")
-    mat_file_path = mat_file_path[0]
+    mat_file_path = find_mat_file_path(
+        protocol_folder_path=protocol_folder_path,
+        cohort_data_folder=cohort_config["data_folder"],
+        mat_cohort_folder=mat_cohort_folder,
+    )
     target_area = get_target_area_for_subject(mat_file_path, subject_id)
     raw_target_area = target_area
     if target_area in ("STN_to_Anxa1", "PPN_to_Anxa1"):
