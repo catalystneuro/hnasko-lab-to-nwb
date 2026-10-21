@@ -1,0 +1,6 @@
+# Metadata shared by all Hadjas 2025 cohorts. Cohort files add to or override these values.
+NWBFile:
+  related_publications: ['https://doi.org/10.1101/2025.06.03.657460']
+  institution: UC San Diego School of Medicine
+  lab: Hnasko
+  experimenter: ['Hadjas, Lotfi', 'Hollon, Nick']

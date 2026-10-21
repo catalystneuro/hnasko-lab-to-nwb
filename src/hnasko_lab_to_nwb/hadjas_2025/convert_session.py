@@ -13,6 +13,29 @@ from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface impo
 from hnasko_lab_to_nwb.hadjas_2025.nwbconverter import Hadjas2025NWBConverter
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
+METADATA_FOLDER_PATH = Path(__file__).parent / "metadata"
+SHARED_METADATA_FILE_NAMES = ("general_metadata.yaml", "subject_metadata.yaml", "devices_metadata.yaml")
+
+
+def load_cohort_metadata(recording_type: str) -> dict:
+    """Load the metadata shared by all cohorts, updated with the metadata file of one cohort.
+
+    Parameters
+    ----------
+    recording_type : str
+        Type of recording (e.g., "SN pan GABA recordings", "Cell_type recordings_Anxa1").
+
+    Returns
+    -------
+    dict
+        The merged metadata.
+    """
+    metadata = dict()
+    for file_name in SHARED_METADATA_FILE_NAMES:
+        metadata = dict_deep_update(metadata, load_dict_from_file(METADATA_FOLDER_PATH / file_name))
+    cohort_file_path = METADATA_FOLDER_PATH / f"{recording_type.replace(' ', '_')}_metadata.yaml"
+    return dict_deep_update(metadata, load_dict_from_file(cohort_file_path))
+
 
 def get_target_area_for_subject(file_path: Path, subject_id: str) -> str:
     """Extract available sites for a specific subject.
@@ -205,8 +228,7 @@ def varying_frequencies_session_to_nwb(
         "(5 Hz, 10 Hz , 20 Hz and 40 Hz) 5 times for each duration with an ISI of 10s. "
     )
 
-    editable_metadata_path = Path(__file__).parent / f"metadata/{recording_type.replace(' ', '_')}_metadata.yaml"
-    editable_metadata = load_dict_from_file(editable_metadata_path)
+    editable_metadata = load_cohort_metadata(recording_type)
     if subject_metadata["Hemisphere"] == "Left":
         editable_metadata = update_coordinates_for_left_hemisphere(editable_metadata)
 
@@ -438,8 +460,7 @@ def varying_durations_session_to_nwb(  #
         "5 times for each duration) with an inter-stimulus interval (ISI) of 10s. "
     )
 
-    editable_metadata_path = Path(__file__).parent / f"metadata/{recording_type.replace(' ', '_')}_metadata.yaml"
-    editable_metadata = load_dict_from_file(editable_metadata_path)
+    editable_metadata = load_cohort_metadata(recording_type)
     if subject_metadata["Hemisphere"] == "Left":
         editable_metadata = update_coordinates_for_left_hemisphere(editable_metadata)
 
