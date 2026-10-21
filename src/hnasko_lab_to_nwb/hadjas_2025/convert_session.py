@@ -114,6 +114,25 @@ def get_target_area_for_subject(file_path: Path, subject_id: str) -> str:
         raise RuntimeError(f"Error extracting the target area for subject {subject_id}: {e}.")
 
 
+def normalize_hemisphere(hemisphere) -> str:
+    """Return "Left" or "Right" for a hemisphere value of the overview sheet ("Left", "L", "Right", "R").
+
+    Parameters
+    ----------
+    hemisphere
+        The Hemisphere cell of the overview sheet.
+
+    Returns
+    -------
+    str
+        "Left" or "Right".
+    """
+    hemisphere_values = dict(left="Left", l="Left", right="Right", r="Right")
+    if not isinstance(hemisphere, str) or hemisphere.strip().lower() not in hemisphere_values:
+        raise ValueError(f"Unknown hemisphere {hemisphere!r} in the overview sheet.")
+    return hemisphere_values[hemisphere.strip().lower()]
+
+
 def update_coordinates_for_left_hemisphere(metadata: dict) -> dict:
     """
     Update medio-lateral coordinates and hemisphere references in metadata dictionary.
@@ -298,7 +317,7 @@ def session_to_nwb(
     nwbfile_path = output_dir_path / f"sub-{subject_id}_ses-{session_id}.nwb"
 
     editable_metadata = load_cohort_metadata(recording_type)
-    if subject_metadata["Hemisphere"] == "Left":
+    if normalize_hemisphere(subject_metadata["Hemisphere"]) == "Left":
         editable_metadata = update_coordinates_for_left_hemisphere(editable_metadata)
 
     # TDT blocks, in chronological order (folders are named {subject_id}-{yymmdd}-{HHMMSS})
