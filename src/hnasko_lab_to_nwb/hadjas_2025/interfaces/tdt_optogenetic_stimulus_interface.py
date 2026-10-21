@@ -1,4 +1,3 @@
-from copy import deepcopy
 from datetime import datetime
 from logging import warning
 from typing import List
@@ -8,7 +7,7 @@ from pydantic import DirectoryPath, validate_call
 from pynwb.file import NWBFile
 
 from neuroconv.basetemporalalignmentinterface import BaseDataInterface
-from neuroconv.tools.fiber_photometry import add_ophys_device, add_ophys_device_model
+from neuroconv.tools.nwb_helpers import _add_device_to_nwbfile
 from neuroconv.utils import DeepDict
 import pytz
 
@@ -21,7 +20,7 @@ def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
     nwbfile : NWBFile
         The in-memory object to add the data to.
     metadata : dict
-        Metadata dictionary with information used to create the NWBFile.
+        Metadata dictionary with the "Optogenetics" section and the "Devices" and "DeviceModels" registry.
 
     Returns
     -------
@@ -39,8 +38,6 @@ def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
         Effector,
         ViralVector,
         ViralVectorInjection,
-        OpticalFiber,
-        FiberInsertion,
     )
 
     #  check if Optogenetic lab metadata already exists
@@ -49,96 +46,56 @@ def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
         if isinstance(optogenetics, OptogeneticExperimentMetadata):
             return optogenetics
 
-    # Add Devices
-    device_model_types = ["OpticalFiberModel", "ExcitationSourceModel"]
-    for device_model_type in device_model_types:
-        device_models_metadata = metadata["Optogenetics"].get(device_model_type + "s", [])
-        for devices_metadata in device_models_metadata:
-            add_ophys_device_model(
-                nwbfile=nwbfile,
-                device_metadata=devices_metadata,
-                device_type=device_model_type,
-            )
-    device_type = "ExcitationSource"
-    device_models_metadata = metadata["Optogenetics"].get(device_type + "s", [])
-    for devices_metadata in device_models_metadata:
-        add_ophys_device(
-            nwbfile=nwbfile,
-            device_metadata=devices_metadata,
-            device_type=device_type,
-        )
-
-    # Add a dummy Optical Fibers (special case bc they have additional FiberInsertion objects)
-    optical_fibers_metadata = metadata["Optogenetics"].get("OpticalFibers", [])
-    for optical_fiber_metadata in optical_fibers_metadata:
-        fiber_insertion_metadata = optical_fiber_metadata["fiber_insertion"]
-        fiber_insertion = FiberInsertion(**fiber_insertion_metadata)
-        optical_fiber_metadata = deepcopy(optical_fiber_metadata)
-        optical_fiber_metadata["fiber_insertion"] = fiber_insertion
-        assert optical_fiber_metadata["model"] in nwbfile.device_models, (
-            f"Device model {optical_fiber_metadata['model']} not found in NWBFile device_models for {optical_fiber_metadata['name']}."
-        )
-        optical_fiber_metadata["model"] = nwbfile.device_models[optical_fiber_metadata["model"]]
-        optical_fiber = OpticalFiber(**optical_fiber_metadata)
-        nwbfile.add_device(optical_fiber)
+    optogenetics_metadata = metadata["Optogenetics"]
 
     # Add Viral Vectors, Injections, and Effectors
-    viral_vectors_metadata = metadata["Optogenetics"].get("OptogeneticViruses", [])
-    name_to_viral_vector = {}
-    for viral_vector_metadata in viral_vectors_metadata:
-        viral_vector = ViralVector(**viral_vector_metadata)
-        name_to_viral_vector[viral_vector.name] = viral_vector
-    if len(name_to_viral_vector) > 0:
-        viruses = OptogeneticViruses(viral_vectors=list(name_to_viral_vector.values()))
-    else:
-        viruses = None
+    key_to_viral_vector = {
+        key: ViralVector(**viral_vector_metadata)
+        for key, viral_vector_metadata in optogenetics_metadata.get("OptogeneticViruses", {}).items()
+    }
+    viruses = OptogeneticViruses(viral_vectors=list(key_to_viral_vector.values())) if key_to_viral_vector else None
 
-    viral_vector_injections_metadata = metadata["Optogenetics"].get("OptogeneticVirusInjections", [])
-    name_to_viral_vector_injection = {}
-    for viral_vector_injection_metadata in viral_vector_injections_metadata:
-        viral_vector = name_to_viral_vector[viral_vector_injection_metadata["viral_vector"]]
-        viral_vector_injection_metadata = deepcopy(viral_vector_injection_metadata)
-        viral_vector_injection_metadata["viral_vector"] = viral_vector
-        viral_vector_injection = ViralVectorInjection(**viral_vector_injection_metadata)
-        name_to_viral_vector_injection[viral_vector_injection.name] = viral_vector_injection
-    if len(name_to_viral_vector_injection) > 0:
-        virus_injections = OptogeneticVirusInjections(
-            viral_vector_injections=list(name_to_viral_vector_injection.values())
-        )
-    else:
-        virus_injections = None
+    key_to_injection = {}
+    for key, injection_metadata in optogenetics_metadata.get("OptogeneticVirusInjections", {}).items():
+        injection_metadata = dict(injection_metadata)
+        injection_metadata["viral_vector"] = key_to_viral_vector[injection_metadata.pop("viral_vector_metadata_key")]
+        key_to_injection[key] = ViralVectorInjection(**injection_metadata)
+    virus_injections = (
+        OptogeneticVirusInjections(viral_vector_injections=list(key_to_injection.values()))
+        if key_to_injection
+        else None
+    )
 
-    effectors_metadata = metadata["Optogenetics"].get("OptogeneticEffectors", [])
-    name_to_indicator = {}
-    for effector_metadata in effectors_metadata:
-        if "viral_vector_injection" in effector_metadata:
-            viral_vector_injection = name_to_viral_vector_injection[effector_metadata["viral_vector_injection"]]
-            effector_metadata = deepcopy(effector_metadata)
-            effector_metadata["viral_vector_injection"] = viral_vector_injection
-        effector = Effector(**effector_metadata)
-        name_to_indicator[effector.name] = effector
-    if len(name_to_indicator) > 0:
-        effectors = OptogeneticEffectors(effectors=list(name_to_indicator.values()))
-    else:
+    key_to_effector = {}
+    for key, effector_metadata in optogenetics_metadata.get("OptogeneticEffectors", {}).items():
+        effector_metadata = dict(effector_metadata)
+        injection_key = effector_metadata.pop("viral_vector_injection_metadata_key", None)
+        if injection_key is not None:
+            effector_metadata["viral_vector_injection"] = key_to_injection[injection_key]
+        key_to_effector[key] = Effector(**effector_metadata)
+    if len(key_to_effector) == 0:
         raise ValueError("At least one effector must be specified in the metadata.")
+    effectors = OptogeneticEffectors(effectors=list(key_to_effector.values()))
 
-    sites_table_metadata = metadata["Optogenetics"].get("OptogeneticSitesTable", {})
+    # Optogenetic sites, with devices from the shared Devices registry
+    sites_table_metadata = optogenetics_metadata["OptogeneticSitesTable"]
     optogenetic_sites_table = OptogeneticSitesTable(
         name=sites_table_metadata["name"], description=sites_table_metadata["description"]
     )
-    device_fields = [
-        "optical_fiber",
-        "excitation_source",
-    ]
-    for row_metadata in metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"]:
-        row_data = {field: nwbfile.devices[row_metadata[field]] for field in device_fields if field in row_metadata}
-        if "effector" in row_metadata:
-            row_data["effector"] = name_to_indicator[row_metadata["effector"]]
+    for row_metadata in sites_table_metadata["rows"].values():
+        row_data = {}
+        for field in ("optical_fiber", "excitation_source"):
+            if f"{field}_metadata_key" in row_metadata:
+                row_data[field] = _add_device_to_nwbfile(
+                    nwbfile=nwbfile, metadata=metadata, metadata_key=row_metadata[f"{field}_metadata_key"]
+                )
+        if "effector_metadata_key" in row_metadata:
+            row_data["effector"] = key_to_effector[row_metadata["effector_metadata_key"]]
         optogenetic_sites_table.add_row(**row_data)
 
     # Optogenetic Experiment Metadata
     optogenetic_experiment_metadata = OptogeneticExperimentMetadata(
-        stimulation_software=metadata["Optogenetics"]["stimulation_software"],
+        stimulation_software=optogenetics_metadata["stimulation_software"],
         optogenetic_sites_table=optogenetic_sites_table,
         optogenetic_viruses=viruses,
         optogenetic_virus_injections=virus_injections,
