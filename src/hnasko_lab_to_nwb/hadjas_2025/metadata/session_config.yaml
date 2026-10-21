@@ -22,13 +22,14 @@ cohorts:
     sheet_name: DA subtypes
     data_folder: Cell_type recordings
     genotype: VGlut2  # rows of the sheet whose genotype contains this
-    subgroup_folder_prefix: Vglut2  # protocol subfolders are named "<prefix> <recording site>"
+    subgroup_folder_prefix: Vglut2  # protocol subfolders are named "<prefix> <recording site>"; the site is taken from them
     inputs: [PPN, STN]
   Cell_type recordings_Anxa1:
     sheet_name: DA subtypes
     data_folder: Cell_type recordings
     genotype: Anxa1
     subgroup_folder_prefix: Anxa1
+    site_in_session_id: true  # Anxa1 mice are recorded in SNc, DLS or both, one session per site
     inputs: [PPN, STN]
 # Recording rigs, identified by the sampling frequency of the raw Fi1r stream of each TDT block.
 # 24 kHz blocks have three Fi1r channels; only channel 2 carries the photodetector signal.

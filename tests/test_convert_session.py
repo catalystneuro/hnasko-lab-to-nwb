@@ -8,6 +8,8 @@ from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     filter_optogenetics_metadata,
     find_mat_file_path,
     find_tdt_folder_paths,
+    get_recording_site,
+    get_session_id,
     get_target_area_for_subject,
     load_session_config,
     localize_session_start_time,
@@ -128,3 +130,16 @@ def test_get_target_area_for_subject_matches_lowercase_mat_keys(tmp_path, write_
     )
 
     assert get_target_area_for_subject(file_path, "C4708") == ("DLS", "c4708")
+
+
+def test_every_anxa1_session_id_carries_the_recording_site_of_its_folder():
+    # issue #21, finding 15: nine Anxa1 mice had session IDs without a site
+    protocol_folder_path = (
+        Path("Cell_type recordings") / "STN" / "Fiber photometry_TDT" / "Varying durations" / "Anxa1 DLS"
+    )
+    recording_site = get_recording_site("Cell_type recordings_Anxa1", protocol_folder_path)
+
+    assert recording_site == "DLS"
+    assert get_session_id("Varying durations", "Cell_type recordings_Anxa1", recording_site) == "varying_durations_DLS"
+    assert get_session_id("Varying frequencies", "Cell_type recordings_Vglut2", "SNc") == "varying_frequencies"
+    assert get_session_id("Varying durations", "GRABDA recordings", None) == "varying_durations"

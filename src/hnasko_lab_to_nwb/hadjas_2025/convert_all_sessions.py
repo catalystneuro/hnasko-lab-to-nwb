@@ -8,6 +8,7 @@ from tqdm import tqdm
 import pandas as pd
 
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
+    find_tdt_folder_paths,
     load_session_config,
     session_to_nwb,
 )
@@ -77,6 +78,15 @@ def dataset_to_nwb(
                 f.write(traceback.format_exc())
 
 
+def has_tdt_blocks(protocol_folder_path: Path, subject_id: str) -> bool:
+    """Whether a protocol folder holds TDT blocks of the subject."""
+    try:
+        find_tdt_folder_paths(protocol_folder_path=protocol_folder_path, subject_id=subject_id)
+    except FileNotFoundError:
+        return False
+    return True
+
+
 def get_session_to_nwb_kwargs_per_session(
     *,
     data_dir_path: Union[str, Path],
@@ -120,24 +130,32 @@ def get_session_to_nwb_kwargs_per_session(
             )
             for session_id in session_ids:
                 protocol_folder_path = parent_protocol_folder_path / session_id
-                if "subgroup_folder_prefix" in cohort_config:
-                    prefix = cohort_config["subgroup_folder_prefix"]
-                    protocol_folder_path = protocol_folder_path / f"{prefix} {subject_metadata['Recording Site']}"
                 if not protocol_folder_path.exists():
                     with open(exception_file_path, mode="a") as f:
                         f.write(f"Subject {subject_metadata['Animal ID']}, session {session_id}\n")
                         f.write(f"Folder {protocol_folder_path} does not exist\n\n")
                     continue
-
-                session_to_nwb_kwargs_per_session.append(
-                    {
-                        "session_id": session_id,
-                        "subject_metadata": subject_metadata,
-                        "protocol_folder_path": protocol_folder_path,
-                        "recording_type": recording_type,
-                        "stimulus_location": stimulus_location,
-                    }
-                )
+                # Cell_type sessions are in one subgroup folder per recording site, "<prefix> <site>"; a session is
+                # converted for each subgroup folder holding blocks of the subject, whatever site the sheet gives
+                protocol_folder_paths = [protocol_folder_path]
+                if "subgroup_folder_prefix" in cohort_config:
+                    protocol_folder_paths = [
+                        subgroup_folder_path
+                        for subgroup_folder_path in sorted(
+                            protocol_folder_path.glob(f"{cohort_config['subgroup_folder_prefix']} *")
+                        )
+                        if has_tdt_blocks(subgroup_folder_path, subject_metadata["Animal ID"])
+                    ]
+                for subject_protocol_folder_path in protocol_folder_paths:
+                    session_to_nwb_kwargs_per_session.append(
+                        {
+                            "session_id": session_id,
+                            "subject_metadata": subject_metadata,
+                            "protocol_folder_path": subject_protocol_folder_path,
+                            "recording_type": recording_type,
+                            "stimulus_location": stimulus_location,
+                        }
+                    )
 
     return session_to_nwb_kwargs_per_session
 

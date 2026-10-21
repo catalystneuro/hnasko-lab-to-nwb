@@ -211,6 +211,51 @@ def update_coordinates_for_left_hemisphere(metadata: dict) -> dict:
     return updated_metadata
 
 
+def get_recording_site(recording_type: str, protocol_folder_path: Path) -> str | None:
+    """Get the recording site of a Cell_type session from its subgroup folder ("Anxa1 DLS" gives "DLS").
+
+    Parameters
+    ----------
+    recording_type : str
+        Cohort key of the session config.
+    protocol_folder_path : Path
+        Protocol folder of the session.
+
+    Returns
+    -------
+    str or None
+        The recording site, or None for cohorts without subgroup folders.
+    """
+    cohort_config = load_session_config()["cohorts"][recording_type]
+    if "subgroup_folder_prefix" not in cohort_config:
+        return None
+    return Path(protocol_folder_path).name.removeprefix(f"{cohort_config['subgroup_folder_prefix']} ")
+
+
+def get_session_id(protocol: str, recording_type: str, recording_site: str | None) -> str:
+    """Get the session ID: the protocol's, followed by the recording site for cohorts recorded at several sites.
+
+    Parameters
+    ----------
+    protocol : str
+        Protocol key of the session config.
+    recording_type : str
+        Cohort key of the session config.
+    recording_site : str or None
+        The recording site from get_recording_site.
+
+    Returns
+    -------
+    str
+        The session ID, e.g. "varying_durations" or "varying_durations_DLS".
+    """
+    session_config = load_session_config()
+    session_id = session_config["protocols"][protocol]["session_id"]
+    if session_config["cohorts"][recording_type].get("site_in_session_id", False):
+        session_id = f"{session_id}_{recording_site}"
+    return session_id
+
+
 def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_cohort_folder: str) -> Path:
     """Find the lab's processed .mat file of a protocol folder, possibly in another cohort's folder.
 
@@ -329,11 +374,9 @@ def session_to_nwb(
     cohort_config = session_config["cohorts"][recording_type]
     subject_config = session_config["subjects"].get(subject_id, {})
     mat_cohort_folder = subject_config.get("mat_cohort_folder", cohort_config["data_folder"])
-    session_id = protocol_config["session_id"]
-    if subject_id in ["C5904", "C5966", "C5964", "C6609", "C6299", "C6612", "C6901", "C7241", "C7242"]:
-        session_id = f"{session_id}_{subject_metadata['Recording Site']}"
-
     protocol_folder_path = Path(protocol_folder_path)
+    recording_site = get_recording_site(recording_type=recording_type, protocol_folder_path=protocol_folder_path)
+    session_id = get_session_id(protocol=protocol, recording_type=recording_type, recording_site=recording_site)
     output_dir_path = Path(output_dir_path)
     if stub_test:
         output_dir_path = output_dir_path / "nwb_stub"
@@ -374,9 +417,8 @@ def session_to_nwb(
         mat_cohort_folder=mat_cohort_folder,
     )
     target_area, mat_subject_id = get_target_area_for_subject(mat_file_path, subject_id)
-    raw_target_area = target_area
-    if target_area in ("STN_to_Anxa1", "PPN_to_Anxa1"):
-        raw_target_area = subject_metadata["Recording Site"]
+    # The Anxa1 .mat files group subjects by stimulus site; their series are keyed by recording site
+    raw_target_area = recording_site if target_area in ("STN_to_Anxa1", "PPN_to_Anxa1") else target_area
 
     source_data = dict()
     conversion_options = dict()
