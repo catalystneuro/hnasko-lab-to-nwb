@@ -5,12 +5,11 @@ import h5py
 import numpy as np
 import pytest
 
+from hnasko_lab_to_nwb.hadjas_2025.convert_session import load_cohort_metadata
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface import (
     ConcatenatedTDTFiberPhotometryInterface,
 )
-from neuroconv.utils import load_dict_from_file
 
-METADATA_FOLDER_PATH = Path(__file__).parents[1] / "src" / "hnasko_lab_to_nwb" / "hadjas_2025" / "metadata"
 SEGMENT_STARTING_TIMES = [0.0, 10.0, 20.0]
 
 
@@ -32,7 +31,7 @@ class FakeTDTInterface:
 
 @pytest.fixture
 def anxa1_metadata() -> dict:
-    return load_dict_from_file(METADATA_FOLDER_PATH / "Cell_type_recordings_Anxa1_metadata.yaml")
+    return load_cohort_metadata("Cell_type recordings_Anxa1")
 
 
 @pytest.fixture

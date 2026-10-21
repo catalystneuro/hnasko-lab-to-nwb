@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from hnasko_lab_to_nwb.hadjas_2025.convert_session import load_cohort_metadata
 from neuroconv.utils import load_dict_from_file
 
 METADATA_FOLDER_PATH = Path(__file__).parents[1] / "src" / "hnasko_lab_to_nwb" / "hadjas_2025" / "metadata"
@@ -19,3 +20,14 @@ def find_none_strings(value, path=""):
 @pytest.mark.parametrize("file_path", sorted(METADATA_FOLDER_PATH.glob("*.yaml")), ids=lambda path: path.name)
 def test_metadata_has_no_none_strings(file_path):
     assert find_none_strings(load_dict_from_file(file_path)) == []
+
+
+def test_load_cohort_metadata_merges_shared_files_with_cohort_overrides():
+    metadata = load_cohort_metadata("GRABDA recordings")
+
+    assert metadata["NWBFile"]["lab"] == "Hnasko"
+    assert metadata["Subject"]["species"] == "Mus musculus"
+    assert metadata["Subject"]["genotype"] == "VGlut2-cre"
+    isosbestic_model = metadata["DeviceModels"]["excitation_source_model_isosbestic"]
+    assert isosbestic_model["manufacturer"] == "Tucker-Davis Technologies"
+    assert isosbestic_model["wavelength_range_in_nm"] == [410.0, 420.0]

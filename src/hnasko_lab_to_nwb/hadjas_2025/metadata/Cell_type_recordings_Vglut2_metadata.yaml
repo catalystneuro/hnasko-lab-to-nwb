@@ -1,40 +1,17 @@
 # Metadata for Hadjas 2025 --> Parkinson's resilient Vglut2+ dopamine subtypes recordings, STN & PPN stim
 NWBFile:
-  related_publications:
-    - https://doi.org/10.1101/2025.06.03.657460
-  keywords:
-    - SNc fiber photometry recordings
-    - Vglut2+ dopamine subtypes
-    - VGLUT2-Cre x DAT-Flp
-    - STN optogenetic stimulation
-    - PPN optogenetic stimulation
-    - Parkinson's disease
-  experiment_description:
-    Parkinson's resilient Vglut2+ dopamine subtypes recordings. Mice were freely moving on a plastic tub.
-    Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the first two days.
-    Excitatory inputs from either the STN or PPN to SN were stimulated.
-    Recordings of GCaMP6f fluorescence signal captured Vglut2+ DA neurons activity in SNc in VGLUT2-Cre x DAT-Flp mice.
-  institution: UC San Diego School of Medicine
-  lab: Hnasko
-  experimenter:
-    - Hadjas, Lotfi
-    - Hollon, Nick
-  surgery:
-    Mice > 6 weeks old were anesthetized with isofluorane (4% for induction and 1-2% for maintenance), and provided with pre- and post-surgical analgesic carprofen (5 mg/kg i.p).
-    For recording from Vglut2+ DA neurons in SNc, VGLUT2-Cre x DAT-Flp animals were injected with 300 nl of AAV8-Ef1a-ConFon-GCaMP6f (2.3e12 vg/ml, Addgene 137122) in SNc (AP -3.20, ML +/-1.5, DV -4.20),
-    and AAV5-Syn-FLEX-ChrimsonR-TdTomato was injected in STN or PPN as above.
-    A fiber (400-um core, 0.39 NA, L = 6 mm, 1.25 mm black ceramic ferrule, RWD) was implanted in SNc (AP -3.20, ML +/-1.60, DV -4.00).
+  keywords: [SNc fiber photometry recordings, Vglut2+ dopamine subtypes, VGLUT2-Cre x DAT-Flp, STN optogenetic stimulation,
+    PPN optogenetic stimulation, Parkinson's disease]
+  experiment_description: Parkinson's resilient Vglut2+ dopamine subtypes recordings. Mice were freely moving on a plastic
+    tub. Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the first two
+    days. Excitatory inputs from either the STN or PPN to SN were stimulated. Recordings of GCaMP6f fluorescence signal captured
+    Vglut2+ DA neurons activity in SNc in VGLUT2-Cre x DAT-Flp mice.
+  surgery: Mice > 6 weeks old were anesthetized with isofluorane (4% for induction and 1-2% for maintenance), and provided
+    with pre- and post-surgical analgesic carprofen (5 mg/kg i.p). For recording from Vglut2+ DA neurons in SNc, VGLUT2-Cre
+    x DAT-Flp animals were injected with 300 nl of AAV8-Ef1a-ConFon-GCaMP6f (2.3e12 vg/ml, Addgene 137122) in SNc (AP -3.20,
+    ML +/-1.5, DV -4.20), and AAV5-Syn-FLEX-ChrimsonR-TdTomato was injected in STN or PPN as above. A fiber (400-um core,
+    0.39 NA, L = 6 mm, 1.25 mm black ceramic ferrule, RWD) was implanted in SNc (AP -3.20, ML +/-1.60, DV -4.00).
 Subject:
-  species: Mus musculus
-  description:
-    All mouse experiments were performed in accordance with protocols approved by UCSD Institutional Animal Care and Use Committee.
-    Male and female mice were bred at UCSD and group-housed on a 12-hour light/dark cycle, with food and water ad libitum.
-    VGLUT2-Cre (Slc17a6tm2(cre)Lowl, RRID:IMSR_JAX:016963) and VGAT-Flp (Slc32a1tm1.1(flpo)Hze, RRID:IMSR_JAX:029591) mice were obtained from the Jackson Laboratory and maintained backcrossed on to C57BL/6J (RRID:IMSR_JAX:000664).
-    The DAT-Flp (Slc6a3em1(flpo)Hbat, RRID:IMSR_JAX:035436) were generously provided by Dr. Helen Bateup (UC Berkeley).
-    VGLUT2-PhiC31 (Jeong et al. 2024) mice were generously provided by Dr. Lim (UC San Diego).
-    DAT-Flp (Slc6a3em1(flpo)NW Jax and RRID) and Anxa1-Cre (RRID:MMRRC_069931-MU) were generously provided by Dr.Awatramani (Northwestern).
-  age: P6W
-  strain: C57BL/6J
   genotype: VGlut2-cre X DAT-flp
 DeviceModels:
   optical_fiber_model_1:
@@ -49,66 +26,18 @@ DeviceModels:
     ferrule_diameter_in_mm: 1.25
     ferrule_name: black ceramic ferrule
   excitation_source_model_calcium:
-    type: ExcitationSourceModel
-    name: excitation_source_model_calcium
     description: excitation source for the sensor's fluorescence signal.
-    manufacturer: Tucker-Davis Technologies
-    model_number: RZ5P or RZ10x
-    source_type: LED
-    excitation_mode: one-photon
-    wavelength_range_in_nm: [460.0, 490.0]
   excitation_source_model_isosbestic:
-    type: ExcitationSourceModel
-    name: excitation_source_model_isosbestic
     description: excitation source for the sensor's isosbestic control.
-    manufacturer: Tucker-Davis Technologies
-    model_number: RZ5P or RZ10x
-    source_type: LED
-    excitation_mode: one-photon
     wavelength_range_in_nm: [400.0, 410.0]
   photodetector_model:
-    type: PhotodetectorModel
-    name: photodetector_model
-    description: <description of the photodetector model>
-    manufacturer: <manufacturer of the photodetector>
-    model_number: <model of the photodetector>
     detector_type: Silicon photodiode
-    wavelength_range_in_nm: [500.0, 540.0]
-    gain: 0.38
-    gain_unit: A/W
   emission_filter_model:
-    type: BandOpticalFilterModel
-    name: emission_filter_model
     description: emission filter model for GCaMP6f fluorescence signal.
-    manufacturer: <manufacturer of the emission filter>
-    model_number: <model of the emission filter>
-    filter_type: Bandpass
-    center_wavelength_in_nm: 520.0
-    bandwidth_in_nm: 40.0
   excitation_filter_model:
-    type: BandOpticalFilterModel
-    name: excitation_filter_model
     description: excitation filter model for GCaMP6f fluorescence signal.
-    manufacturer: <manufacturer of the excitation filter>
-    model_number: <model of the excitation filter>
-    filter_type: Bandpass
-    center_wavelength_in_nm: 445.0
-    bandwidth_in_nm: 90.0
   dichroic_mirror_model:
-    type: DichroicMirrorModel
-    name: dichroic_mirror_model
     description: <description of the dichroic mirror model>
-    manufacturer: <manufacturer of the dichroic mirror>
-    model_number: <model of the dichroic mirror>
-  optogenetic_excitation_source_model:
-    type: ExcitationSourceModel
-    name: optogenetic_excitation_source_model
-    description: Red LED device used for optogenetic stimulation.
-    manufacturer: Shanghai laser
-    model_number: <model of the LED device>
-    source_type: LED
-    excitation_mode: one-photon
-    wavelength_range_in_nm: [580.0, 680.0]
 Devices:
   optical_fiber_SNc:
     type: OpticalFiber
@@ -123,42 +52,15 @@ Devices:
       hemisphere: right
     device_model_metadata_key: optical_fiber_model_1
   excitation_source_calcium_signal:
-    type: ExcitationSource
-    name: excitation_source_calcium_signal
     description: excitation source for the sensor's fluorescence signal (465nm) modulated at 210 Hz.
-    device_model_metadata_key: excitation_source_model_calcium
   excitation_source_isosbestic_control:
-    type: ExcitationSource
-    name: excitation_source_isosbestic_control
     description: excitation source for the sensor's isosbestic control (405nm) modulated at 330 Hz.
-    device_model_metadata_key: excitation_source_model_isosbestic
-  photodetector:
-    type: Photodetector
-    name: photodetector
-    description: <description of the photodetector>
-    serial_number: <serial number of the photodetector>
-    device_model_metadata_key: photodetector_model
   emission_filter:
-    type: BandOpticalFilter
-    name: emission_filter
     description: <description of emission filter>
-    device_model_metadata_key: emission_filter_model
   excitation_filter:
-    type: BandOpticalFilter
-    name: excitation_filter
     description: <description of excitation filter>
-    device_model_metadata_key: excitation_filter_model
   dichroic_mirror:
-    type: DichroicMirror
-    name: dichroic_mirror
     description: <description of the dichroic mirror>
-    serial_number: <serial number of the dichroic mirror>
-    device_model_metadata_key: dichroic_mirror_model
-  optogenetic_excitation_source:
-    type: ExcitationSource
-    name: optogenetic_excitation_source
-    description: Red LED device used for optogenetic stimulation.
-    device_model_metadata_key: optogenetic_excitation_source_model
 FiberPhotometry:
   FiberPhotometryViruses:
     viral_vector_gcamp6f:
