@@ -4,7 +4,7 @@ import numpy as np
 from pynwb.testing.mock.file import mock_NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.processed_fp_interface import (
-    ConcatenatedHadjas2025ProcessedFiberPhotometryInterface,
+    Hadjas2025ProcessedFiberPhotometryInterface,
     get_series_target_area,
 )
 
@@ -29,7 +29,7 @@ def test_concatenated_interface_reads_anxa1_site_from_folder_name(tmp_path, anxa
         subject_id="C0001",
         segments=segments,
     )
-    interface = ConcatenatedHadjas2025ProcessedFiberPhotometryInterface(
+    interface = Hadjas2025ProcessedFiberPhotometryInterface(
         file_path=file_path, stream_name="dF", subject_id="C0001", target_area="PPN_to_Anxa1", sampling_frequency=100.0
     )
     nwbfile = mock_NWBFile()

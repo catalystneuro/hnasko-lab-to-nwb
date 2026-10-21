@@ -7,8 +7,6 @@ from pathlib import Path
 from typing import Union
 from zoneinfo import ZoneInfo
 
-import pandas as pd
-
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface import (
     ConcatenatedTDTFiberPhotometryInterface,
 )
@@ -210,104 +208,94 @@ def filter_optogenetics_metadata(metadata: dict, stimulus_location: str) -> None
     }
 
 
-def varying_frequencies_session_to_nwb(
+def session_to_nwb(
     output_dir_path: Union[str, Path],
     subject_metadata: dict,
     protocol_folder_path: Union[str, Path],
     recording_type: str,
     stimulus_location: str,
+    protocol: str,
     stub_test: bool = False,
     overwrite: bool = False,
     verbose: bool = False,
 ):
-    """Convert a single session to NWB format.
+    """Convert one session (one protocol of one subject) to NWB.
+
     Parameters
     ----------
     output_dir_path : Union[str, Path]
         Path to the output directory where the NWB file will be saved.
     subject_metadata : dict
-        Subject metadata dictionary.
+        Row of the overview sheet for the subject.
     protocol_folder_path : Union[str, Path]
-        Path to the protocol folder containing TDT data and processed .mat file.
+        Path to the protocol folder containing the TDT blocks and the lab's processed .mat file.
     recording_type : str
-        Type of recording (e.g., "SN pan GABA recordings", "GRABDA recordings", "SN pan DA recordings", "Str_DA_terminal recordings").
+        Cohort key of the session config (e.g., "SN pan GABA recordings", "Cell_type recordings_Anxa1").
     stimulus_location : str
         Location of the stimulus (e.g., "PPN", "STN").
+    protocol : str
+        Protocol key of the session config: "Varying durations" or "Varying frequencies".
     stub_test : bool, optional
-        If True, run a stub test (default is False).
+        If True, convert only the first second of each block (default is False).
     overwrite : bool, optional
         If True, overwrite existing NWB file (default is False).
     verbose : bool, optional
         If True, print verbose output (default is False).
 
     Notes
-    -------
-    This function assumes that the protocol_folder_path contains a TDT folder and a processed .mat
-    file. The TDT folder should be named as "{subject_id}-*" and the .mat file should be the only .mat
-    file in the protocol_folder_path.
-    If recording_type or stimulus_location are not provided, they will be inferred
-    from the protocol_folder_path, as follows:
-        protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT" / "Varying frequencies"
-    The optogenetic stimulation parameters are hardcoded in this function.
-    tdt stimulation channel names: ["H10_", "H20_", "H40_", "H05_"]
-    stimulation frequencies: [10.0, 20.0, 40.0, 5.0]
+    -----
+    Varying-durations sessions have one TDT block in the protocol folder. Varying-frequencies sessions have one
+    block per train duration in varFreq_* subfolders, written as one concatenated series, except SN pan GABA PPN,
+    which has one block for all durations.
     """
     subject_id = subject_metadata["Animal ID"]
     if subject_id in ["C4708", "C4709", "C4977", "C4978", "C3015", "C3016", "C4379", "C5113"]:
         subject_id = subject_id.lower()
 
     session_config = load_session_config()
-    protocol_config = session_config["protocols"]["Varying frequencies"]
+    protocol_config = session_config["protocols"][protocol]
+    cohort_config = session_config["cohorts"][recording_type]
     session_id = protocol_config["session_id"]
     if subject_id in ["C5904", "C5966", "C5964", "C6609", "C6299", "C6612", "C6901", "C7241", "C7242"]:
         session_id = f"{session_id}_{subject_metadata['Recording Site']}"
 
     protocol_folder_path = Path(protocol_folder_path)
-
     output_dir_path = Path(output_dir_path)
     if stub_test:
         output_dir_path = output_dir_path / "nwb_stub"
     output_dir_path.mkdir(parents=True, exist_ok=True)
-
     nwbfile_path = output_dir_path / f"sub-{subject_id}_ses-{session_id}.nwb"
-
-    # Define session description and stimulation parameters
-    session_description = protocol_config["session_description"]
 
     editable_metadata = load_cohort_metadata(recording_type)
     if subject_metadata["Hemisphere"] == "Left":
         editable_metadata = update_coordinates_for_left_hemisphere(editable_metadata)
 
-    tdt_stimulus_channel_to_frequency = protocol_config["epoc_name_to_frequency_in_hz"]
-    mat_stim_ch_names = ["s250ms", "s1s", "s4s"]
-    cohort_config = session_config["cohorts"][recording_type]
-    add_video_conversion = stimulus_location in cohort_config.get("behavioral_video_inputs", [])
+    # TDT blocks, in chronological order (folders are named {subject_id}-{yymmdd}-{HHMMSS})
+    tdt_folder_paths = list(protocol_folder_path.glob(f"{subject_id}-*"))
+    tdt_folder_paths += list(protocol_folder_path.glob(f"varFreq_*/{subject_id}-*"))
+    if len(tdt_folder_paths) == 0:
+        raise FileNotFoundError(f"No TDT block for {subject_id} in {protocol_folder_path}")
+    tdt_folder_paths.sort(key=lambda folder_path: folder_path.name.split("-")[-2] + folder_path.name.split("-")[-1])
 
-    # Handle exception for SN pan GABA recordings
-    if add_video_conversion:
-        tdt_folder_paths = list(protocol_folder_path.glob(f"{subject_id}-*"))
-        ordered_mat_stim_ch_names = ["AllDurs"]
+    # Segments of the lab's .mat file, one per block
+    if protocol == "Varying durations":
+        mat_segment_names = ["LP5mW"]
+    elif len(tdt_folder_paths) == 1:
+        mat_segment_names = ["AllDurs"]
     else:
+        duration_mat_segment_names = ["s250ms", "s1s", "s4s"]
         if recording_type == "SN pan GABA recordings" and stimulus_location == "STN":
-            mat_stim_ch_names = ["s250ms5mW", "s1s10mW"]
-
-        tdt_folder_paths = list(protocol_folder_path.glob(f"varFreq_*/{subject_id}-*"))
-        # Sort the folders based on the session_starting_time_string. Under the assumption that the folders are named as {subject_id}-{day_string:%y%m%d}-{%H%M%S}
-        tdt_folder_paths.sort(key=lambda x: x.name.split("-")[-2] + x.name.split("-")[-1])
-        ordered_mat_stim_ch_names = []
-        for folder in tdt_folder_paths:
-            if "varFreq_250ms" in folder.parent.name:
-                ordered_mat_stim_ch_names.append(mat_stim_ch_names[0])
-            elif "varFreq_1s" in folder.parent.name:
-                ordered_mat_stim_ch_names.append(mat_stim_ch_names[1])
-            elif "varFreq_4s" in folder.parent.name:
-                ordered_mat_stim_ch_names.append(mat_stim_ch_names[2])
-            else:
-                raise ValueError(f"Unknown sub-session folder name: {folder.parent.name}")
+            duration_mat_segment_names = ["s250ms5mW", "s1s10mW"]
+        folder_name_to_index = dict(varFreq_250ms=0, varFreq_1s=1, varFreq_4s=2)
+        mat_segment_names = []
+        for folder_path in tdt_folder_paths:
+            if folder_path.parent.name not in folder_name_to_index:
+                raise ValueError(f"Unknown sub-session folder name: {folder_path.parent.name}")
+            mat_segment_names.append(duration_mat_segment_names[folder_name_to_index[folder_path.parent.name]])
+    if len(mat_segment_names) != len(tdt_folder_paths):
+        raise ValueError(f"Expected {len(mat_segment_names)} TDT blocks in {protocol_folder_path}")
 
     raw_stream_settings = get_raw_stream_settings(tdt_folder_paths[0])
-    stream_indices = raw_stream_settings["stream_indices"]
-    raw_sampling_frequency = raw_stream_settings["sampling_frequency"]
     # Gaps between blocks are NaN-padded on the 6 kHz rig only, as before
     fill_gaps = raw_stream_settings["rig_name"] == "RZ10x"
 
@@ -318,290 +306,86 @@ def varying_frequencies_session_to_nwb(
         raise ValueError(f"Multiple .mat files found in {protocol_folder_path}")
     mat_file_path = mat_file_path[0]
     target_area = get_target_area_for_subject(mat_file_path, subject_id)
+    raw_target_area = target_area
+    if target_area in ("STN_to_Anxa1", "PPN_to_Anxa1"):
+        raw_target_area = subject_metadata["Recording Site"]
 
     source_data = dict()
     conversion_options = dict()
 
-    # Add FiberPhotometry
+    # Raw fiber photometry
     raw_source_data = dict(
         folder_paths=tdt_folder_paths,
         stream_name="Fi1r",
-        metadata_key=f"Fi1r_{target_area}",
-        stream_indices=stream_indices,
+        metadata_key=f"Fi1r_{raw_target_area}",
+        stream_indices=raw_stream_settings["stream_indices"],
     )
-    source_data.update(dict(ConcatenatedRawFiberPhotometry=raw_source_data))
-    conversion_options.update(dict(ConcatenatedRawFiberPhotometry=dict(stub_test=stub_test, fill_gaps=fill_gaps)))
+    source_data.update(RawFiberPhotometry=raw_source_data)
+    conversion_options.update(RawFiberPhotometry=dict(stub_test=stub_test, fill_gaps=fill_gaps))
 
     # Extract session starting time from TDT data
     # Assume that the tdt folders are named as {subject_id}-{session_starting_time_string}
     session_starting_time_string = tdt_folder_paths[0].name.replace(f"{subject_id}-", "")
     session_start_datetime = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
 
-    concatenated_tdt_interface = ConcatenatedTDTFiberPhotometryInterface(**raw_source_data, verbose=verbose)
-    segment_starting_times = concatenated_tdt_interface.segment_starting_times
-    # Add Processed Fiber Photometry
-    stream_to_interface_mapping = {
-        "Gc_raw": "ConcatenatedDemodulatedFiberPhotometry_Calcium",
-        "af_raw": "ConcatenatedDemodulatedFiberPhotometry_Isosbestic",
-        "Gc": "ConcatenatedDownsampledFiberPhotometry_Calcium",
-        "af": "ConcatenatedDownsampledFiberPhotometry_Isosbestic",
-        "dF": "ConcatenatedDeltaFOverF",
-    }
-    for stream_name, interface_name in stream_to_interface_mapping.items():
-        source_data.update(
-            dict(
-                **{
-                    interface_name: dict(
-                        file_path=mat_file_path,
-                        subject_id=subject_id,
-                        stream_name=stream_name,
-                        target_area=target_area,
-                        sampling_frequency=raw_sampling_frequency if "raw" in stream_name else 100.0,
-                    )
-                }
-            )
-        )
-        conversion_options.update(
-            dict(
-                **{
-                    interface_name: dict(
-                        stub_test=stub_test,
-                        stimulus_channel_names=ordered_mat_stim_ch_names,
-                        segment_starting_times=segment_starting_times,
-                        fill_gaps=fill_gaps,
-                    )
-                }
-            )
-        )
+    segment_starting_times = ConcatenatedTDTFiberPhotometryInterface(**raw_source_data).segment_starting_times
 
-    # Add Behavioral Video if needed
-    if add_video_conversion:
-        from hnasko_lab_to_nwb.hadjas_2025.utils import get_video_aligned_starting_time
-
-        video_time_alignment_dict = dict()
-        video_folder_path = protocol_folder_path.parents[1] / "AnyMaze videos_mp4" / "Varying frequencies"
-        video_metadata_file_path = video_folder_path / "video_metadata.xlsx"
-        video_file_paths = list(video_folder_path.glob(f"{subject_id}*.mp4"))
-        if len(video_file_paths) != 3:
-            raise FileNotFoundError(
-                f"Expected three video files for subject {subject_id}, found {len(video_file_paths)}."
-            )
-        else:
-            for video_file_path in video_file_paths:
-                suffix = video_file_path.name.split("_")[-1].split(".")[0]  # Extract suffix from filename
-                source_data.update(
-                    {f"Video_{suffix}": dict(file_paths=[video_file_path], video_name=f"BehavioralVideo_{suffix}")}
-                )
-                video_starting_time = get_video_aligned_starting_time(
-                    video_metadata_file_path=video_metadata_file_path,
-                    video_file_path=video_file_path,
-                    session_starting_time=session_start_datetime,
-                )
-                video_time_alignment_dict.update({f"Video_{suffix}": dict(video_starting_time=video_starting_time)})
-    else:
-        video_time_alignment_dict = None
-
-    # Add OptogeneticStimulation
-    source_data.update(dict(ConcatenatedOptogeneticStimulus=dict(folder_paths=tdt_folder_paths)))
-    conversion_options.update(
-        dict(ConcatenatedOptogeneticStimulus=dict(tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency))
-    )
-
-    converter = Hadjas2025NWBConverter(
-        source_data=source_data, verbose=verbose, video_time_alignment_dict=video_time_alignment_dict
-    )
-
-    # Update default metadata with the editable in the corresponding yaml file
-    metadata = converter.get_metadata()
-    metadata = dict_deep_update(metadata, editable_metadata)
-
-    metadata["Subject"]["subject_id"] = subject_id
-    metadata["Subject"]["sex"] = subject_metadata["Sex"]
-    metadata["NWBFile"]["session_id"] = session_id
-    metadata["NWBFile"]["session_description"] = session_description
-    metadata["NWBFile"]["session_start_time"] = localize_session_start_time(session_start_datetime)
-
-    # Remove entries for other stimulus sites from metadata
-    filter_optogenetics_metadata(metadata=metadata, stimulus_location=stimulus_location)
-
-    # Run conversion
-    converter.run_conversion(
-        metadata=metadata, nwbfile_path=nwbfile_path, conversion_options=conversion_options, overwrite=overwrite
-    )
-    if verbose:
-        print(f"Session {session_id} for subject {subject_id} converted successfully to NWB format at {nwbfile_path}")
-
-
-def varying_durations_session_to_nwb(  #
-    output_dir_path: Union[str, Path],
-    subject_metadata: dict,
-    protocol_folder_path: Union[str, Path],
-    recording_type: str,
-    stimulus_location: str,
-    stub_test: bool = False,
-    overwrite: bool = False,
-    verbose: bool = False,
-):
-    """Convert a single session to NWB format.
-    Parameters
-    ----------
-    output_dir_path : Union[str, Path]
-        Path to the output directory where the NWB file will be saved.
-    subject_metadata : dict
-        Subject metadata dictionary.
-    protocol_folder_path : Union[str, Path]
-        Path to the protocol folder containing TDT data and processed .mat file.
-    recording_type : str
-        Type of recording (e.g., "SN pan GABA recordings", "GRABDA recordings", "SN pan DA recordings", "Str_DA_terminal recordings").
-    stimulus_location : str
-        Location of the stimulus (e.g., "PPN", "STN").
-    stub_test : bool, optional
-        If True, run a stub test (default is False).
-    overwrite : bool, optional
-        If True, overwrite existing NWB file (default is False).
-    verbose : bool, optional
-        If True, print verbose output (default is False).
-
-    Notes
-    -------
-    This function assumes that the protocol_folder_path contains a TDT folder and a processed .mat
-    file. The TDT folder should be named as "{subject_id}-*" and the .mat file should be the only .mat
-    file in the protocol_folder_path.
-    If recording_type or stimulus_location are not provided, they will be inferred
-    from the protocol_folder_path, as follows:
-        protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT" / "Varying durations"
-    The optogenetic stimulation parameters are hardcoded in this function.
-    tdt stimulation channel names: ["sms_", "s1s_", "s4s_"]
-    stimulation frequencies: [40.0, 40.0, 40.0]
-    """
-    subject_id = subject_metadata["Animal ID"]
-    if subject_id in ["C4708", "C4709", "C4977", "C4978", "C3015", "C3016", "C4379", "C5113"]:
-        subject_id = subject_id.lower()
-
-    session_config = load_session_config()
-    protocol_config = session_config["protocols"]["Varying durations"]
-    session_id = protocol_config["session_id"]
-    if subject_id in ["C5904", "C5966", "C5964", "C6609", "C6299", "C6612", "C6901", "C7241", "C7242"]:
-        session_id = f"{session_id}_{subject_metadata['Recording Site']}"
-
-    protocol_folder_path = Path(protocol_folder_path)
-
-    output_dir_path = Path(output_dir_path)
-    if stub_test:
-        output_dir_path = output_dir_path / "nwb_stub"
-    output_dir_path.mkdir(parents=True, exist_ok=True)
-
-    nwbfile_path = output_dir_path / f"sub-{subject_id}_ses-{session_id}.nwb"
-
-    # Define session description and stimulation parameters
-    session_description = protocol_config["session_description"]
-
-    editable_metadata = load_cohort_metadata(recording_type)
-    if subject_metadata["Hemisphere"] == "Left":
-        editable_metadata = update_coordinates_for_left_hemisphere(editable_metadata)
-
-    tdt_stimulus_channel_to_frequency = protocol_config["epoc_name_to_frequency_in_hz"]
-    mat_stim_ch_name = "LP5mW"
-    cohort_config = session_config["cohorts"][recording_type]
-    add_video_conversion = stimulus_location in cohort_config.get("behavioral_video_inputs", [])
-
-    mat_file_path = list(protocol_folder_path.glob("*.mat"))
-    if len(mat_file_path) == 0:
-        raise FileNotFoundError(f"No .mat files found in {protocol_folder_path}")
-    elif len(mat_file_path) > 1:
-        raise ValueError(f"Multiple .mat files found in {protocol_folder_path}")
-    mat_file_path = mat_file_path[0]
-    target_area = get_target_area_for_subject(mat_file_path, subject_id)
-    raw_target_area = target_area
-    if target_area == "STN_to_Anxa1" or target_area == "PPN_to_Anxa1":
-        raw_target_area = subject_metadata["Recording Site"]
-
-    source_data = dict()
-    conversion_options = dict()
-
-    # Add FiberPhotometry
-    tdt_folder_path = list(protocol_folder_path.glob(f"{subject_id}-*"))
-    if len(tdt_folder_path) == 0:
-        raise FileNotFoundError(f"No TDT folder found in {protocol_folder_path}")
-    elif len(tdt_folder_path) > 1:
-        raise ValueError(f"Multiple TDT folders found in {protocol_folder_path}")
-    tdt_folder_path = tdt_folder_path[0]
-    raw_stream_settings = get_raw_stream_settings(tdt_folder_path)
-    stream_indices = raw_stream_settings["stream_indices"]
-    raw_sampling_frequency = raw_stream_settings["sampling_frequency"]
-    raw_source_data = dict(
-        folder_path=tdt_folder_path,
-        stream_names=["Fi1r"],
-        metadata_key=f"Fi1r_{raw_target_area}",
-        stream_indices=stream_indices,
-    )
-    source_data.update(dict(RawFiberPhotometry=raw_source_data))
-    conversion_options.update(dict(RawFiberPhotometry=dict(stub_test=stub_test)))
-
-    # Extract session starting time from TDT data
-    # Assume that the tdt folders are named as {subject_id}-{session_starting_time_string}
-    # handle lower case subject IDs
-    session_starting_time_string = tdt_folder_path.name.replace(f"{subject_id}-", "")
-    session_start_datetime = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
-
-    # Add Processed Fiber Photometry
-    stream_to_interface_mapping = {
+    # Processed fiber photometry from the lab's .mat file
+    stream_to_interface_name = {
         "Gc_raw": "DemodulatedFiberPhotometry_Calcium",
         "af_raw": "DemodulatedFiberPhotometry_Isosbestic",
         "Gc": "DownsampledFiberPhotometry_Calcium",
         "af": "DownsampledFiberPhotometry_Isosbestic",
         "dF": "DeltaFOverF",
     }
-    for stream_name, interface_name in stream_to_interface_mapping.items():
-        source_data.update(
-            dict(
-                **{
-                    interface_name: dict(
-                        file_path=mat_file_path,
-                        subject_id=subject_id,
-                        stream_name=stream_name,
-                        target_area=target_area,
-                        sampling_frequency=raw_sampling_frequency if "raw" in stream_name else 100.0,
-                    )
-                }
-            )
+    for stream_name, interface_name in stream_to_interface_name.items():
+        source_data[interface_name] = dict(
+            file_path=mat_file_path,
+            subject_id=subject_id,
+            stream_name=stream_name,
+            target_area=target_area,
+            sampling_frequency=raw_stream_settings["sampling_frequency"] if "raw" in stream_name else 100.0,
         )
-        conversion_options.update(
-            dict(
-                **{
-                    interface_name: dict(
-                        stub_test=stub_test,
-                        stimulus_channel_name=mat_stim_ch_name,
-                    )
-                }
-            )
+        conversion_options[interface_name] = dict(
+            stub_test=stub_test,
+            stimulus_channel_names=mat_segment_names,
+            segment_starting_times=segment_starting_times,
+            fill_gaps=fill_gaps,
         )
 
-    # Add Behavioral Video if needed
-    if add_video_conversion:
+    # Behavioral video
+    video_time_alignment_dict = None
+    if stimulus_location in cohort_config.get("behavioral_video_inputs", []):
         from hnasko_lab_to_nwb.hadjas_2025.utils import get_video_aligned_starting_time
 
         video_time_alignment_dict = dict()
-        video_folder_path = protocol_folder_path.parents[1] / "AnyMaze videos_mp4" / "Varying durations"
+        video_folder_path = protocol_folder_path.parents[1] / "AnyMaze videos_mp4" / protocol
         video_metadata_file_path = video_folder_path / "video_metadata.xlsx"
         video_file_paths = list(video_folder_path.glob(f"{subject_id}*.mp4"))
-        if len(video_file_paths) != 1:
-            raise FileNotFoundError(f"Expected one video file for subject {subject_id}, found {len(video_file_paths)}.")
-        else:
-            source_data.update(dict(Video=dict(file_paths=video_file_paths, video_name="BehavioralVideo")))
+        expected_number_of_videos = 1 if protocol == "Varying durations" else 3
+        if len(video_file_paths) != expected_number_of_videos:
+            raise FileNotFoundError(
+                f"Expected {expected_number_of_videos} video files for subject {subject_id}, "
+                f"found {len(video_file_paths)}."
+            )
+        for video_file_path in video_file_paths:
+            if expected_number_of_videos == 1:
+                interface_name, video_name = "Video", "BehavioralVideo"
+            else:
+                suffix = video_file_path.name.split("_")[-1].split(".")[0]  # train duration, e.g. "250ms"
+                interface_name, video_name = f"Video_{suffix}", f"BehavioralVideo_{suffix}"
+            source_data[interface_name] = dict(file_paths=[video_file_path], video_name=video_name)
             video_starting_time = get_video_aligned_starting_time(
                 video_metadata_file_path=video_metadata_file_path,
-                video_file_path=video_file_paths[0],
+                video_file_path=video_file_path,
                 session_starting_time=session_start_datetime,
             )
-            video_time_alignment_dict.update(dict(Video=dict(video_starting_time=video_starting_time)))
-    else:
-        video_time_alignment_dict = None
+            video_time_alignment_dict[interface_name] = dict(video_starting_time=video_starting_time)
 
-    # Add OptogeneticStimulation
-    source_data.update(dict(OptogeneticStimulus=dict(folder_path=tdt_folder_path)))
+    # Optogenetic stimulation
+    source_data.update(OptogeneticStimulus=dict(folder_paths=tdt_folder_paths))
     conversion_options.update(
-        dict(OptogeneticStimulus=dict(tdt_stimulus_channel_to_frequency=tdt_stimulus_channel_to_frequency))
+        OptogeneticStimulus=dict(tdt_stimulus_channel_to_frequency=protocol_config["epoc_name_to_frequency_in_hz"])
     )
 
     converter = Hadjas2025NWBConverter(
@@ -615,49 +399,14 @@ def varying_durations_session_to_nwb(  #
     metadata["Subject"]["subject_id"] = subject_id
     metadata["Subject"]["sex"] = subject_metadata["Sex"]
     metadata["NWBFile"]["session_id"] = session_id
-    metadata["NWBFile"]["session_description"] = session_description
+    metadata["NWBFile"]["session_description"] = protocol_config["session_description"]
     metadata["NWBFile"]["session_start_time"] = localize_session_start_time(session_start_datetime)
 
     # Remove entries for other stimulus sites from metadata
     filter_optogenetics_metadata(metadata=metadata, stimulus_location=stimulus_location)
 
-    # Run conversion
     converter.run_conversion(
         metadata=metadata, nwbfile_path=nwbfile_path, conversion_options=conversion_options, overwrite=overwrite
     )
-
-
-if __name__ == "__main__":
-    # Parameters for conversion
-    data_dir_path = Path("D:/Hnasko-CN-data-share/")
-    output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
-    subjects_metadata_file_path = data_dir_path / "ASAP FP Overview.xlsx"
-    recording_types = pd.ExcelFile(subjects_metadata_file_path).sheet_names
-    recording_type = recording_types[3]
-    subjects_metadata = pd.read_excel(subjects_metadata_file_path, sheet_name=recording_type)
-    # Select a subject to convert
-    subject_metadata = subjects_metadata.iloc[27]  # Change the index to select different subjects
-    stimulus_location = subject_metadata["Input"]
-    parent_protocol_folder_path = data_dir_path / recording_type / stimulus_location / "Fiber photometry_TDT"
-
-    varying_frequencies_session_to_nwb(
-        output_dir_path=output_dir_path,
-        subject_metadata=subject_metadata,
-        protocol_folder_path=parent_protocol_folder_path / "Varying frequencies",
-        recording_type=recording_type,
-        stimulus_location=stimulus_location,
-        stub_test=False,
-        overwrite=False,
-        verbose=True,
-    )
-
-    varying_durations_session_to_nwb(
-        output_dir_path=output_dir_path,
-        subject_metadata=subject_metadata,
-        protocol_folder_path=parent_protocol_folder_path / "Varying durations",
-        recording_type=recording_type,
-        stimulus_location=stimulus_location,
-        stub_test=False,
-        overwrite=False,
-        verbose=True,
-    )
+    if verbose:
+        print(f"Session {session_id} for subject {subject_id} converted successfully to NWB format at {nwbfile_path}")

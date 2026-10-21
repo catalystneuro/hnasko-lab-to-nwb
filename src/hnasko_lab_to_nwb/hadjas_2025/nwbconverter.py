@@ -5,14 +5,12 @@ from typing import Optional
 from pynwb import NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.interfaces import (
-    ConcatenatedHadjas2025ProcessedFiberPhotometryInterface,
     ConcatenatedTDTFiberPhotometryInterface,
     Hadjas2025ProcessedFiberPhotometryInterface,
     Hadjas2025TDTOptogeneticStimulusInterface,
-    ConcatenatedHadjas2025TDTOptogeneticStimulusInterface,
 )
 from neuroconv import NWBConverter
-from neuroconv.datainterfaces import ExternalVideoInterface, TDTFiberPhotometryInterface
+from neuroconv.datainterfaces import ExternalVideoInterface
 
 
 class Hadjas2025NWBConverter(NWBConverter):
@@ -33,29 +31,16 @@ class Hadjas2025NWBConverter(NWBConverter):
         """
         data_interface_name_mapping = {
             "Video": ExternalVideoInterface,
-            "RawFiberPhotometry": TDTFiberPhotometryInterface,
+            "RawFiberPhotometry": ConcatenatedTDTFiberPhotometryInterface,
             "DemodulatedFiberPhotometry": Hadjas2025ProcessedFiberPhotometryInterface,
             "DownsampledFiberPhotometry": Hadjas2025ProcessedFiberPhotometryInterface,
             "DeltaFOverF": Hadjas2025ProcessedFiberPhotometryInterface,
             "OptogeneticStimulus": Hadjas2025TDTOptogeneticStimulusInterface,
         }
-        concatenated_data_interface_name_mapping = {
-            "ConcatenatedRawFiberPhotometry": ConcatenatedTDTFiberPhotometryInterface,
-            "ConcatenatedDemodulatedFiberPhotometry": ConcatenatedHadjas2025ProcessedFiberPhotometryInterface,
-            "ConcatenatedDownsampledFiberPhotometry": ConcatenatedHadjas2025ProcessedFiberPhotometryInterface,
-            "ConcatenatedDeltaFOverF": ConcatenatedHadjas2025ProcessedFiberPhotometryInterface,
-            "ConcatenatedOptogeneticStimulus": ConcatenatedHadjas2025TDTOptogeneticStimulusInterface,
-        }
-
         for interface_name in source_data.keys():
-            if "Concatenated" in interface_name:
-                for key, interface_class in concatenated_data_interface_name_mapping.items():
-                    if key in interface_name:
-                        self.data_interface_classes[interface_name] = interface_class
-            else:
-                for key, interface_class in data_interface_name_mapping.items():
-                    if key in interface_name:
-                        self.data_interface_classes[interface_name] = interface_class
+            for key, interface_class in data_interface_name_mapping.items():
+                if interface_name.startswith(key):
+                    self.data_interface_classes[interface_name] = interface_class
 
         super().__init__(source_data=source_data, verbose=verbose)
         self.video_time_alignment_dict = video_time_alignment_dict or {}

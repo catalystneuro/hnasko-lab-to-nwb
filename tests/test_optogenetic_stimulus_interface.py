@@ -9,7 +9,7 @@ from hnasko_lab_to_nwb.hadjas_2025.interfaces.tdt_optogenetic_stimulus_interface
 
 
 def make_interface(tmp_path, events: dict) -> Hadjas2025TDTOptogeneticStimulusInterface:
-    interface = Hadjas2025TDTOptogeneticStimulusInterface(folder_path=tmp_path)
+    interface = Hadjas2025TDTOptogeneticStimulusInterface(folder_paths=[tmp_path])
     interface.get_events = lambda: events
     return interface
 
