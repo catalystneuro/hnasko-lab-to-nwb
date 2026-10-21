@@ -1,9 +1,12 @@
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import pytest
 
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     filter_optogenetics_metadata,
+    find_mat_file_path,
+    load_session_config,
     localize_session_start_time,
 )
 
@@ -48,3 +51,42 @@ def test_filter_optogenetics_metadata_keeps_only_stimulus_location():
     assert list(optogenetics["OptogeneticEffectors"]) == ["ChrimsonR_PPN"]
     assert list(optogenetics["OptogeneticVirusInjections"]) == ["injection_PPN"]
     assert list(optogenetics["OptogeneticSitesTable"]["rows"]) == ["PPN"]
+
+
+def test_find_mat_file_path_uses_the_mat_cohort_folder(tmp_path):
+    relative_protocol_folder_path = Path("STN") / "Fiber photometry_TDT" / "Varying durations"
+    own_folder_path = tmp_path / "SN pan DA recordings" / relative_protocol_folder_path
+    gaba_folder_path = tmp_path / "SN pan GABA recordings" / relative_protocol_folder_path
+    for folder_path in (own_folder_path, gaba_folder_path):
+        folder_path.mkdir(parents=True)
+        (folder_path / "processed.mat").touch()
+
+    mat_file_path = find_mat_file_path(
+        protocol_folder_path=own_folder_path,
+        cohort_data_folder="SN pan DA recordings",
+        mat_cohort_folder="SN pan GABA recordings",
+    )
+
+    assert mat_file_path == gaba_folder_path / "processed.mat"
+
+
+def test_find_mat_file_path_in_a_subgroup_folder(tmp_path):
+    protocol_folder_path = (
+        tmp_path / "Cell_type recordings" / "STN" / "Fiber photometry_TDT" / "Varying durations" / "Anxa1 DLS"
+    )
+    protocol_folder_path.mkdir(parents=True)
+    (protocol_folder_path / "processed.mat").touch()
+
+    mat_file_path = find_mat_file_path(
+        protocol_folder_path=protocol_folder_path,
+        cohort_data_folder="Cell_type recordings",
+        mat_cohort_folder="Cell_type recordings",
+    )
+
+    assert mat_file_path == protocol_folder_path / "processed.mat"
+
+
+def test_session_config_points_2022_sn_pan_da_stn_subjects_to_the_sn_pan_gaba_mat():
+    subjects_config = load_session_config()["subjects"]
+    for subject_id in ("B8364", "B8369", "B8370", "B8427", "B8429", "B8612"):
+        assert subjects_config[subject_id]["mat_cohort_folder"] == "SN pan GABA recordings"
