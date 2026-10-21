@@ -1,4 +1,3 @@
-from datetime import datetime
 from logging import warning
 from typing import List
 import numpy as np
@@ -6,10 +5,10 @@ import numpy as np
 from pydantic import DirectoryPath, validate_call
 from pynwb.file import NWBFile
 
+from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import read_tdt_epocs, read_tdt_start_timestamp
 from neuroconv.basetemporalalignmentinterface import BaseDataInterface
 from neuroconv.tools.nwb_helpers import _add_device_to_nwbfile
 from neuroconv.utils import DeepDict
-import pytz
 
 
 def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
@@ -170,37 +169,22 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
 
     def get_events(self) -> dict:
         """
-        Get the events from the Hadjas2025TDTOptogeneticStimulusInterface.
+        Get the epocs of all blocks, with times in seconds from the start of the first block.
 
         Returns
         -------
         dict
-            The events dictionary for this interface.
+            {epoc name: {"onset": list, "offset": list}}.
         """
-        from neuroconv.datainterfaces import TDTFiberPhotometryInterface
-
-        all_events = {}
-        tdt_interfaces = []
-        session_start_datetimes = []
-        for folder_path in self.source_data["folder_paths"]:
-            tdt_interface = TDTFiberPhotometryInterface(folder_path=folder_path, stream_names=["Fi1r"])
-            tdt_photometry = tdt_interface.load(evtype=["scalars"])
-            start_timestamp = tdt_photometry.info.start_date.timestamp()
-            session_start_datetime = datetime.fromtimestamp(start_timestamp, tz=pytz.utc)
-            tdt_interfaces.append(tdt_interface)
-            session_start_datetimes.append(session_start_datetime)
-
-        assert session_start_datetimes == sorted(session_start_datetimes), (
+        folder_paths = self.source_data["folder_paths"]
+        start_timestamps = [read_tdt_start_timestamp(folder_path) for folder_path in folder_paths]
+        assert start_timestamps == sorted(start_timestamps), (
             "Session start times are not in chronological order. Please provide folder paths in chronological order."
         )
-        # Calculate segment start times based on the session start datetimes
-        # E.g. we have three consecutive sessions starting at times 10:00, 10:20, and 10:40 on the same day
-        # we want segment_starting_times to be [0, 1200, 2400] (in seconds)
-        segment_starting_times = [(dt - session_start_datetimes[0]).total_seconds() for dt in session_start_datetimes]
-        for tdt_interface, segment_start_time in zip(tdt_interfaces, segment_starting_times):
-            # Adjust event times by adding segment_start_time
-            events = tdt_interface.get_events()
-            for stream_name, stream_events in events.items():
+        all_events = {}
+        for folder_path, start_timestamp in zip(folder_paths, start_timestamps):
+            segment_start_time = start_timestamp - start_timestamps[0]
+            for stream_name, stream_events in read_tdt_epocs(folder_path).items():
                 if stream_name not in all_events:
                     all_events[stream_name] = {"onset": [], "offset": []}
                 all_events[stream_name]["onset"].extend(stream_events["onset"] + segment_start_time)

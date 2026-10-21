@@ -1,7 +1,5 @@
 """Primary script to run to convert an entire session for of data using the NWBConverter."""
 
-import io
-from contextlib import redirect_stdout
 from datetime import datetime
 from pathlib import Path
 from typing import Union
@@ -11,6 +9,7 @@ from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface impo
     ConcatenatedTDTFiberPhotometryInterface,
 )
 from hnasko_lab_to_nwb.hadjas_2025.nwbconverter import Hadjas2025NWBConverter
+from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import clear_tdt_block_cache, read_tdt_stream
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 METADATA_FOLDER_PATH = Path(__file__).parent / "metadata"
@@ -56,11 +55,7 @@ def get_raw_stream_settings(folder_path: Path) -> dict:
     dict
         "sampling_frequency" (Hz) of Fi1r, plus "rig_name" and "stream_indices" from get_rig_settings.
     """
-    import tdt
-
-    with redirect_stdout(io.StringIO()):
-        stream = tdt.read_block(str(folder_path), evtype=["streams"], store="Fi1r", t2=1.0).streams["Fi1r"]
-    sampling_frequency = float(stream.fs)
+    sampling_frequency = float(read_tdt_stream(Path(folder_path), "Fi1r").fs)
     return dict(sampling_frequency=sampling_frequency, **get_rig_settings(sampling_frequency))
 
 
@@ -522,8 +517,11 @@ def session_to_nwb(
     # Remove entries for other stimulus sites from metadata
     filter_optogenetics_metadata(metadata=metadata, stimulus_location=stimulus_location)
 
-    converter.run_conversion(
-        metadata=metadata, nwbfile_path=nwbfile_path, conversion_options=conversion_options, overwrite=overwrite
-    )
+    try:
+        converter.run_conversion(
+            metadata=metadata, nwbfile_path=nwbfile_path, conversion_options=conversion_options, overwrite=overwrite
+        )
+    finally:
+        clear_tdt_block_cache()
     if verbose:
         print(f"Session {session_id} for subject {subject_id} converted successfully to NWB format at {nwbfile_path}")

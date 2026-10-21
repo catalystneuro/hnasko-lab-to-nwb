@@ -6,27 +6,12 @@ import numpy as np
 import pytest
 
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import load_cohort_metadata
+from hnasko_lab_to_nwb.hadjas_2025.interfaces import concatenated_tdt_fp_interface
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface import (
     ConcatenatedTDTFiberPhotometryInterface,
 )
 
 SEGMENT_STARTING_TIMES = [0.0, 10.0, 20.0]
-
-
-class FakeTDTInterface:
-    """Stands in for a TDTFiberPhotometryInterface of one block with a float32 Fi1r stream."""
-
-    def __init__(self, folder_path: Path, data: np.ndarray, sampling_frequency: float):
-        self.source_data = dict(folder_path=folder_path)
-        self._data = data
-        self._sampling_frequency = sampling_frequency
-
-    def _end_index(self, t2: float) -> int:
-        return int(t2 * self._sampling_frequency) if t2 != 0.0 else len(self._data)
-
-    def load(self, t1: float = 0.0, t2: float = 0.0, evtype: list[str] = ["all"], store: str | None = None):
-        stream = SimpleNamespace(data=self._data[: self._end_index(t2)], fs=self._sampling_frequency)
-        return SimpleNamespace(streams=dict(Fi1r=stream))
 
 
 @pytest.fixture
@@ -50,19 +35,18 @@ def write_processed_mat_file():
 
 
 @pytest.fixture
-def make_concatenated_tdt_interface():
-    """Return a function that builds a ConcatenatedTDTFiberPhotometryInterface over three fake blocks."""
+def make_concatenated_tdt_interface(monkeypatch):
+    """Return a function that builds a ConcatenatedTDTFiberPhotometryInterface over three fake blocks.
+
+    Each block has a float32 Fi1r stream of num_samples ones; the blocks start at SEGMENT_STARTING_TIMES.
+    """
 
     def make(num_samples: int, sampling_frequency: float = 100.0) -> ConcatenatedTDTFiberPhotometryInterface:
+        folder_paths = [Path(f"varFreq_{duration}") / "C0001-240101-120000" for duration in ("250ms", "1s", "4s")]
+        stream = SimpleNamespace(data=np.ones(num_samples, dtype="float32"), fs=sampling_frequency)
+        monkeypatch.setattr(concatenated_tdt_fp_interface, "read_tdt_stream", lambda folder_path, store: stream)
         interface = ConcatenatedTDTFiberPhotometryInterface.__new__(ConcatenatedTDTFiberPhotometryInterface)
-        interface._tdt_interfaces = [
-            FakeTDTInterface(
-                folder_path=Path(f"varFreq_{duration}") / "C0001-240101-120000",
-                data=np.ones(num_samples, dtype="float32"),
-                sampling_frequency=sampling_frequency,
-            )
-            for duration in ("250ms", "1s", "4s")
-        ]
+        interface._folder_paths = folder_paths
         interface.segment_starting_times = SEGMENT_STARTING_TIMES
         interface.stream_name = "Fi1r"
         interface.metadata_key = "Fi1r_SNc"
