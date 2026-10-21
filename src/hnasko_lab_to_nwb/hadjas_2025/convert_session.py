@@ -502,8 +502,6 @@ def session_to_nwb(
     tdt_folder_paths = find_tdt_folder_paths(protocol_folder_path=protocol_folder_path, subject_id=subject_id)
 
     raw_stream_settings = get_raw_stream_settings(tdt_folder_paths[0])
-    # Gaps between blocks are NaN-padded on the 6 kHz rig only, as before
-    fill_gaps = raw_stream_settings["rig_name"] == "RZ10x"
 
     mat_file_path = find_mat_file_path(
         protocol_folder_path=protocol_folder_path,
@@ -536,7 +534,7 @@ def session_to_nwb(
         stream_indices=raw_stream_settings["stream_indices"],
     )
     source_data.update(RawFiberPhotometry=raw_source_data)
-    conversion_options.update(RawFiberPhotometry=dict(stub_test=stub_test, fill_gaps=fill_gaps, trial_tags=trial_tags))
+    conversion_options.update(RawFiberPhotometry=dict(stub_test=stub_test, trial_tags=trial_tags))
 
     session_start_time = get_session_start_time(read_tdt_start_timestamp(tdt_folder_paths[0]))
 
@@ -562,7 +560,6 @@ def session_to_nwb(
             stub_test=stub_test,
             stimulus_channel_names=mat_segment_names,
             segment_starting_times=segment_starting_times,
-            fill_gaps=fill_gaps,
         )
 
     # Behavioral video
