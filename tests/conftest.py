@@ -52,15 +52,15 @@ def write_processed_mat_file():
 
 @pytest.fixture
 def make_concatenated_tdt_interface():
-    """Return a function that builds a ConcatenatedTDTFiberPhotometryInterface over three fake 100 Hz blocks."""
+    """Return a function that builds a ConcatenatedTDTFiberPhotometryInterface over three fake blocks."""
 
-    def make(num_samples: int) -> ConcatenatedTDTFiberPhotometryInterface:
+    def make(num_samples: int, sampling_frequency: float = 100.0) -> ConcatenatedTDTFiberPhotometryInterface:
         interface = ConcatenatedTDTFiberPhotometryInterface.__new__(ConcatenatedTDTFiberPhotometryInterface)
         interface._tdt_interfaces = [
             FakeTDTInterface(
                 folder_path=Path(f"varFreq_{duration}") / "C0001-240101-120000",
                 data=np.ones(num_samples, dtype="float32"),
-                sampling_frequency=100.0,
+                sampling_frequency=sampling_frequency,
             )
             for duration in ("250ms", "1s", "4s")
         ]
