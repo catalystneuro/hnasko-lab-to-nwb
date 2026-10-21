@@ -130,7 +130,6 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseDataInterface):
         *,
         stimulus_channel_names: list[str],
         segment_starting_times: list[float],
-        fill_gaps: bool = False,
         stub_test: bool = False,
         t1: float = 0.0,
         t2: float = 0.0,
@@ -148,8 +147,6 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseDataInterface):
             Segments of the .mat file to concatenate, one per TDT block.
         segment_starting_times : list[float]
             Starting time (in seconds) of each segment.
-        fill_gaps : bool, optional
-            If True, fill the gaps between segments with NaNs, default = False.
         stub_test : bool, optional
             If True, only add a subset of the data (1s per segment) to the NWBFile for testing purposes, default = False.
         t1 : float, optional
@@ -185,17 +182,7 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseDataInterface):
         concatenated_data = np.concatenate(data_segments)
         concatenated_timestamps = np.concatenate(timestamps_segments)
 
-        # Fill gaps with NaNs
-        if fill_gaps:
-            from hnasko_lab_to_nwb.hadjas_2025.utils import fill_gaps_w_nans
-
-            concatenated_data, concatenated_timestamps = fill_gaps_w_nans(
-                data=concatenated_data,
-                timestamps=concatenated_timestamps,
-                sampling_rate=self._sampling_frequency,
-            )
-
-        # One segment, or segments padded onto one grid, are written with a rate
+        # One segment is written with a rate; several segments keep each block's own times as timestamps
         if calculate_regular_series_rate(concatenated_timestamps) is not None:
             timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=self._sampling_frequency)
         else:

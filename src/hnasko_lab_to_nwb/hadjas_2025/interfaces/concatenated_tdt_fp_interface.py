@@ -80,7 +80,6 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
         nwbfile: NWBFile,
         metadata: dict,
         *,
-        fill_gaps: bool = False,
         trial_tags: list[str] | None = None,
         stub_test: bool = False,
         t1: float = 0.0,
@@ -95,8 +94,6 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
             The in-memory object to add the data to.
         metadata : dict
             Metadata dictionary with information used to create the NWBFile.
-        fill_gaps : bool, optional
-            If True, fill the gaps between segments with NaNs, default = False.
         trial_tags : list[str], optional
             Tag of the trial added for each block when there are several, e.g. its train duration.
         stub_test : bool, optional
@@ -144,17 +141,7 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
         concatenated_data = np.concatenate(data_segments)
         concatenated_timestamps = np.concatenate(timestamps_segments)
 
-        # Fill gaps with NaNs
-        if fill_gaps:
-            from hnasko_lab_to_nwb.hadjas_2025.utils import fill_gaps_w_nans
-
-            concatenated_data, concatenated_timestamps = fill_gaps_w_nans(
-                data=concatenated_data,
-                timestamps=concatenated_timestamps,
-                sampling_rate=stream.fs,
-            )
-
-        # One block, or blocks padded onto one grid, are written with a rate
+        # One block is written with a rate; several blocks keep each block's own times as timestamps
         if calculate_regular_series_rate(concatenated_timestamps) is not None:
             timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=float(stream.fs))
         else:
