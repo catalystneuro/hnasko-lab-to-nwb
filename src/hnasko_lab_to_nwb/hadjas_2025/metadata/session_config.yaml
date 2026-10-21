@@ -1,0 +1,31 @@
+# Settings that differ between cohorts, protocols and subjects of the Hadjas 2025 dataset.
+# Each cohort key is the recording type of its metadata file (<recording type>_metadata.yaml).
+cohorts:
+  SN pan GABA recordings:
+    sheet_name: SNr GABA  # sheet of ASAP FP Overview.xlsx
+    data_folder: SN pan GABA recordings
+    inputs: [PPN, STN]
+  SN pan DA recordings:
+    sheet_name: SNc pan-DA
+    data_folder: SN pan DA recordings
+    inputs: [PPN, STN]
+  GRABDA recordings:
+    sheet_name: GRAB DA
+    data_folder: GRABDA recordings
+    inputs: [PPN, STN]  # SNr and STN_mCherry inputs are added with their metadata
+  Str_DA_terminal recordings:
+    sheet_name: Striatal DA terminals
+    data_folder: Str_DA_terminal recordings
+    inputs: [STN]
+  Cell_type recordings_Vglut2:
+    sheet_name: DA subtypes
+    data_folder: Cell_type recordings
+    genotype: VGlut2  # rows of the sheet whose genotype contains this
+    subgroup_folder_prefix: Vglut2  # protocol subfolders are named "<prefix> <recording site>"
+    inputs: [PPN, STN]
+  Cell_type recordings_Anxa1:
+    sheet_name: DA subtypes
+    data_folder: Cell_type recordings
+    genotype: Anxa1
+    subgroup_folder_prefix: Anxa1
+    inputs: [PPN, STN]
