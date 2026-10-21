@@ -253,6 +253,42 @@ def get_train_duration_label(folder_path: Path, epoc_names: list[str]) -> str:
     return TRAIN_DURATION_IN_S_TO_LABEL[train_duration]
 
 
+def get_block_trials(
+    folder_paths: list[Path], segment_starting_times: list[float], epoc_names: list[str]
+) -> list[dict]:
+    """Get one trial per TDT block of a session of several blocks, tagged with the block's train duration.
+
+    Parameters
+    ----------
+    folder_paths : list[Path]
+        The TDT blocks of the session, in chronological order.
+    segment_starting_times : list[float]
+        Start of each block, in seconds from the start of the first block.
+    epoc_names : list[str]
+        Names of the stimulation epocs of the protocol.
+
+    Returns
+    -------
+    list[dict]
+        add_trial arguments (start_time, stop_time, tags) from the first to the last Fi1r sample of each block;
+        empty for a session of one block.
+    """
+    if len(folder_paths) == 1:
+        return []
+    block_trials = []
+    for folder_path, start_time in zip(folder_paths, segment_starting_times):
+        stream = read_tdt_stream(Path(folder_path), "Fi1r")
+        number_of_samples = np.asarray(stream.data).shape[-1]
+        block_trials.append(
+            dict(
+                start_time=start_time,
+                stop_time=start_time + (number_of_samples - 1) / stream.fs,
+                tags=get_train_duration_label(folder_path, epoc_names),
+            )
+        )
+    return block_trials
+
+
 def match_mat_segments(
     mat_file_path: Path, target_area: str, mat_subject_id: str, folder_paths: list[Path]
 ) -> list[str]:
@@ -515,11 +551,6 @@ def session_to_nwb(
         mat_subject_id=mat_subject_id,
         folder_paths=tdt_folder_paths,
     )
-    # Varying-frequencies blocks have one train duration each; a session of several blocks has one trial per block
-    trial_tags = None
-    if len(tdt_folder_paths) > 1:
-        epoc_names = list(protocol_config["epoc_name_to_frequency_in_hz"])
-        trial_tags = [get_train_duration_label(folder_path, epoc_names) for folder_path in tdt_folder_paths]
     # The Anxa1 .mat files group subjects by stimulus site; their series are keyed by recording site
     raw_target_area = recording_site if target_area in ("STN_to_Anxa1", "PPN_to_Anxa1") else target_area
 
@@ -534,11 +565,16 @@ def session_to_nwb(
         stream_indices=raw_stream_settings["stream_indices"],
     )
     source_data.update(RawFiberPhotometry=raw_source_data)
-    conversion_options.update(RawFiberPhotometry=dict(stub_test=stub_test, trial_tags=trial_tags))
+    conversion_options.update(RawFiberPhotometry=dict(stub_test=stub_test))
 
     session_start_time = get_session_start_time(read_tdt_start_timestamp(tdt_folder_paths[0]))
 
     segment_starting_times = ConcatenatedTDTFiberPhotometryInterface(**raw_source_data).segment_starting_times
+    block_trials = get_block_trials(
+        folder_paths=tdt_folder_paths,
+        segment_starting_times=segment_starting_times,
+        epoc_names=list(protocol_config["epoc_name_to_frequency_in_hz"]),
+    )
 
     # Processed fiber photometry from the lab's .mat file
     stream_to_interface_name = {
@@ -598,7 +634,10 @@ def session_to_nwb(
     )
 
     converter = Hadjas2025NWBConverter(
-        source_data=source_data, verbose=verbose, video_time_alignment_dict=video_time_alignment_dict
+        source_data=source_data,
+        verbose=verbose,
+        video_time_alignment_dict=video_time_alignment_dict,
+        block_trials=block_trials,
     )
 
     # Update default metadata with the editable in the corresponding yaml file

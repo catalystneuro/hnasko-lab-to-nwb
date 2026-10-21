@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from hnasko_lab_to_nwb.hadjas_2025 import convert_session
-from hnasko_lab_to_nwb.hadjas_2025.convert_session import get_train_duration_label, match_mat_segments
+from hnasko_lab_to_nwb.hadjas_2025.convert_session import get_block_trials, get_train_duration_label, match_mat_segments
 
 FREQUENCY_EPOCS = ["H10_", "H20_", "H40_", "H05_"]
 
@@ -71,3 +71,21 @@ def test_match_mat_segments_uses_the_only_segment_of_a_single_block_session(tmp_
     file_path = write_processed_mat_file(tmp_path / "processed.mat", "Gc_raw", "SNc", "C3163", {"LP5mW": np.ones(3)})
 
     assert match_mat_segments(file_path, "SNc", "C3163", [Path("C3163-240227-080654")]) == ["LP5mW"]
+
+
+def test_block_trials_span_each_block_and_carry_its_train_duration(monkeypatch, block_sample_counts):
+    folder_paths = [Path("C4604-240313-140222"), Path("C4604-240313-141213")]
+    block_sample_counts.update({"C4604-240313-140222": 501, "C4604-240313-141213": 301})
+    block_epocs = {
+        "C4604-240313-140222": {"H10_": trains([1.0], 4.0)},
+        "C4604-240313-141213": {"H10_": trains([1.0], 1.0)},
+    }
+    monkeypatch.setattr(convert_session, "read_tdt_epocs", lambda folder_path: block_epocs[folder_path.name])
+
+    block_trials = get_block_trials(folder_paths, [0.0, 591.0], FREQUENCY_EPOCS)
+
+    assert block_trials == [
+        dict(start_time=0.0, stop_time=5.0, tags="4s"),
+        dict(start_time=591.0, stop_time=594.0, tags="1s"),
+    ]
+    assert get_block_trials(folder_paths[:1], [0.0], FREQUENCY_EPOCS) == []
