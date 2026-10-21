@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pytest
@@ -9,23 +10,25 @@ from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     find_mat_file_path,
     find_tdt_folder_paths,
     get_recording_site,
+    get_session_start_time,
     get_session_id,
     get_target_area_for_subject,
     load_session_config,
-    localize_session_start_time,
     normalize_hemisphere,
 )
 
 
 @pytest.mark.parametrize(
-    "session_start_datetime, utc_offset_in_hours",
+    "wall_clock_time, utc_offset_in_hours",
     [(datetime(2024, 1, 17, 10, 15, 0), -8), (datetime(2022, 4, 26, 13, 9, 9), -7)],
 )
-def test_localize_session_start_time_uses_lab_time_zone(session_start_datetime, utc_offset_in_hours):
-    session_start_time = localize_session_start_time(session_start_datetime)
+def test_get_session_start_time_uses_lab_time_zone(wall_clock_time, utc_offset_in_hours):
+    start_timestamp = wall_clock_time.replace(tzinfo=ZoneInfo("America/Los_Angeles")).timestamp()
+
+    session_start_time = get_session_start_time(start_timestamp)
 
     assert session_start_time.utcoffset() == timedelta(hours=utc_offset_in_hours)
-    assert session_start_time.replace(tzinfo=None) == session_start_datetime
+    assert session_start_time.replace(tzinfo=None) == wall_clock_time
 
 
 def test_filter_optogenetics_metadata_keeps_only_stimulus_location():

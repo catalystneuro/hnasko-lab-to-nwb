@@ -9,7 +9,11 @@ from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface impo
     ConcatenatedTDTFiberPhotometryInterface,
 )
 from hnasko_lab_to_nwb.hadjas_2025.nwbconverter import Hadjas2025NWBConverter
-from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import clear_tdt_block_cache, read_tdt_stream
+from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import (
+    clear_tdt_block_cache,
+    read_tdt_start_timestamp,
+    read_tdt_stream,
+)
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 METADATA_FOLDER_PATH = Path(__file__).parent / "metadata"
@@ -287,20 +291,21 @@ def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_
     return mat_file_paths[0]
 
 
-def localize_session_start_time(session_start_datetime: datetime) -> datetime:
-    """Attach the lab's time zone (America/Los_Angeles) to a session start time read from a TDT block folder name.
+def get_session_start_time(start_timestamp: float) -> datetime:
+    """Return the start time of a TDT block in the lab's time zone (America/Los_Angeles).
 
     Parameters
     ----------
-    session_start_datetime : datetime
-        Naive session start time, in the local time of the recording computer.
+    start_timestamp : float
+        POSIX timestamp of the block start, from read_tdt_start_timestamp. It does not depend on the time zone of
+        the computer reading the block, unlike the start_date of tdt.read_block.
 
     Returns
     -------
     datetime
-        The session start time with its time zone.
+        The start time with its time zone.
     """
-    return session_start_datetime.replace(tzinfo=ZoneInfo("America/Los_Angeles"))
+    return datetime.fromtimestamp(start_timestamp, tz=ZoneInfo("America/Los_Angeles"))
 
 
 def filter_optogenetics_metadata(metadata: dict, stimulus_location: str) -> None:
@@ -435,10 +440,7 @@ def session_to_nwb(
     source_data.update(RawFiberPhotometry=raw_source_data)
     conversion_options.update(RawFiberPhotometry=dict(stub_test=stub_test, fill_gaps=fill_gaps))
 
-    # Extract session starting time from TDT data
-    # Assume that the tdt folders are named as {subject_id}-{session_starting_time_string}
-    session_starting_time_string = tdt_folder_paths[0].name.split("-", 1)[1]
-    session_start_datetime = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
+    session_start_time = get_session_start_time(read_tdt_start_timestamp(tdt_folder_paths[0]))
 
     segment_starting_times = ConcatenatedTDTFiberPhotometryInterface(**raw_source_data).segment_starting_times
 
@@ -490,7 +492,7 @@ def session_to_nwb(
             video_starting_time = get_video_aligned_starting_time(
                 video_metadata_file_path=video_metadata_file_path,
                 video_file_path=video_file_path,
-                session_starting_time=session_start_datetime,
+                session_starting_time=session_start_time.replace(tzinfo=None),  # video metadata times are local
             )
             video_time_alignment_dict[interface_name] = dict(video_starting_time=video_starting_time)
 
@@ -512,7 +514,7 @@ def session_to_nwb(
     metadata["Subject"]["sex"] = subject_metadata["Sex"]
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = protocol_config["session_description"]
-    metadata["NWBFile"]["session_start_time"] = localize_session_start_time(session_start_datetime)
+    metadata["NWBFile"]["session_start_time"] = session_start_time
 
     # Remove entries for other stimulus sites from metadata
     filter_optogenetics_metadata(metadata=metadata, stimulus_location=stimulus_location)
