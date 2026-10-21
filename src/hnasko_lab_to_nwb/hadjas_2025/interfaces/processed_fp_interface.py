@@ -1,6 +1,4 @@
 from pathlib import Path
-from typing import Dict, List
-
 import h5py
 import numpy as np
 from pydantic import FilePath, validate_call
@@ -92,49 +90,18 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseDataInterface):
         series_target_area = get_series_target_area(target_area=target_area, file_path=file_path)
         self.metadata_key = f"{stream_name}_{series_target_area}"
 
-        self._scan_file_structure()
-        if target_area not in self.available_sites:
-            raise ValueError(f"Target area '{target_area}' not found. Available: {self.available_sites}")
-        if subject_id not in self.available_subjects[target_area]:
-            raise ValueError(
-                f"Subject '{subject_id}' not found in {target_area}. Available: {self.available_subjects[target_area]}"
-            )
-
-    @property
-    def available_sites(self) -> List[str]:
-        """Get list of available recording sites"""
-        return self._sites
-
-    @property
-    def available_subjects(self) -> Dict[str, List[str]]:
-        """Get dictionary of available subjects per site"""
-        return self._subjects
-
-    @property
-    def available_stimulus_channel_names(self) -> Dict[str, List[str]]:
-        """Get dictionary of available stimulus channel names per site and subject"""
-        return self._stimulus_channel_names
-
-    def _scan_file_structure(self) -> None:
-        """Scan file to determine available sites, subjects and stimulus channel names."""
-        try:
-            with h5py.File(self.source_data["file_path"], "r") as f:
-                signal_group = f[self._stream_name]  # type: ignore
-                self._sites = list(signal_group.keys())
-                self._stimulus_channel_names = {}
-                self._subjects = {}
-                for site in self._sites:
-                    self._stimulus_channel_names[site] = {}
-                    self._subjects[site] = list(signal_group[site].keys())
-                    for subject in self._subjects[site]:
-                        subject_group: h5py.Group = signal_group[site][subject]  # type: ignore
-                        self._stimulus_channel_names[site][subject] = list(subject_group.keys())
-        except Exception as e:
-            raise RuntimeError(f"Error scanning file structure: {e}")
+        with h5py.File(file_path, "r") as f:
+            if target_area not in f[stream_name]:
+                raise ValueError(f"Target area '{target_area}' not found. Available: {list(f[stream_name])}")
+            if subject_id not in f[stream_name][target_area]:
+                raise ValueError(
+                    f"Subject '{subject_id}' not found in {target_area}. Available: {list(f[stream_name][target_area])}"
+                )
+            self._segment_names = list(f[stream_name][target_area][subject_id])
 
     def _extract_signal(self, stimulus_channel_name: str, t1: float = 0.0, t2: float = 0.0) -> np.ndarray:
         """
-        Extract one segment of the processed signal of the subject.
+        Read one segment of the processed signal of the subject, between t1 and t2.
 
         Parameters
         ----------
@@ -150,15 +117,11 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseDataInterface):
         np.ndarray
             The extracted signal data.
         """
-        try:
-            with h5py.File(self.source_data["file_path"], "r") as f:
-                dataset: h5py.Dataset = f[self._stream_name][self._target_area][self._subject_id][stimulus_channel_name]
-                signal = dataset[:].flatten()
-                start_index = int(t1 * self._sampling_frequency) if t1 != 0.0 else 0
-                end_index = int(t2 * self._sampling_frequency) if t2 != 0.0 else signal.shape[0]
-                return signal[start_index:end_index]
-        except Exception as e:
-            raise RuntimeError(f"Error extracting signals for {self._subject_id} {self._target_area}: {e}.")
+        start_index = int(t1 * self._sampling_frequency)
+        end_index = int(t2 * self._sampling_frequency) if t2 != 0.0 else None
+        with h5py.File(self.source_data["file_path"], "r") as f:
+            dataset: h5py.Dataset = f[self._stream_name][self._target_area][self._subject_id][stimulus_channel_name]
+            return dataset[0, start_index:end_index]  # segments are stored as (1, number of samples)
 
     def add_to_nwbfile(
         self,
@@ -209,10 +172,10 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseDataInterface):
             )
             t2 = t1 + 1.0
         for i, stimulus_channel_name in enumerate(stimulus_channel_names):
-            if stimulus_channel_name not in self.available_stimulus_channel_names[self._target_area][self._subject_id]:
+            if stimulus_channel_name not in self._segment_names:
                 raise ValueError(
-                    f"stimulus channel name '{stimulus_channel_name}' not found for {self._subject_id} in {self._target_area}. "
-                    f"Available: {self.available_stimulus_channel_names[self._target_area][self._subject_id]}"
+                    f"Segment '{stimulus_channel_name}' not found for {self._subject_id} in {self._target_area}. "
+                    f"Available: {self._segment_names}"
                 )
             data = self._extract_signal(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
             timestamps = segment_starting_times[i] + t1 + np.arange(len(data)) / self._sampling_frequency
