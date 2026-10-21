@@ -1,6 +1,7 @@
 import pandas as pd
 
-from hnasko_lab_to_nwb.hadjas_2025.convert_all_sessions import get_session_to_nwb_kwargs_per_session
+from hnasko_lab_to_nwb.hadjas_2025 import convert_all_sessions
+from hnasko_lab_to_nwb.hadjas_2025.convert_all_sessions import dataset_to_nwb, get_session_to_nwb_kwargs_per_session
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import METADATA_FOLDER_PATH, load_session_config
 
 SHEET_COLUMNS = ["Animal ID", "Sex", "Genotype", "Input", "Recording Site", "Hemisphere"]
@@ -24,7 +25,7 @@ def list_sessions(kwargs_per_session) -> list:
         (
             kwargs["recording_type"],
             kwargs["subject_metadata"]["Animal ID"],
-            kwargs["session_id"],
+            kwargs["protocol"],
             kwargs["protocol_folder_path"].name,
         )
         for kwargs in kwargs_per_session
@@ -89,3 +90,49 @@ def test_anxa1_sessions_follow_the_block_folders_not_the_sheet_site(tmp_path):
         (anxa1, "C0005", "Varying frequencies", "Anxa1 DLS"),
         (anxa1, "C0005", "Varying frequencies", "Anxa1 SNc"),
     ]
+
+
+def test_listing_sessions_writes_nothing_to_the_data_folder(tmp_path):
+    data_dir_path = tmp_path / "data"
+    data_dir_path.mkdir()
+    overview_file_path = tmp_path / "overview.xlsx"
+    write_overview(overview_file_path, {"GRAB DA": [["C0001", "M", "VGlut2-cre", "PPN", "DLS", "R"]]})
+
+    get_session_to_nwb_kwargs_per_session(data_dir_path=data_dir_path, subjects_metadata_file_path=overview_file_path)
+
+    assert list(data_dir_path.iterdir()) == []
+
+
+def test_dataset_to_nwb_logs_a_failed_session_and_converts_the_others(tmp_path, monkeypatch):
+    sheets = {
+        "GRAB DA": [
+            ["C0001", "M", "VGlut2-cre", "PPN", "DLS", "R"],
+            ["C0002", "F", "VGlut2-cre", "PPN", "TS", "L"],
+        ]
+    }
+    overview_file_path = tmp_path / "overview.xlsx"
+    write_overview(overview_file_path, sheets)
+    make_blocks(tmp_path, "C0001", "GRABDA recordings", "PPN")
+    make_blocks(tmp_path, "C0002", "GRABDA recordings", "PPN")
+    converted = []
+
+    def session_to_nwb(subject_metadata, protocol, **kwargs):
+        if subject_metadata["Animal ID"] == "C0001" and protocol == "Varying durations":
+            raise ValueError("broken block")
+        converted.append((subject_metadata["Animal ID"], protocol))
+
+    monkeypatch.setattr(convert_all_sessions, "session_to_nwb", session_to_nwb)
+    output_dir_path = tmp_path / "nwb"
+
+    failed_sessions = dataset_to_nwb(
+        data_dir_path=tmp_path, output_dir_path=output_dir_path, subjects_metadata_file_path=overview_file_path
+    )
+
+    assert [(kwargs["subject_metadata"]["Animal ID"], kwargs["protocol"]) for kwargs in failed_sessions] == [
+        ("C0001", "Varying durations")
+    ]
+    assert len(converted) == 3
+    log = (output_dir_path / "convert_all_sessions.log").read_text(encoding="utf-8")
+    assert "Failed C0001 Varying durations" in log
+    assert "ValueError: broken block" in log
+    assert "1 of 4 sessions failed" in log
