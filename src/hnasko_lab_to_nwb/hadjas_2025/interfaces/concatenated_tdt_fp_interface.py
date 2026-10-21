@@ -8,7 +8,7 @@ from pynwb.file import NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.fiber_photometry_table import add_fiber_photometry_table_region
 from neuroconv.basedatainterface import BaseDataInterface
-from neuroconv.datainterfaces import TDTFiberPhotometryInterface
+from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import read_tdt_start_timestamp, read_tdt_stream
 from neuroconv.utils.checks import calculate_regular_series_rate
 
 
@@ -60,15 +60,10 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
         self.stream_name = stream_name
         self.metadata_key = metadata_key
         self.stream_indices = stream_indices
-        self._tdt_interfaces = []
-        session_start_datetimes = []
-        for folder_path in folder_paths:
-            tdt_interface = TDTFiberPhotometryInterface(folder_path=folder_path, stream_names=[stream_name])
-            tdt_photometry = tdt_interface.load(evtype=["scalars"])
-            start_timestamp = tdt_photometry.info.start_date.timestamp()
-            session_start_datetime = datetime.fromtimestamp(start_timestamp, tz=pytz.utc)
-            session_start_datetimes.append(session_start_datetime)
-            self._tdt_interfaces.append(tdt_interface)
+        self._folder_paths = folder_paths
+        session_start_datetimes = [
+            datetime.fromtimestamp(read_tdt_start_timestamp(folder_path), tz=pytz.utc) for folder_path in folder_paths
+        ]
         # check that the session start times are in chronological order
         assert session_start_datetimes == sorted(session_start_datetimes), (
             "Session start times are not in chronological order. Please provide folder paths in chronological order."
@@ -122,12 +117,13 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
                 f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
             )
             t2 = t1 + 1.0
-        for i, tdt_interface in enumerate(self._tdt_interfaces):
-            tdt_photometry = tdt_interface.load(t1=t1, t2=t2, evtype=["streams"], store=self.stream_name)
-            stream = tdt_photometry.streams[self.stream_name]
+        for i, folder_path in enumerate(self._folder_paths):
+            stream = read_tdt_stream(folder_path, self.stream_name)
 
             # TDT stores are (channels, samples); keep the selected channels as a 1D series
-            data = np.asarray(stream.data)
+            start_index = int(t1 * stream.fs)
+            end_index = int(t2 * stream.fs) if t2 != 0.0 else None
+            data = np.asarray(stream.data)[..., start_index:end_index]
             if data.ndim == 2:
                 data = data.T
                 if self.stream_indices is not None:
@@ -139,8 +135,8 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
             timestamps_segments.append(timestamps)
 
             # Add trials for each segment
-            if len(self._tdt_interfaces) > 1:
-                tag = tdt_interface.source_data["folder_path"].parts[-2].replace("varFreq_", "")
+            if len(self._folder_paths) > 1:
+                tag = folder_path.parts[-2].replace("varFreq_", "")
                 nwbfile.add_trial(start_time=timestamps[0], stop_time=timestamps[-1], tags=tag)
 
         concatenated_data = np.concatenate(data_segments)
