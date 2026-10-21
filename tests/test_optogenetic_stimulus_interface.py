@@ -75,5 +75,24 @@ def test_hh5_trains_are_written_as_5_hz(tmp_path, stn_metadata):
         nwbfile=nwbfile, metadata=stn_metadata, tdt_stimulus_channel_to_frequency=epoc_name_to_frequency
     )
 
-    epochs = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe().sort_values("start_time")
+    epochs = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe()
     assert list(epochs["stimulus_frequency"]) == [5.0, 10.0]
+
+
+def test_epochs_are_written_in_time_order(tmp_path, stn_metadata):
+    events = {
+        "H10_": dict(onset=np.array([10.0, 94.0]), offset=np.array([11.0, 95.0])),
+        "H20_": dict(onset=np.array([31.0]), offset=np.array([32.0])),
+        "H05_": dict(onset=np.array([73.0]), offset=np.array([74.0])),
+    }
+    nwbfile = mock_NWBFile()
+
+    make_interface(tmp_path, events).add_to_nwbfile(
+        nwbfile=nwbfile,
+        metadata=stn_metadata,
+        tdt_stimulus_channel_to_frequency={"H10_": 10.0, "H20_": 20.0, "H05_": 5.0},
+    )
+
+    epochs = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe()
+    assert list(epochs["start_time"]) == [10.0, 31.0, 73.0, 94.0]
+    assert list(epochs["stimulus_frequency"]) == [10.0, 20.0, 5.0, 10.0]

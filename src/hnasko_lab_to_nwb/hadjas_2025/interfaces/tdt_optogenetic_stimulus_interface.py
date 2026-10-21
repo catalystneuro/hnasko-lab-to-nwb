@@ -232,6 +232,7 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
                 f"None of the stimulation epocs {list(tdt_stimulus_channel_to_frequency)} is in the TDT events "
                 f"{list(tdt_events)}."
             )
+        trains = []  # (start time, stop time, pulse frequency) of every train, in time order
         for stream_name, stimulus_frequency in tdt_stimulus_channel_to_frequency.items():
             if stream_name not in tdt_events:
                 continue
@@ -244,21 +245,25 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
                     f"Dropped {np.count_nonzero(~is_valid)} of {is_valid.size} {stream_name} trains without an "
                     f"offset or of zero length."
                 )
-            for start_time, stop_time in zip(onsets[is_valid], offsets[is_valid]):
-                number_pulses_per_pulse_train = int((stop_time - start_time) * stimulus_frequency)
-                opto_epochs_table.add_row(
-                    start_time=start_time,
-                    stop_time=stop_time,
-                    stimulus_frequency=stimulus_frequency,
-                    stimulation_on=True,
-                    pulse_length_in_ms=1.0,  # Unknown
-                    period_in_ms=(1 / stimulus_frequency) * 1000,
-                    number_pulses_per_pulse_train=number_pulses_per_pulse_train,
-                    number_trains=1,
-                    intertrain_interval_in_ms=0.0,
-                    power_in_mW=metadata["Optogenetics"]["power_in_mW"],
-                    wavelength_in_nm=metadata["Optogenetics"]["excitation_wavelength_in_nm"],
-                    optogenetic_sites=[0],  # assuming single stimulation site for now
-                )
+            trains.extend(
+                (start_time, stop_time, stimulus_frequency)
+                for start_time, stop_time in zip(onsets[is_valid], offsets[is_valid])
+            )
+        for start_time, stop_time, stimulus_frequency in sorted(trains):
+            number_pulses_per_pulse_train = int((stop_time - start_time) * stimulus_frequency)
+            opto_epochs_table.add_row(
+                start_time=start_time,
+                stop_time=stop_time,
+                stimulus_frequency=stimulus_frequency,
+                stimulation_on=True,
+                pulse_length_in_ms=1.0,  # Unknown
+                period_in_ms=(1 / stimulus_frequency) * 1000,
+                number_pulses_per_pulse_train=number_pulses_per_pulse_train,
+                number_trains=1,
+                intertrain_interval_in_ms=0.0,
+                power_in_mW=metadata["Optogenetics"]["power_in_mW"],
+                wavelength_in_nm=metadata["Optogenetics"]["excitation_wavelength_in_nm"],
+                optogenetic_sites=[0],  # assuming single stimulation site for now
+            )
 
         nwbfile.add_time_intervals(opto_epochs_table)
