@@ -10,6 +10,7 @@ from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     find_mat_file_path,
     find_tdt_folder_paths,
     get_recording_site,
+    get_session_description,
     get_session_start_time,
     get_session_id,
     get_target_area_for_subject,
@@ -158,3 +159,11 @@ def test_find_tdt_folder_paths_fails_on_a_block_nested_in_another_block(tmp_path
 
     with pytest.raises(ValueError, match="holds another block, C5008-240314-154241"):
         find_tdt_folder_paths(protocol_folder_path=tmp_path, subject_id="C3164")
+
+
+def test_varying_durations_with_16_s_trains_have_their_own_description():
+    # 2022 recordings (24 kHz rig) add 16 s trains (S6s_); C1496 is on the same rig with the 3-duration protocol
+    description = get_session_description("Varying durations", ["Sms_", "S1s_", "S4s_", "S6s_", "Tick"])
+
+    assert "250 ms, 1 s, 4 s and 16 s" in description
+    assert get_session_description("Varying durations", ["sms_", "s1s_", "s4s_", "Cam1", "Tick"]) != description

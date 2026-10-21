@@ -345,6 +345,28 @@ def get_session_id(protocol: str, recording_type: str, recording_site: str | Non
     return session_id
 
 
+def get_session_description(protocol: str, epoc_names: list[str]) -> str:
+    """Get the session description of a protocol, which differs for blocks with the 2022 16 s trains (S6s_).
+
+    Parameters
+    ----------
+    protocol : str
+        Protocol key of the session config.
+    epoc_names : list[str]
+        Epoc names of the session's first block.
+
+    Returns
+    -------
+    str
+        The session description.
+    """
+    protocol_config = load_session_config()["protocols"][protocol]
+    for epoc_name, session_description in protocol_config.get("session_description_by_epoc", {}).items():
+        if epoc_name in epoc_names:
+            return session_description
+    return protocol_config["session_description"]
+
+
 def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_cohort_folder: str) -> Path:
     """Find the lab's processed .mat file of a protocol folder, possibly in another cohort's folder.
 
@@ -589,7 +611,9 @@ def session_to_nwb(
     metadata["Subject"]["subject_id"] = subject_id
     metadata["Subject"]["sex"] = subject_metadata["Sex"]
     metadata["NWBFile"]["session_id"] = session_id
-    metadata["NWBFile"]["session_description"] = protocol_config["session_description"]
+    metadata["NWBFile"]["session_description"] = get_session_description(
+        protocol=protocol, epoc_names=list(read_tdt_epocs(tdt_folder_paths[0]))
+    )
     metadata["NWBFile"]["session_start_time"] = session_start_time
 
     # Remove entries for other stimulus sites from metadata
