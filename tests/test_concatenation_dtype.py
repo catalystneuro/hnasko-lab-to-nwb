@@ -50,6 +50,6 @@ def test_concatenated_tdt_series_keeps_float32(anxa1_metadata, make_concatenated
     interface = make_concatenated_tdt_interface(num_samples=5)
     nwbfile = mock_NWBFile()
 
-    interface.add_to_nwbfile(nwbfile=nwbfile, metadata=anxa1_metadata, stream_name="Fi1r", fill_gaps=fill_gaps)
+    interface.add_to_nwbfile(nwbfile=nwbfile, metadata=anxa1_metadata, fill_gaps=fill_gaps)
 
     assert nwbfile.acquisition["raw_signal_SNc"].data.dtype == np.float32

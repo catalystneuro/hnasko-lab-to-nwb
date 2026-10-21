@@ -247,29 +247,33 @@ def varying_frequencies_session_to_nwb(
             else:
                 raise ValueError(f"Unknown sub-session folder name: {folder.parent.name}")
 
-    source_data = dict()
-    conversion_options = dict()
-
-    # Add FiberPhotometry
-    source_data.update(dict(ConcatenatedRawFiberPhotometry=dict(folder_paths=tdt_folder_paths)))
-    conversion_options.update(
-        dict(ConcatenatedRawFiberPhotometry=dict(stub_test=stub_test, stream_name="Fi1r", fill_gaps=fill_gaps))
-    )
-
-    # Extract session starting time from TDT data
-    # Assume that the tdt folders are named as {subject_id}-{session_starting_time_string}
-    session_starting_time_string = tdt_folder_paths[0].name.replace(f"{subject_id}-", "")
-    session_start_datetime = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
-
-    # Add processed fp series
     mat_file_path = list(protocol_folder_path.glob("*.mat"))
     if len(mat_file_path) == 0:
         raise FileNotFoundError(f"No .mat files found in {protocol_folder_path}")
     elif len(mat_file_path) > 1:
         raise ValueError(f"Multiple .mat files found in {protocol_folder_path}")
     mat_file_path = mat_file_path[0]
+    target_area = get_target_area_for_subject(mat_file_path, subject_id)
 
-    concatenated_tdt_interface = ConcatenatedTDTFiberPhotometryInterface(folder_paths=tdt_folder_paths, verbose=verbose)
+    source_data = dict()
+    conversion_options = dict()
+
+    # Add FiberPhotometry
+    raw_source_data = dict(
+        folder_paths=tdt_folder_paths,
+        stream_name="Fi1r",
+        metadata_key=f"Fi1r_{target_area}",
+        stream_indices=stream_indices,
+    )
+    source_data.update(dict(ConcatenatedRawFiberPhotometry=raw_source_data))
+    conversion_options.update(dict(ConcatenatedRawFiberPhotometry=dict(stub_test=stub_test, fill_gaps=fill_gaps)))
+
+    # Extract session starting time from TDT data
+    # Assume that the tdt folders are named as {subject_id}-{session_starting_time_string}
+    session_starting_time_string = tdt_folder_paths[0].name.replace(f"{subject_id}-", "")
+    session_start_datetime = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
+
+    concatenated_tdt_interface = ConcatenatedTDTFiberPhotometryInterface(**raw_source_data, verbose=verbose)
     segment_starting_times = concatenated_tdt_interface.segment_starting_times
     # Add Processed Fiber Photometry
     stream_to_interface_mapping = {
@@ -279,7 +283,6 @@ def varying_frequencies_session_to_nwb(
         "af": "ConcatenatedDownsampledFiberPhotometry_Isosbestic",
         "dF": "ConcatenatedDeltaFOverF",
     }
-    target_area = get_target_area_for_subject(mat_file_path, subject_id)
     for stream_name, interface_name in stream_to_interface_mapping.items():
         source_data.update(
             dict(
@@ -353,17 +356,6 @@ def varying_frequencies_session_to_nwb(
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
     metadata["NWBFile"]["session_start_time"] = localize_session_start_time(session_start_datetime)
-
-    # Remove entries for other target areas from metadata
-    for key in metadata["Ophys"]["FiberPhotometry"].keys():
-        if "FiberPhotometryResponseSeries" in key:
-            fp_response_series = metadata["Ophys"]["FiberPhotometry"][key]
-            metadata["Ophys"]["FiberPhotometry"][key] = [
-                fps for fps in fp_response_series if fps.get("target_area", None) == target_area
-            ]
-
-    for i in range(len(metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"])):
-        metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"][i]["stream_indices"] = stream_indices
 
     # Remove entries for other stimulus sites from metadata
     filter_optogenetics_metadata(metadata=metadata, stimulus_location=stimulus_location)
@@ -470,6 +462,17 @@ def varying_durations_session_to_nwb(  #
         tdt_stimulus_channel_to_frequency = {"S1s_": 40.0, "S4s_": 40.0, "S6s_": 40.0, "Sms_": 40.0}
         stream_indices = [2]
         raw_sampling_frequency = 24414.0625
+    mat_file_path = list(protocol_folder_path.glob("*.mat"))
+    if len(mat_file_path) == 0:
+        raise FileNotFoundError(f"No .mat files found in {protocol_folder_path}")
+    elif len(mat_file_path) > 1:
+        raise ValueError(f"Multiple .mat files found in {protocol_folder_path}")
+    mat_file_path = mat_file_path[0]
+    target_area = get_target_area_for_subject(mat_file_path, subject_id)
+    raw_target_area = target_area
+    if target_area == "STN_to_Anxa1" or target_area == "PPN_to_Anxa1":
+        raw_target_area = subject_metadata["Recording Site"]
+
     source_data = dict()
     conversion_options = dict()
 
@@ -480,7 +483,13 @@ def varying_durations_session_to_nwb(  #
     elif len(tdt_folder_path) > 1:
         raise ValueError(f"Multiple TDT folders found in {protocol_folder_path}")
     tdt_folder_path = tdt_folder_path[0]
-    source_data.update(dict(RawFiberPhotometry=dict(folder_path=tdt_folder_path)))
+    raw_source_data = dict(
+        folder_path=tdt_folder_path,
+        stream_names=["Fi1r"],
+        metadata_key=f"Fi1r_{raw_target_area}",
+        stream_indices=stream_indices,
+    )
+    source_data.update(dict(RawFiberPhotometry=raw_source_data))
     conversion_options.update(dict(RawFiberPhotometry=dict(stub_test=stub_test)))
 
     # Extract session starting time from TDT data
@@ -489,13 +498,6 @@ def varying_durations_session_to_nwb(  #
     session_starting_time_string = tdt_folder_path.name.replace(f"{subject_id}-", "")
     session_start_datetime = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
 
-    # Add processed fp series
-    mat_file_path = list(protocol_folder_path.glob("*.mat"))
-    if len(mat_file_path) == 0:
-        raise FileNotFoundError(f"No .mat files found in {protocol_folder_path}")
-    elif len(mat_file_path) > 1:
-        raise ValueError(f"Multiple .mat files found in {protocol_folder_path}")
-    mat_file_path = mat_file_path[0]
     # Add Processed Fiber Photometry
     stream_to_interface_mapping = {
         "Gc_raw": "DemodulatedFiberPhotometry_Calcium",
@@ -504,7 +506,6 @@ def varying_durations_session_to_nwb(  #
         "af": "DownsampledFiberPhotometry_Isosbestic",
         "dF": "DeltaFOverF",
     }
-    target_area = get_target_area_for_subject(mat_file_path, subject_id)
     for stream_name, interface_name in stream_to_interface_mapping.items():
         source_data.update(
             dict(
@@ -570,19 +571,6 @@ def varying_durations_session_to_nwb(  #
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
     metadata["NWBFile"]["session_start_time"] = localize_session_start_time(session_start_datetime)
-
-    # Remove entries for other target areas from metadata
-    if target_area == "STN_to_Anxa1" or target_area == "PPN_to_Anxa1":
-        target_area = subject_metadata["Recording Site"]
-    for key in metadata["Ophys"]["FiberPhotometry"].keys():
-        if "FiberPhotometryResponseSeries" in key:
-            fp_response_series = metadata["Ophys"]["FiberPhotometry"][key]
-            metadata["Ophys"]["FiberPhotometry"][key] = [
-                fps for fps in fp_response_series if fps.get("target_area", None) == target_area
-            ]
-
-    for i in range(len(metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"])):
-        metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"][i]["stream_indices"] = stream_indices
 
     # Remove entries for other stimulus sites from metadata
     filter_optogenetics_metadata(metadata=metadata, stimulus_location=stimulus_location)

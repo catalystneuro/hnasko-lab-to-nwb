@@ -38,300 +38,322 @@ Subject:
   age: P6W
   strain: C57BL/6J
   genotype: Vglut2-phiC X Anxa1-cre
-Ophys:
-  FiberPhotometry:
-    OpticalFiberModels:
-      - name: optical_fiber_model_1
-        description: Chronically implantable optic fiber.
-        manufacturer: RWD
-        model_number: <model of the optical fiber> # TODO add model number
-        numerical_aperture: 0.39
-        core_diameter_in_um: 400.0
-        active_length_in_mm: 6.0
-        ferrule_diameter_in_mm: 1.25
-        ferrule_name: black ceramic ferrule
-      - name: optical_fiber_model_2
-        description: Chronically implantable optic fiber.
-        manufacturer: RWD
-        model_number: <model of the optical fiber>
-        numerical_aperture: 0.39
-        core_diameter_in_um: 400.0
-        active_length_in_mm: 4.0
-        ferrule_diameter_in_mm: 1.25
-        ferrule_name: black ceramic ferrule
-    OpticalFibers:
-      - name: optical_fiber_DLS
-        description: Chronically implanted optic fiber.
-        model: optical_fiber_model_2
-        serial_number: <serial number of the optical fiber>
-        fiber_insertion:
-          insertion_position_ap_in_mm: 0.5
-          insertion_position_ml_in_mm: 2.25
-          insertion_position_dv_in_mm: -2.75
-          position_reference: bregma
-          hemisphere: right
-      - name: optical_fiber_SNc
-        description: Chronically implanted optic fiber.
-        model: optical_fiber_model_1
-        serial_number: <serial number of the optical fiber> # TODO add serial number
-        fiber_insertion:
-          insertion_position_ap_in_mm: -3.2
-          insertion_position_ml_in_mm: 1.4
-          insertion_position_dv_in_mm: -4.1
-          position_reference: bregma
-          hemisphere: right
-    ExcitationSourceModels:
-      - name: excitation_source_model_calcium
-        description: excitation source for the sensor's fluorescence signal.
-        manufacturer: Tucker-Davis Technologies
-        model_number: RZ5P or RZ10x # TODO confirm model number depend on FP1 or FP3 rig
-        source_type: LED
-        excitation_mode: one-photon
-        wavelength_range_in_nm: [460.0, 490.0]
-      - name: excitation_source_model_isosbestic
-        description: excitation source for the sensor's isosbestic control.
-        manufacturer: Tucker-Davis Technologies
-        model_number: RZ5P or RZ10x # TODO confirm model number depend on FP1 or FP3 rig
-        source_type: LED
-        excitation_mode: one-photon
-        wavelength_range_in_nm: [400.0, 410.0]
-    ExcitationSources:
-      - name: excitation_source_calcium_signal
-        description: excitation source for the sensor's fluorescence signal (465nm) modulated at 210 Hz.
-        model: excitation_source_model_calcium
-      - name: excitation_source_isosbestic_control
-        description: excitation source for the sensor's isosbestic control (405nm) modulated at 330 Hz.
-        model: excitation_source_model_isosbestic
-    PhotodetectorModels:
-      - name: photodetector_model
-        description: <description of the photodetector model> # TODO add description
-        manufacturer: <manufacturer of the photodetector> # TODO add manufacturer
-        model_number: <model of the photodetector> # TODO add model number
-        detector_type: Silicon photodiode
-        wavelength_range_in_nm: [500.0, 540.0]
-        gain: 0.38
-        gain_unit: A/W
-    Photodetectors:
-      - name: photodetector
-        description: <description of the photodetector> # TODO add description
-        model: photodetector_model
-        serial_number: <serial number of the photodetector> # TODO add serial number
-    BandOpticalFilterModels:
-      - name: emission_filter_model
-        description: emission filter model for GCaMP8f fluorescence signal.
-        manufacturer: <manufacturer of the emission filter> # TODO add manufacturer
-        model_number: <model of the emission filter> # TODO add model number
-        filter_type: Bandpass
-        center_wavelength_in_nm: 520.0 #TODO confirm center wavelength
-        bandwidth_in_nm: 40.0
-      - name: excitation_filter_model
-        description: excitation filter model for GCaMP8f fluorescence signal.
-        manufacturer: <manufacturer of the excitation filter> # TODO add manufacturer
-        model_number: <model of the excitation filter> # TODO add model number
-        filter_type: Bandpass
-        center_wavelength_in_nm: 445.0 #TODO confirm center wavelength
-        bandwidth_in_nm: 90.0 #TODO confirm bandwidth
-    BandOpticalFilters:
-      - name: emission_filter
-        description: <description of emission filter> # TODO add description
-        model: emission_filter_model
-      - name: excitation_filter
-        description: <description of excitation filter> # TODO add description
-        model: excitation_filter_model
-    DichroicMirrorModels:
-      - name: dichroic_mirror_model
-        description: <description of the dichroic mirror model> # TODO add description
-        manufacturer: <manufacturer of the dichroic mirror> # TODO add manufacturer
-        model_number: <model of the dichroic mirror> # TODO add model number
-    DichroicMirrors:
-      - name: dichroic_mirror
-        description: <description of the dichroic mirror> # TODO add description
-        model: dichroic_mirror_model
-        serial_number: <serial number of the dichroic mirror> # TODO add serial number
-    FiberPhotometryViruses:
-      - name: viral_vector_gcamp8f
-        description: AAV1 viral vector expressing GCaMP8f calcium sensor under FLEX promoter for fiber photometry recording in SNc and DLS
-        manufacturer: Addgene (catalog number 162379)
-        construct_name: AAV5-Syn-FLEX-GCaMP8f
-        titer_in_vg_per_ml: 1.0e+13
-    FiberPhotometryVirusInjections:
-      - name: viral_vector_injection_SNc
-        description: Viral injection of GCaMP8f in SNc.
-        viral_vector: viral_vector_gcamp8f
+DeviceModels:
+  optical_fiber_model_1:
+    type: OpticalFiberModel
+    name: optical_fiber_model_1
+    description: Chronically implantable optic fiber.
+    manufacturer: RWD
+    model_number: <model of the optical fiber>
+    numerical_aperture: 0.39
+    core_diameter_in_um: 400.0
+    active_length_in_mm: 6.0
+    ferrule_diameter_in_mm: 1.25
+    ferrule_name: black ceramic ferrule
+  optical_fiber_model_2:
+    type: OpticalFiberModel
+    name: optical_fiber_model_2
+    description: Chronically implantable optic fiber.
+    manufacturer: RWD
+    model_number: <model of the optical fiber>
+    numerical_aperture: 0.39
+    core_diameter_in_um: 400.0
+    active_length_in_mm: 4.0
+    ferrule_diameter_in_mm: 1.25
+    ferrule_name: black ceramic ferrule
+  excitation_source_model_calcium:
+    type: ExcitationSourceModel
+    name: excitation_source_model_calcium
+    description: excitation source for the sensor's fluorescence signal.
+    manufacturer: Tucker-Davis Technologies
+    model_number: RZ5P or RZ10x
+    source_type: LED
+    excitation_mode: one-photon
+    wavelength_range_in_nm: [460.0, 490.0]
+  excitation_source_model_isosbestic:
+    type: ExcitationSourceModel
+    name: excitation_source_model_isosbestic
+    description: excitation source for the sensor's isosbestic control.
+    manufacturer: Tucker-Davis Technologies
+    model_number: RZ5P or RZ10x
+    source_type: LED
+    excitation_mode: one-photon
+    wavelength_range_in_nm: [400.0, 410.0]
+  photodetector_model:
+    type: PhotodetectorModel
+    name: photodetector_model
+    description: <description of the photodetector model>
+    manufacturer: <manufacturer of the photodetector>
+    model_number: <model of the photodetector>
+    detector_type: Silicon photodiode
+    wavelength_range_in_nm: [500.0, 540.0]
+    gain: 0.38
+    gain_unit: A/W
+  emission_filter_model:
+    type: BandOpticalFilterModel
+    name: emission_filter_model
+    description: emission filter model for GCaMP8f fluorescence signal.
+    manufacturer: <manufacturer of the emission filter>
+    model_number: <model of the emission filter>
+    filter_type: Bandpass
+    center_wavelength_in_nm: 520.0
+    bandwidth_in_nm: 40.0
+  excitation_filter_model:
+    type: BandOpticalFilterModel
+    name: excitation_filter_model
+    description: excitation filter model for GCaMP8f fluorescence signal.
+    manufacturer: <manufacturer of the excitation filter>
+    model_number: <model of the excitation filter>
+    filter_type: Bandpass
+    center_wavelength_in_nm: 445.0
+    bandwidth_in_nm: 90.0
+  dichroic_mirror_model:
+    type: DichroicMirrorModel
+    name: dichroic_mirror_model
+    description: <description of the dichroic mirror model>
+    manufacturer: <manufacturer of the dichroic mirror>
+    model_number: <model of the dichroic mirror>
+Devices:
+  optical_fiber_DLS:
+    type: OpticalFiber
+    name: optical_fiber_DLS
+    description: Chronically implanted optic fiber.
+    serial_number: <serial number of the optical fiber>
+    fiber_insertion:
+      insertion_position_ap_in_mm: 0.5
+      insertion_position_ml_in_mm: 2.25
+      insertion_position_dv_in_mm: -2.75
+      position_reference: bregma
+      hemisphere: right
+    device_model_metadata_key: optical_fiber_model_2
+  optical_fiber_SNc:
+    type: OpticalFiber
+    name: optical_fiber_SNc
+    description: Chronically implanted optic fiber.
+    serial_number: <serial number of the optical fiber>
+    fiber_insertion:
+      insertion_position_ap_in_mm: -3.2
+      insertion_position_ml_in_mm: 1.4
+      insertion_position_dv_in_mm: -4.1
+      position_reference: bregma
+      hemisphere: right
+    device_model_metadata_key: optical_fiber_model_1
+  excitation_source_calcium_signal:
+    type: ExcitationSource
+    name: excitation_source_calcium_signal
+    description: excitation source for the sensor's fluorescence signal (465nm) modulated at 210 Hz.
+    device_model_metadata_key: excitation_source_model_calcium
+  excitation_source_isosbestic_control:
+    type: ExcitationSource
+    name: excitation_source_isosbestic_control
+    description: excitation source for the sensor's isosbestic control (405nm) modulated at 330 Hz.
+    device_model_metadata_key: excitation_source_model_isosbestic
+  photodetector:
+    type: Photodetector
+    name: photodetector
+    description: <description of the photodetector>
+    serial_number: <serial number of the photodetector>
+    device_model_metadata_key: photodetector_model
+  emission_filter:
+    type: BandOpticalFilter
+    name: emission_filter
+    description: <description of emission filter>
+    device_model_metadata_key: emission_filter_model
+  excitation_filter:
+    type: BandOpticalFilter
+    name: excitation_filter
+    description: <description of excitation filter>
+    device_model_metadata_key: excitation_filter_model
+  dichroic_mirror:
+    type: DichroicMirror
+    name: dichroic_mirror
+    description: <description of the dichroic mirror>
+    serial_number: <serial number of the dichroic mirror>
+    device_model_metadata_key: dichroic_mirror_model
+FiberPhotometry:
+  FiberPhotometryViruses:
+    viral_vector_gcamp8f:
+      name: viral_vector_gcamp8f
+      description: AAV1 viral vector expressing GCaMP8f calcium sensor under FLEX promoter for fiber photometry recording
+        in SNc and DLS
+      manufacturer: Addgene (catalog number 162379)
+      construct_name: AAV5-Syn-FLEX-GCaMP8f
+      titer_in_vg_per_ml: 1.0e+13
+  FiberPhotometryVirusInjections:
+    viral_vector_injection_SNc:
+      name: viral_vector_injection_SNc
+      description: Viral injection of GCaMP8f in SNc.
+      location: SNc
+      hemisphere: right
+      reference: bregma at the cortical surface
+      ap_in_mm: -3.2
+      ml_in_mm: 1.3
+      dv_in_mm: -4.3
+      volume_in_uL: 0.3
+      viral_vector_metadata_key: viral_vector_gcamp8f
+    viral_vector_injection_DLS:
+      name: viral_vector_injection_DLS
+      description: Viral injection of GCaMP8f in DLS.
+      location: DLS
+      hemisphere: right
+      reference: bregma at the cortical surface
+      ap_in_mm: 0.5
+      ml_in_mm: 2.25
+      dv_in_mm: -2.95
+      volume_in_uL: 0.3
+      viral_vector_metadata_key: viral_vector_gcamp8f
+  FiberPhotometryIndicators:
+    GCaMP8f_SNc:
+      name: GCaMP8f_SNc
+      description: GCaMP8f calcium sensor in SNc Anxa1+ neurons and terminals.
+      manufacturer: Addgene
+      label: GCaMP8f
+      viral_vector_injection_metadata_key: viral_vector_injection_SNc
+    GCaMP8f_DLS:
+      name: GCaMP8f_DLS
+      description: GCaMP8f calcium sensor in DLS Anxa1+ neurons and terminals.
+      manufacturer: Addgene
+      label: GCaMP8f
+      viral_vector_injection_metadata_key: viral_vector_injection_DLS
+  FiberPhotometryTable:
+    name: fiber_photometry_table
+    description: For monitoring calcium dynamics in Anxa1+ neurons and terminals, a fiber was implanted in SNc and DLS.
+    rows:
+      SNc_465:
         location: SNc
-        hemisphere: right
-        reference: bregma at the cortical surface
-        ap_in_mm: -3.2
-        ml_in_mm: 1.3
-        dv_in_mm: -4.3
-        volume_in_uL: 0.3
-      - name: viral_vector_injection_DLS
-        description: Viral injection of GCaMP8f in DLS.
-        viral_vector: viral_vector_gcamp8f
+        excitation_wavelength_in_nm: 465.0
+        emission_wavelength_in_nm: 515.0
+        indicator_metadata_key: GCaMP8f_SNc
+        optical_fiber_metadata_key: optical_fiber_SNc
+        excitation_source_metadata_key: excitation_source_calcium_signal
+        photodetector_metadata_key: photodetector
+        emission_filter_metadata_key: emission_filter
+        excitation_filter_metadata_key: excitation_filter
+        dichroic_mirror_metadata_key: dichroic_mirror
+      SNc_405:
+        location: SNc
+        excitation_wavelength_in_nm: 405.0
+        emission_wavelength_in_nm: 515.0
+        indicator_metadata_key: GCaMP8f_SNc
+        optical_fiber_metadata_key: optical_fiber_SNc
+        excitation_source_metadata_key: excitation_source_isosbestic_control
+        photodetector_metadata_key: photodetector
+        emission_filter_metadata_key: emission_filter
+        excitation_filter_metadata_key: excitation_filter
+        dichroic_mirror_metadata_key: dichroic_mirror
+      DLS_465:
         location: DLS
-        hemisphere: right
-        reference: bregma at the cortical surface
-        ap_in_mm: 0.5
-        ml_in_mm: 2.25
-        dv_in_mm: -2.95
-        volume_in_uL: 0.3
-    FiberPhotometryIndicators:
-      - name: GCaMP8f_SNc
-        description: GCaMP8f calcium sensor in SNc Anxa1+ neurons and terminals.
-        manufacturer: Addgene
-        label: GCaMP8f
-        viral_vector_injection: viral_vector_injection_SNc
-      - name: GCaMP8f_DLS
-        description: GCaMP8f calcium sensor in DLS Anxa1+ neurons and terminals.
-        manufacturer: Addgene
-        label: GCaMP8f
-        viral_vector_injection: viral_vector_injection_DLS
-    FiberPhotometryTable:
-      name: fiber_photometry_table
-      description: For monitoring calcium dynamics in Anxa1+ neurons and terminals, a fiber was implanted in SNc and DLS.
-      rows:
-        - name: 0
-          location: SNc
-          excitation_wavelength_in_nm: 465.0
-          emission_wavelength_in_nm: 515.0
-          indicator: GCaMP8f_SNc
-          optical_fiber: optical_fiber_SNc
-          excitation_source: excitation_source_calcium_signal
-          photodetector: photodetector
-          emission_filter: emission_filter
-          excitation_filter: excitation_filter
-          dichroic_mirror: dichroic_mirror
-        - name: 1
-          location: SNc
-          excitation_wavelength_in_nm: 405.0
-          emission_wavelength_in_nm: 515.0
-          indicator: GCaMP8f_SNc
-          optical_fiber: optical_fiber_SNc
-          excitation_source: excitation_source_isosbestic_control
-          photodetector: photodetector
-          emission_filter: emission_filter
-          excitation_filter: excitation_filter
-          dichroic_mirror: dichroic_mirror
-        - name: 2
-          location: DLS
-          excitation_wavelength_in_nm: 465.0
-          emission_wavelength_in_nm: 515.0
-          indicator: GCaMP8f_DLS
-          optical_fiber: optical_fiber_DLS
-          excitation_source: excitation_source_calcium_signal
-          photodetector: photodetector
-          emission_filter: emission_filter
-          excitation_filter: excitation_filter
-          dichroic_mirror: dichroic_mirror
-        - name: 3
-          location: DLS
-          excitation_wavelength_in_nm: 405.0
-          emission_wavelength_in_nm: 515.0
-          indicator: GCaMP8f_DLS
-          optical_fiber: optical_fiber_DLS
-          excitation_source: excitation_source_isosbestic_control
-          photodetector: photodetector
-          emission_filter: emission_filter
-          excitation_filter: excitation_filter
-          dichroic_mirror: dichroic_mirror
-    FiberPhotometryResponseSeries:
-      - name: raw_signal_SNc
-        description: The raw modulated fluorescence signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm and 405nm, respectively.
-        stream_name: Fi1r
-        stream_indices: null
-        target_area: SNc
-        unit: a.u.
-        fiber_photometry_table_region: [0]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
-      - name: raw_signal_DLS
-        description: The raw modulated fluorescence signal from GCaMP8f in DLS Anxa1+ neurons, excited at 465nm and 405nm, respectively.
-        stream_name: Fi1r
-        stream_indices: null
-        target_area: DLS
-        unit: a.u.
-        fiber_photometry_table_region: [2]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal in DLS.
-    ProcessedFiberPhotometryResponseSeries:
-      - name: demodulated_calcium_signal_SNc
-        description: The demodulated fluorescence signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm and demodulated at 330Hz.
-        stream_name: Gc_raw
-        target_area: SNc
-        sampling_frequency: 6103.5156
-        unit: a.u.
-        fiber_photometry_table_region: [0]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of SNc.
-      - name: demodulated_isosbestic_control_SNc
-        description: The demodulated fluorescence signal from GCaMP8f for isosbestic control in SNc Anxa1+ neurons, excited at 405nm and demodulated at 210Hz.
-        stream_name: af_raw
-        target_area: SNc
-        sampling_frequency: 6103.5156
-        unit: a.u.
-        fiber_photometry_table_region: [1]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNc.
-      - name: downsampled_calcium_signal_SNc
-        description: The downsampled fluorescence signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm and downsampled at 100Hz.
-        stream_name: Gc
-        target_area: SNc
-        sampling_frequency: 100.0
-        unit: a.u.
-        fiber_photometry_table_region: [0]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of SNc.
-      - name: downsampled_isosbestic_control_SNc
-        description: The downsampled fluorescence signal from GCaMP8f for isosbestic control in SNc Anxa1+ neurons, excited at 405nm and downsampled at 100Hz.
-        stream_name: af
-        target_area: SNc
-        sampling_frequency: 100.0
-        unit: a.u.
-        fiber_photometry_table_region: [1]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of SNc.
-      - name: deltaF_over_F_SNc
-        description: The deltaF/F signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm and calculated as (Gc - fitted_af) / fitted_af.
-        stream_name: dF
-        target_area: SNc
-        sampling_frequency: 100.0
-        unit: a.u.
-        fiber_photometry_table_region: [0]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal of SNc.
-      - name: demodulated_calcium_signal_DLS
-        description: The demodulated fluorescence signal from GCaMP8f dopamine indicator in DLS Anxa1+ terminals, excited at 465nm and demodulated at 330Hz.
-        stream_name: Gc_raw
-        target_area: DLS
-        sampling_frequency: 6103.5156
-        unit: a.u.
-        fiber_photometry_table_region: [2]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of DLS.
-      - name: demodulated_isosbestic_control_DLS
-        description: The demodulated fluorescence signal from GCaMP8f for isosbestic control in DLS Anxa1+ terminals, excited at 405nm and demodulated at 210Hz.
-        stream_name: af_raw
-        target_area: DLS
-        sampling_frequency: 6103.5156
-        unit: a.u.
-        fiber_photometry_table_region: [3]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of DLS.
-      - name: downsampled_calcium_signal_DLS
-        description: The downsampled fluorescence signal from GCaMP8f dopamine indicator in DLS Anxa1+ terminals, excited at 465nm and downsampled at 100Hz.
-        stream_name: Gc
-        target_area: DLS
-        sampling_frequency: 100.0
-        unit: a.u.
-        fiber_photometry_table_region: [2]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal of DLS.
-      - name: downsampled_isosbestic_control_DLS
-        description: The downsampled fluorescence signal from GCaMP8f for isosbestic control in DLS Anxa1+ terminals, excited at 405nm and downsampled at 100Hz.
-        stream_name: af
-        target_area: DLS
-        sampling_frequency: 100.0
-        unit: a.u.
-        fiber_photometry_table_region: [3]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control of DLS.
-      - name: deltaF_over_F_DLS
-        description: The deltaF/F signal from GCaMP8f dopamine indicator in DLS Anxa1+ terminals, excited at 465nm and calculated as (Gc - fitted_af) / fitted_af.
-        stream_name: dF
-        target_area: DLS
-        sampling_frequency: 100.0
-        unit: a.u.
-        fiber_photometry_table_region: [2]
-        fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal of DLS.
+        excitation_wavelength_in_nm: 465.0
+        emission_wavelength_in_nm: 515.0
+        indicator_metadata_key: GCaMP8f_DLS
+        optical_fiber_metadata_key: optical_fiber_DLS
+        excitation_source_metadata_key: excitation_source_calcium_signal
+        photodetector_metadata_key: photodetector
+        emission_filter_metadata_key: emission_filter
+        excitation_filter_metadata_key: excitation_filter
+        dichroic_mirror_metadata_key: dichroic_mirror
+      DLS_405:
+        location: DLS
+        excitation_wavelength_in_nm: 405.0
+        emission_wavelength_in_nm: 515.0
+        indicator_metadata_key: GCaMP8f_DLS
+        optical_fiber_metadata_key: optical_fiber_DLS
+        excitation_source_metadata_key: excitation_source_isosbestic_control
+        photodetector_metadata_key: photodetector
+        emission_filter_metadata_key: emission_filter
+        excitation_filter_metadata_key: excitation_filter
+        dichroic_mirror_metadata_key: dichroic_mirror
+  Fi1r_SNc:
+    name: raw_signal_SNc
+    description: The raw modulated fluorescence signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm
+      and 405nm, respectively.
+    fiber_photometry_table_region: [SNc_465]
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
+  Fi1r_DLS:
+    name: raw_signal_DLS
+    description: The raw modulated fluorescence signal from GCaMP8f in DLS Anxa1+ neurons, excited at 465nm and 405nm, respectively.
+    fiber_photometry_table_region: [DLS_465]
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal in DLS.
+  Gc_raw_SNc:
+    name: demodulated_calcium_signal_SNc
+    description: The demodulated fluorescence signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm
+      and demodulated at 330Hz.
+    unit: a.u.
+    fiber_photometry_table_region: [SNc_465]
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
+      of SNc.
+  af_raw_SNc:
+    name: demodulated_isosbestic_control_SNc
+    description: The demodulated fluorescence signal from GCaMP8f for isosbestic control in SNc Anxa1+ neurons, excited at
+      405nm and demodulated at 210Hz.
+    unit: a.u.
+    fiber_photometry_table_region: [SNc_405]
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
+      of SNc.
+  Gc_SNc:
+    name: downsampled_calcium_signal_SNc
+    description: The downsampled fluorescence signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm
+      and downsampled at 100Hz.
+    unit: a.u.
+    fiber_photometry_table_region: [SNc_465]
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
+      of SNc.
+  af_SNc:
+    name: downsampled_isosbestic_control_SNc
+    description: The downsampled fluorescence signal from GCaMP8f for isosbestic control in SNc Anxa1+ neurons, excited at
+      405nm and downsampled at 100Hz.
+    unit: a.u.
+    fiber_photometry_table_region: [SNc_405]
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
+      of SNc.
+  dF_SNc:
+    name: deltaF_over_F_SNc
+    description: The deltaF/F signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm and calculated
+      as (Gc - fitted_af) / fitted_af.
+    unit: a.u.
+    fiber_photometry_table_region: [SNc_465]
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal
+      of SNc.
+  Gc_raw_DLS:
+    name: demodulated_calcium_signal_DLS
+    description: The demodulated fluorescence signal from GCaMP8f dopamine indicator in DLS Anxa1+ terminals, excited at 465nm
+      and demodulated at 330Hz.
+    unit: a.u.
+    fiber_photometry_table_region: [DLS_465]
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
+      of DLS.
+  af_raw_DLS:
+    name: demodulated_isosbestic_control_DLS
+    description: The demodulated fluorescence signal from GCaMP8f for isosbestic control in DLS Anxa1+ terminals, excited
+      at 405nm and demodulated at 210Hz.
+    unit: a.u.
+    fiber_photometry_table_region: [DLS_405]
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
+      of DLS.
+  Gc_DLS:
+    name: downsampled_calcium_signal_DLS
+    description: The downsampled fluorescence signal from GCaMP8f dopamine indicator in DLS Anxa1+ terminals, excited at 465nm
+      and downsampled at 100Hz.
+    unit: a.u.
+    fiber_photometry_table_region: [DLS_465]
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
+      of DLS.
+  af_DLS:
+    name: downsampled_isosbestic_control_DLS
+    description: The downsampled fluorescence signal from GCaMP8f for isosbestic control in DLS Anxa1+ terminals, excited
+      at 405nm and downsampled at 100Hz.
+    unit: a.u.
+    fiber_photometry_table_region: [DLS_405]
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
+      of DLS.
+  dF_DLS:
+    name: deltaF_over_F_DLS
+    description: The deltaF/F signal from GCaMP8f dopamine indicator in DLS Anxa1+ terminals, excited at 465nm and calculated
+      as (Gc - fitted_af) / fitted_af.
+    unit: a.u.
+    fiber_photometry_table_region: [DLS_465]
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal
+      of DLS.
 
 Optogenetics:
   stimulation_software: TDT Synapse

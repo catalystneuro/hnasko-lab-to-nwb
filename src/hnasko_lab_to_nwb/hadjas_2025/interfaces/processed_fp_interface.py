@@ -1,4 +1,3 @@
-from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List, Literal
 
@@ -7,215 +6,10 @@ import numpy as np
 from pydantic import FilePath, validate_call
 from pynwb.file import NWBFile
 
+from hnasko_lab_to_nwb.hadjas_2025.interfaces.fiber_photometry_table import add_fiber_photometry_table_region
 from neuroconv.basetemporalalignmentinterface import BaseTemporalAlignmentInterface
-from neuroconv.tools.fiber_photometry import add_ophys_device, add_ophys_device_model
 from neuroconv.tools.nwb_helpers import get_module
 from neuroconv.utils import DeepDict
-
-
-def get_fiber_photometry_table(nwbfile: NWBFile, metadata: dict):
-    """Get or create the FiberPhotometryTable in the NWBFile.
-
-    Parameters
-    ----------
-    nwbfile : NWBFile
-        The in-memory object to add the data to.
-    metadata : dict
-        Metadata dictionary with information used to create the NWBFile.
-
-    Returns
-    -------
-    FiberPhotometryTable
-        The FiberPhotometryTable object.
-    """
-    from ndx_fiber_photometry import (
-        FiberPhotometry,
-        FiberPhotometryIndicators,
-        FiberPhotometryTable,
-        FiberPhotometryViruses,
-        FiberPhotometryVirusInjections,
-    )
-    from ndx_ophys_devices import (
-        FiberInsertion,
-        Indicator,
-        OpticalFiber,
-        ViralVector,
-        ViralVectorInjection,
-    )
-
-    #  check if FiberPhotometry lab metadata already exists
-    if "fiber_photometry" in nwbfile.lab_meta_data:
-        fiber_photometry = nwbfile.lab_meta_data["fiber_photometry"]
-        if isinstance(fiber_photometry, FiberPhotometry):
-            # Check if tables have matching rows by comparing key attributes
-            table_metadata = metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryTable"]
-            if fiber_photometry.fiber_photometry_table.name == table_metadata["name"]:
-                existing_table = fiber_photometry.fiber_photometry_table
-                metadata_rows = table_metadata["rows"]
-                # Check if row counts match
-                if len(existing_table) == len(metadata_rows):
-                    return existing_table
-
-    # Add Devices
-    device_model_types = [
-        "OpticalFiberModel",
-        "ExcitationSourceModel",
-        "PhotodetectorModel",
-        "BandOpticalFilterModel",
-        "EdgeOpticalFilterModel",
-        "DichroicMirrorModel",
-    ]
-    for device_type in device_model_types:
-        device_models_metadata = metadata["Ophys"]["FiberPhotometry"].get(device_type + "s", [])
-        for devices_metadata in device_models_metadata:
-            add_ophys_device_model(
-                nwbfile=nwbfile,
-                device_metadata=devices_metadata,
-                device_type=device_type,
-            )
-    device_types = [
-        "ExcitationSource",
-        "Photodetector",
-        "BandOpticalFilter",
-        "EdgeOpticalFilter",
-        "DichroicMirror",
-    ]
-    for device_type in device_types:
-        devices_metadata = metadata["Ophys"]["FiberPhotometry"].get(device_type + "s", [])
-        for device_metadata in devices_metadata:
-            add_ophys_device(
-                nwbfile=nwbfile,
-                device_metadata=device_metadata,
-                device_type=device_type,
-            )
-
-    # Add Optical Fibers (special case bc they have additional FiberInsertion objects)
-    optical_fibers_metadata = metadata["Ophys"]["FiberPhotometry"].get("OpticalFibers", [])
-    for optical_fiber_metadata in optical_fibers_metadata:
-        fiber_insertion_metadata = optical_fiber_metadata["fiber_insertion"]
-        fiber_insertion = FiberInsertion(**fiber_insertion_metadata)
-        optical_fiber_metadata = deepcopy(optical_fiber_metadata)
-        optical_fiber_metadata["fiber_insertion"] = fiber_insertion
-        assert optical_fiber_metadata["model"] in nwbfile.device_models, (
-            f"Device model {optical_fiber_metadata['model']} not found in NWBFile device_models for {optical_fiber_metadata['name']}."
-        )
-        optical_fiber_metadata["model"] = nwbfile.device_models[optical_fiber_metadata["model"]]
-        optical_fiber = OpticalFiber(**optical_fiber_metadata)
-        nwbfile.add_device(optical_fiber)
-
-    # Add Viral Vectors, Injections, and Indicators
-    viral_vectors_metadata = metadata["Ophys"]["FiberPhotometry"].get("FiberPhotometryViruses", [])
-    name_to_viral_vector = {}
-    for viral_vector_metadata in viral_vectors_metadata:
-        viral_vector = ViralVector(**viral_vector_metadata)
-        name_to_viral_vector[viral_vector.name] = viral_vector
-    if len(name_to_viral_vector) > 0:
-        viruses = FiberPhotometryViruses(viral_vectors=list(name_to_viral_vector.values()))
-    else:
-        viruses = None
-
-    viral_vector_injections_metadata = metadata["Ophys"]["FiberPhotometry"].get("FiberPhotometryVirusInjections", [])
-    name_to_viral_vector_injection = {}
-    for viral_vector_injection_metadata in viral_vector_injections_metadata:
-        viral_vector = name_to_viral_vector[viral_vector_injection_metadata["viral_vector"]]
-        viral_vector_injection_metadata = deepcopy(viral_vector_injection_metadata)
-        viral_vector_injection_metadata["viral_vector"] = viral_vector
-        viral_vector_injection = ViralVectorInjection(**viral_vector_injection_metadata)
-        name_to_viral_vector_injection[viral_vector_injection.name] = viral_vector_injection
-    if len(name_to_viral_vector_injection) > 0:
-        virus_injections = FiberPhotometryVirusInjections(
-            viral_vector_injections=list(name_to_viral_vector_injection.values())
-        )
-    else:
-        virus_injections = None
-
-    indicators_metadata = metadata["Ophys"]["FiberPhotometry"].get("FiberPhotometryIndicators", [])
-    name_to_indicator = {}
-    for indicator_metadata in indicators_metadata:
-        if "viral_vector_injection" in indicator_metadata:
-            viral_vector_injection = name_to_viral_vector_injection[indicator_metadata["viral_vector_injection"]]
-            indicator_metadata = deepcopy(indicator_metadata)
-            indicator_metadata["viral_vector_injection"] = viral_vector_injection
-        indicator = Indicator(**indicator_metadata)
-        name_to_indicator[indicator.name] = indicator
-    if len(name_to_indicator) > 0:
-        indicators = FiberPhotometryIndicators(indicators=list(name_to_indicator.values()))
-    else:
-        raise ValueError("At least one indicator must be specified in the metadata.")
-
-    # Fiber Photometry Table
-    fiber_photometry_table = FiberPhotometryTable(
-        name=metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryTable"]["name"],
-        description=metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryTable"]["description"],
-    )
-    required_fields = [
-        "location",
-        "excitation_wavelength_in_nm",
-        "emission_wavelength_in_nm",
-        "indicator",
-        "optical_fiber",
-        "excitation_source",
-        "photodetector",
-        "dichroic_mirror",
-    ]
-    device_fields = [
-        "optical_fiber",
-        "excitation_source",
-        "photodetector",
-        "dichroic_mirror",
-        "excitation_filter",
-        "emission_filter",
-    ]
-    for row_metadata in metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryTable"]["rows"]:
-        for field in required_fields:
-            assert field in row_metadata, (
-                f"FiberPhotometryTable metadata row {row_metadata['name']} is missing required field {field}."
-            )
-        row_data = {field: nwbfile.devices[row_metadata[field]] for field in device_fields if field in row_metadata}
-        row_data["location"] = row_metadata["location"]
-        row_data["excitation_wavelength_in_nm"] = row_metadata["excitation_wavelength_in_nm"]
-        row_data["emission_wavelength_in_nm"] = row_metadata["emission_wavelength_in_nm"]
-        if "indicator" in row_metadata:
-            row_data["indicator"] = name_to_indicator[row_metadata["indicator"]]
-        if "coordinates" in row_metadata:
-            row_data["coordinates"] = row_metadata["coordinates"]
-        fiber_photometry_table.add_row(**row_data)
-    fiber_photometry_table_metadata = FiberPhotometry(
-        name="fiber_photometry",
-        fiber_photometry_table=fiber_photometry_table,
-        fiber_photometry_viruses=viruses,
-        fiber_photometry_virus_injections=virus_injections,
-        fiber_photometry_indicators=indicators,
-    )
-    nwbfile.add_lab_meta_data(fiber_photometry_table_metadata)
-
-    return fiber_photometry_table
-
-
-def get_fp_series_metadata(metadata: dict, stream_name: str, target_area: str) -> dict:
-    """Get the metadata for the FiberPhotometryResponseSeries.
-
-    Parameters
-    ----------
-    metadata : dict
-        Metadata dictionary with information used to create the NWBFile.
-    stream_name : str
-        The name of the stream to extract.
-    target_area : str
-        The target area to extract.
-
-    Returns
-    -------
-    dict
-        The metadata dictionary for the FiberPhotometryResponseSeries.
-    """
-    all_series_metadata = metadata["Ophys"]["FiberPhotometry"]["ProcessedFiberPhotometryResponseSeries"]
-    # Find the metadata for the specified stream_name and target_area
-    for series_metadata in all_series_metadata:
-        if series_metadata["stream_name"] == stream_name and series_metadata.get("target_area") == target_area:
-            fiber_photometry_response_series_metadata = deepcopy(series_metadata)
-            break
-    return fiber_photometry_response_series_metadata
 
 
 def get_series_target_area(target_area: str, file_path: Path) -> str:
@@ -295,6 +89,8 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseTemporalAlignmentInterface
         self._subject_id = subject_id
         self._sampling_frequency = sampling_frequency
         self._starting_time = 0.0
+        series_target_area = get_series_target_area(target_area=target_area, file_path=file_path)
+        self.metadata_key = f"{stream_name}_{series_target_area}"
 
         self._scan_file_structure()
         if target_area not in self.available_sites:
@@ -533,17 +329,9 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseTemporalAlignmentInterface
             FiberPhotometryResponseSeries,
         )
 
-        # Get series metadata
-        target_area = get_series_target_area(target_area=self._target_area, file_path=self.source_data["file_path"])
-        fiber_photometry_response_series_metadata = get_fp_series_metadata(
-            metadata=metadata, stream_name=self._stream_name, target_area=target_area
-        )
-
-        # Get or create FiberPhotometryTable
-        fiber_photometry_table = get_fiber_photometry_table(nwbfile=nwbfile, metadata=metadata)
-        fiber_photometry_table_region = fiber_photometry_table.create_fiber_photometry_table_region(
-            description=fiber_photometry_response_series_metadata["fiber_photometry_table_region_description"],
-            region=fiber_photometry_response_series_metadata["fiber_photometry_table_region"],
+        fiber_photometry_response_series_metadata = metadata["FiberPhotometry"][self.metadata_key]
+        fiber_photometry_table_region = add_fiber_photometry_table_region(
+            nwbfile=nwbfile, metadata=metadata, metadata_key=self.metadata_key
         )
         # Validate stimulus channel name
         if stimulus_channel_name not in self.available_stimulus_channel_names[self._target_area][self._subject_id]:
@@ -674,17 +462,9 @@ class ConcatenatedHadjas2025ProcessedFiberPhotometryInterface(Hadjas2025Processe
             FiberPhotometryResponseSeries,
         )
 
-        # Get series metadata
-        target_area = get_series_target_area(target_area=self._target_area, file_path=self.source_data["file_path"])
-        fiber_photometry_response_series_metadata = get_fp_series_metadata(
-            metadata=metadata, stream_name=self._stream_name, target_area=target_area
-        )
-
-        # Get or create FiberPhotometryTable
-        fiber_photometry_table = get_fiber_photometry_table(nwbfile=nwbfile, metadata=metadata)
-        fiber_photometry_table_region = fiber_photometry_table.create_fiber_photometry_table_region(
-            description=fiber_photometry_response_series_metadata["fiber_photometry_table_region_description"],
-            region=fiber_photometry_response_series_metadata["fiber_photometry_table_region"],
+        fiber_photometry_response_series_metadata = metadata["FiberPhotometry"][self.metadata_key]
+        fiber_photometry_table_region = add_fiber_photometry_table_region(
+            nwbfile=nwbfile, metadata=metadata, metadata_key=self.metadata_key
         )
         # Validate stimulus channel name
         data_segments = []
