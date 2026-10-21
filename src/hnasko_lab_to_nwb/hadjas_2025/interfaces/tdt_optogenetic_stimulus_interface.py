@@ -1,4 +1,4 @@
-from logging import warning
+import logging
 from typing import List
 import numpy as np
 
@@ -9,6 +9,8 @@ from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import read_tdt_epocs, read_
 from neuroconv.basetemporalalignmentinterface import BaseDataInterface
 from neuroconv.tools.nwb_helpers import _add_device_to_nwbfile
 from neuroconv.utils import DeepDict
+
+logger = logging.getLogger(__name__)
 
 
 def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
@@ -233,10 +235,16 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         for stream_name, stimulus_frequency in tdt_stimulus_channel_to_frequency.items():
             if stream_name not in tdt_events:
                 continue
-            for start_time, stop_time in zip(tdt_events[stream_name]["onset"], tdt_events[stream_name]["offset"]):
-                if np.isinf(start_time) or np.isinf(stop_time):
-                    warning(f"Found infinite start or stop time for stream {stream_name}. Skipping this event.")
-                    continue
+            onsets = np.asarray(tdt_events[stream_name]["onset"], dtype=float)
+            offsets = np.asarray(tdt_events[stream_name]["offset"], dtype=float)
+            # Trains without an offset (recording stopped first) or of zero length are not written
+            is_valid = np.isfinite(onsets) & np.isfinite(offsets) & (offsets > onsets)
+            if not is_valid.all():
+                logger.warning(
+                    f"Dropped {np.count_nonzero(~is_valid)} of {is_valid.size} {stream_name} trains without an "
+                    f"offset or of zero length."
+                )
+            for start_time, stop_time in zip(onsets[is_valid], offsets[is_valid]):
                 number_pulses_per_pulse_train = int((stop_time - start_time) * stimulus_frequency)
                 opto_epochs_table.add_row(
                     start_time=start_time,

@@ -46,3 +46,17 @@ def test_missing_stimulation_epocs_raise(tmp_path, stn_metadata):
         make_interface(tmp_path, events).add_to_nwbfile(
             nwbfile=mock_NWBFile(), metadata=stn_metadata, tdt_stimulus_channel_to_frequency={"sms_": 40.0}
         )
+
+
+def test_trains_without_offset_or_of_zero_length_are_dropped_and_logged(tmp_path, stn_metadata, caplog):
+    # e.g. C7248 varying frequencies: an H10_ train has no offset, another one has zero length
+    events = {"H10_": dict(onset=np.array([10.0, 31.0, 52.0]), offset=np.array([11.0, 31.0, np.inf]))}
+    nwbfile = mock_NWBFile()
+
+    make_interface(tmp_path, events).add_to_nwbfile(
+        nwbfile=nwbfile, metadata=stn_metadata, tdt_stimulus_channel_to_frequency={"H10_": 10.0}
+    )
+
+    epochs = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe()
+    assert list(epochs["start_time"]) == [10.0]
+    assert "Dropped 2 of 3 H10_ trains" in caplog.text
