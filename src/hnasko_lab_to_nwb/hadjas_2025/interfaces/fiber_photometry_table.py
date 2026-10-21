@@ -26,9 +26,7 @@ def add_fiber_photometry_table_region(nwbfile: NWBFile, metadata: dict, metadata
     """
     fiber_photometry_metadata = metadata["FiberPhotometry"]
     add_fiber_photometry_devices(nwbfile=nwbfile, metadata=metadata)
-    fiber_photometry_table = add_fiber_photometry_lab_metadata(
-        nwbfile=nwbfile, fiber_photometry_metadata=fiber_photometry_metadata, devices_metadata=metadata["Devices"]
-    )
+    fiber_photometry_table = add_fiber_photometry_lab_metadata(nwbfile=nwbfile, metadata=metadata)
     series_metadata = fiber_photometry_metadata[metadata_key]
     return get_fiber_photometry_table_region(
         fiber_photometry_table=fiber_photometry_table,
