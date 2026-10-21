@@ -179,7 +179,7 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         """
         from neuroconv.datainterfaces import TDTFiberPhotometryInterface
 
-        tdt_interface = TDTFiberPhotometryInterface(folder_path=self.source_data["folder_path"])
+        tdt_interface = TDTFiberPhotometryInterface(folder_path=self.source_data["folder_path"], stream_names=["Fi1r"])
         events = tdt_interface.get_events()
         return events
 
@@ -320,7 +320,7 @@ class ConcatenatedHadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         tdt_interfaces = []
         session_start_datetimes = []
         for folder_path in self.source_data["folder_paths"]:
-            tdt_interface = TDTFiberPhotometryInterface(folder_path=folder_path)
+            tdt_interface = TDTFiberPhotometryInterface(folder_path=folder_path, stream_names=["Fi1r"])
             tdt_photometry = tdt_interface.load(evtype=["scalars"])
             start_timestamp = tdt_photometry.info.start_date.timestamp()
             session_start_datetime = datetime.fromtimestamp(start_timestamp, tz=pytz.utc)
