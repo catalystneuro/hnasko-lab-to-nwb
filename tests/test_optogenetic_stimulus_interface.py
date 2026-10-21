@@ -60,3 +60,20 @@ def test_trains_without_offset_or_of_zero_length_are_dropped_and_logged(tmp_path
     epochs = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe()
     assert list(epochs["start_time"]) == [10.0]
     assert "Dropped 2 of 3 H10_ trains" in caplog.text
+
+
+def test_hh5_trains_are_written_as_5_hz(tmp_path, stn_metadata):
+    # C3412, C3798 and C4707 (Vglut2, PPN) store their 5 Hz trains as HH5_ (issue #21, finding 6)
+    events = {
+        "HH5_": dict(onset=np.array([10.0]), offset=np.array([11.0])),
+        "H10_": dict(onset=np.array([31.0]), offset=np.array([32.0])),
+    }
+    epoc_name_to_frequency = load_session_config()["protocols"]["Varying frequencies"]["epoc_name_to_frequency_in_hz"]
+    nwbfile = mock_NWBFile()
+
+    make_interface(tmp_path, events).add_to_nwbfile(
+        nwbfile=nwbfile, metadata=stn_metadata, tdt_stimulus_channel_to_frequency=epoc_name_to_frequency
+    )
+
+    epochs = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe().sort_values("start_time")
+    assert list(epochs["stimulus_frequency"]) == [5.0, 10.0]
