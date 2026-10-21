@@ -723,7 +723,7 @@ class ConcatenatedHadjas2025ProcessedFiberPhotometryInterface(Hadjas2025Processe
 
             from neuroconv.utils.checks import calculate_regular_series_rate
 
-            calculated_rate = calculate_regular_series_rate(concatenated_timestamps, tolerance_decimals=2)
+            calculated_rate = calculate_regular_series_rate(concatenated_timestamps)
             if calculated_rate is not None:
                 timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=calculated_rate)
             else:
