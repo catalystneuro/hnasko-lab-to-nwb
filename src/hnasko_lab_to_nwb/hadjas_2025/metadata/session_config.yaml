@@ -21,7 +21,7 @@ cohorts:
   Cell_type recordings_Vglut2:
     sheet_name: DA subtypes
     data_folder: Cell_type recordings
-    genotype: VGlut2  # rows of the sheet whose genotype contains this
+    genotype: DAT-flp  # rows of the sheet whose genotype contains this (VGlut2-cre X DAT-flp)
     subgroup_folder_prefix: Vglut2  # protocol subfolders are named "<prefix> <recording site>"; the site is taken from them
     inputs: [PPN, STN]
   Cell_type recordings_Anxa1:
