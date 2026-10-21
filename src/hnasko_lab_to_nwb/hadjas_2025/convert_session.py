@@ -1,5 +1,7 @@
 """Primary script to run to convert an entire session for of data using the NWBConverter."""
 
+import io
+from contextlib import redirect_stdout
 from datetime import datetime
 from pathlib import Path
 from typing import Union
@@ -21,6 +23,47 @@ SESSION_CONFIG_FILE_PATH = METADATA_FOLDER_PATH / "session_config.yaml"
 def load_session_config() -> dict:
     """Load the settings that differ between cohorts, protocols and subjects (metadata/session_config.yaml)."""
     return load_dict_from_file(SESSION_CONFIG_FILE_PATH)
+
+
+def get_rig_settings(sampling_frequency: float) -> dict:
+    """Identify the recording rig from the sampling frequency of the raw Fi1r stream.
+
+    Parameters
+    ----------
+    sampling_frequency : float
+        Sampling frequency of the Fi1r stream of a TDT block, in Hz.
+
+    Returns
+    -------
+    dict
+        The rig name ("rig_name") and the Fi1r channels holding the signal ("stream_indices", None for all).
+    """
+    for rig_name, rig_config in load_session_config()["rigs"].items():
+        if abs(rig_config["fi1r_sampling_frequency"] - sampling_frequency) < 1.0:
+            channel = rig_config["fi1r_signal_channel"]
+            return dict(rig_name=rig_name, stream_indices=None if channel is None else [channel])
+    raise ValueError(f"No rig in the session config records Fi1r at {sampling_frequency} Hz.")
+
+
+def get_raw_stream_settings(folder_path: Path) -> dict:
+    """Read the Fi1r sampling frequency of a TDT block and return it with the settings of its rig.
+
+    Parameters
+    ----------
+    folder_path : Path
+        Path to the TDT block folder.
+
+    Returns
+    -------
+    dict
+        "sampling_frequency" (Hz) of Fi1r, plus "rig_name" and "stream_indices" from get_rig_settings.
+    """
+    import tdt
+
+    with redirect_stdout(io.StringIO()):
+        stream = tdt.read_block(str(folder_path), evtype=["streams"], store="Fi1r", t2=1.0).streams["Fi1r"]
+    sampling_frequency = float(stream.fs)
+    return dict(sampling_frequency=sampling_frequency, **get_rig_settings(sampling_frequency))
 
 
 def load_cohort_metadata(recording_type: str) -> dict:
@@ -240,9 +283,6 @@ def varying_frequencies_session_to_nwb(
 
     tdt_stimulus_channel_to_frequency = {"H10_": 10.0, "H20_": 20.0, "H40_": 40.0, "H05_": 5.0}
     mat_stim_ch_names = ["s250ms", "s1s", "s4s"]
-    stream_indices = None
-    raw_sampling_frequency = 6103.5156
-    fill_gaps = True
     add_video_conversion = False
 
     # Handle exception for SN pan GABA recordings
@@ -253,17 +293,6 @@ def varying_frequencies_session_to_nwb(
     else:
         if recording_type == "SN pan GABA recordings" and stimulus_location == "STN":
             mat_stim_ch_names = ["s250ms5mW", "s1s10mW"]
-            stream_indices = [2]
-            raw_sampling_frequency = 24414.0625
-            fill_gaps = False
-        elif recording_type == "Str_DA_terminal recordings":
-            stream_indices = [2]
-            raw_sampling_frequency = 24414.0625
-            fill_gaps = False
-        elif recording_type == "Cell_type recordings_Vglut2" and subject_id in ["C1496", "C1498", "C1499"]:
-            stream_indices = [2]
-            raw_sampling_frequency = 24414.0625
-            fill_gaps = False
 
         tdt_folder_paths = list(protocol_folder_path.glob(f"varFreq_*/{subject_id}-*"))
         # Sort the folders based on the session_starting_time_string. Under the assumption that the folders are named as {subject_id}-{day_string:%y%m%d}-{%H%M%S}
@@ -278,6 +307,12 @@ def varying_frequencies_session_to_nwb(
                 ordered_mat_stim_ch_names.append(mat_stim_ch_names[2])
             else:
                 raise ValueError(f"Unknown sub-session folder name: {folder.parent.name}")
+
+    raw_stream_settings = get_raw_stream_settings(tdt_folder_paths[0])
+    stream_indices = raw_stream_settings["stream_indices"]
+    raw_sampling_frequency = raw_stream_settings["sampling_frequency"]
+    # Gaps between blocks are NaN-padded on the 6 kHz rig only, as before
+    fill_gaps = raw_stream_settings["rig_name"] == "RZ10x"
 
     mat_file_path = list(protocol_folder_path.glob("*.mat"))
     if len(mat_file_path) == 0:
@@ -479,8 +514,6 @@ def varying_durations_session_to_nwb(  #
         "ss4_": 40.0,
     }  # include typos
     mat_stim_ch_name = "LP5mW"
-    stream_indices = None
-    raw_sampling_frequency = 6103.5156
     add_video_conversion = False
 
     # Handle exception for SN pan GABA recordings
@@ -491,8 +524,6 @@ def varying_durations_session_to_nwb(  #
     ):
         # Update the TDT stimulus channel to frequency mapping for this specific case
         tdt_stimulus_channel_to_frequency = {"S1s_": 40.0, "S4s_": 40.0, "S6s_": 40.0, "Sms_": 40.0}
-        stream_indices = [2]
-        raw_sampling_frequency = 24414.0625
     mat_file_path = list(protocol_folder_path.glob("*.mat"))
     if len(mat_file_path) == 0:
         raise FileNotFoundError(f"No .mat files found in {protocol_folder_path}")
@@ -514,6 +545,9 @@ def varying_durations_session_to_nwb(  #
     elif len(tdt_folder_path) > 1:
         raise ValueError(f"Multiple TDT folders found in {protocol_folder_path}")
     tdt_folder_path = tdt_folder_path[0]
+    raw_stream_settings = get_raw_stream_settings(tdt_folder_path)
+    stream_indices = raw_stream_settings["stream_indices"]
+    raw_sampling_frequency = raw_stream_settings["sampling_frequency"]
     raw_source_data = dict(
         folder_path=tdt_folder_path,
         stream_names=["Fi1r"],

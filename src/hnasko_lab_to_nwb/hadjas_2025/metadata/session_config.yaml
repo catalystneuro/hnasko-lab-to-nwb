@@ -29,3 +29,13 @@ cohorts:
     genotype: Anxa1
     subgroup_folder_prefix: Anxa1
     inputs: [PPN, STN]
+# Recording rigs, identified by the sampling frequency of the raw Fi1r stream of each TDT block.
+# 24 kHz blocks have three Fi1r channels; only channel 2 carries the photodetector signal.
+# Rig names follow the lab's hardware list and are to be confirmed per block with the lab.
+rigs:
+  RZ10x:
+    fi1r_sampling_frequency: 6103.515625
+    fi1r_signal_channel: null  # one channel
+  RZ5P:
+    fi1r_sampling_frequency: 24414.0625
+    fi1r_signal_channel: 2
