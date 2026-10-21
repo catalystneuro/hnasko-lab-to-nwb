@@ -113,6 +113,15 @@ DeviceModels:
     description: <description of the dichroic mirror model>
     manufacturer: <manufacturer of the dichroic mirror>
     model_number: <model of the dichroic mirror>
+  optogenetic_excitation_source_model:
+    type: ExcitationSourceModel
+    name: optogenetic_excitation_source_model
+    description: Red LED device used for optogenetic stimulation.
+    manufacturer: Shanghai laser
+    model_number: <model of the LED device>
+    source_type: LED
+    excitation_mode: one-photon
+    wavelength_range_in_nm: [580.0, 680.0]
 Devices:
   optical_fiber_DLS:
     type: OpticalFiber
@@ -170,6 +179,11 @@ Devices:
     description: <description of the dichroic mirror>
     serial_number: <serial number of the dichroic mirror>
     device_model_metadata_key: dichroic_mirror_model
+  optogenetic_excitation_source:
+    type: ExcitationSource
+    name: optogenetic_excitation_source
+    description: Red LED device used for optogenetic stimulation.
+    device_model_metadata_key: optogenetic_excitation_source_model
 FiberPhotometry:
   FiberPhotometryViruses:
     viral_vector_gcamp8f:
@@ -360,65 +374,58 @@ Optogenetics:
   excitation_wavelength_in_nm: 635.0
   power_in_mW: 5.0
   OptogeneticViruses:
-    - name: viral_vector_ogen
+    viral_vector_ogen:
+      name: viral_vector_ogen
       description: AAVDJ-Ef1a-pSIO-ChrimsonR-tdTomato (1e13 vg/ml, Vectorbuilder) viral vector was used for optogenetic experiments.
       manufacturer: Vectorbuilder
       construct_name: AAVDJ-Ef1a-pSIO-ChrimsonR-tdTomato
       titer_in_vg_per_ml: 1.0e+13
   OptogeneticVirusInjections:
-    - name: viral_vector_injection_STN
+    viral_vector_injection_STN:
+      name: viral_vector_injection_STN
       description: Viral injection into the Subthalamic Nucleus (STN).
-      viral_vector: viral_vector_ogen
       location: STN
       hemisphere: right
       reference: bregma at the cortical surface
-      ap_in_mm: -2.00
+      ap_in_mm: -2.0
       ml_in_mm: 1.6
       dv_in_mm: -4.5
-      volume_in_uL: 0.150
-    - name: viral_vector_injection_PPN
+      volume_in_uL: 0.15
+      viral_vector_metadata_key: viral_vector_ogen
+    viral_vector_injection_PPN:
+      name: viral_vector_injection_PPN
       description: Viral injection into the Pedunculopontine Nucleus (PPN).
-      viral_vector: viral_vector_ogen
       location: PPN
       hemisphere: right
       reference: bregma at the cortical surface
       ap_in_mm: -4.48
       ml_in_mm: 1.1
       dv_in_mm: -3.75
-      volume_in_uL: 0.150
+      volume_in_uL: 0.15
+      viral_vector_metadata_key: viral_vector_ogen
   OptogeneticEffectors:
-    - name: chrimsonR_STN
+    chrimsonR_STN:
+      name: chrimsonR_STN
       description: ChrimsonR opsin used for optogenetic stimulation injected into the STN.
       manufacturer: Addgene
       label: ChrimsonR-tdTomato
-      viral_vector_injection: viral_vector_injection_STN
-    - name: chrimsonR_PPN
+      viral_vector_injection_metadata_key: viral_vector_injection_STN
+    chrimsonR_PPN:
+      name: chrimsonR_PPN
       description: ChrimsonR opsin used for optogenetic stimulation injected into the PPN.
       manufacturer: Addgene
       label: ChrimsonR-tdTomato
-      viral_vector_injection: viral_vector_injection_PPN
-  ExcitationSourceModels:
-    - name: optogenetic_excitation_source_model
-      description: Red LED device used for optogenetic stimulation.
-      manufacturer: Shanghai laser
-      model_number: <model of the LED device> # TODO add model number
-      source_type: LED
-      excitation_mode: one-photon
-      wavelength_range_in_nm: [580.0, 680.0]
-  ExcitationSources:
-    - name: optogenetic_excitation_source
-      description: Red LED device used for optogenetic stimulation.
-      model: optogenetic_excitation_source_model
+      viral_vector_injection_metadata_key: viral_vector_injection_PPN
   OptogeneticSitesTable:
     name: optogenetic_sites_table
     description: Information about each optogenetic site, including the excitation source, and targeted effector.
     rows:
-      - name: 0
-        excitation_source: optogenetic_excitation_source
-        effector: chrimsonR_STN
-      - name: 1
-        excitation_source: optogenetic_excitation_source
-        effector: chrimsonR_PPN
+      STN:
+        excitation_source_metadata_key: optogenetic_excitation_source
+        effector_metadata_key: chrimsonR_STN
+      PPN:
+        excitation_source_metadata_key: optogenetic_excitation_source
+        effector_metadata_key: chrimsonR_PPN
   OptogeneticEpochsTable:
     name: optogenetic_epochs_table
     description: Table containing optogenetic stimulation epochs.

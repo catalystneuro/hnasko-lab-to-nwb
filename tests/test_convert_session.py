@@ -22,22 +22,22 @@ def test_localize_session_start_time_uses_lab_time_zone(session_start_datetime, 
 def test_filter_optogenetics_metadata_keeps_only_stimulus_location():
     metadata = {
         "Optogenetics": {
-            "OptogeneticEffectors": [
-                {"name": "ChrimsonR_STN_1"},
-                {"name": "ChrimsonR_STN_2"},
-                {"name": "ChrimsonR_PPN"},
-            ],
-            "OptogeneticVirusInjections": [
-                {"name": "injection_STN_1"},
-                {"name": "injection_STN_2"},
-                {"name": "injection_PPN"},
-            ],
+            "OptogeneticEffectors": {
+                "ChrimsonR_STN_1": {"name": "ChrimsonR_STN_1"},
+                "ChrimsonR_STN_2": {"name": "ChrimsonR_STN_2"},
+                "ChrimsonR_PPN": {"name": "ChrimsonR_PPN"},
+            },
+            "OptogeneticVirusInjections": {
+                "injection_STN_1": {"name": "injection_STN_1"},
+                "injection_STN_2": {"name": "injection_STN_2"},
+                "injection_PPN": {"name": "injection_PPN"},
+            },
             "OptogeneticSitesTable": {
-                "rows": [
-                    {"effector": "ChrimsonR_STN_1"},
-                    {"effector": "ChrimsonR_STN_2"},
-                    {"effector": "ChrimsonR_PPN"},
-                ]
+                "rows": {
+                    "STN_1": {"effector_metadata_key": "ChrimsonR_STN_1"},
+                    "STN_2": {"effector_metadata_key": "ChrimsonR_STN_2"},
+                    "PPN": {"effector_metadata_key": "ChrimsonR_PPN"},
+                }
             },
         }
     }
@@ -45,6 +45,6 @@ def test_filter_optogenetics_metadata_keeps_only_stimulus_location():
     filter_optogenetics_metadata(metadata=metadata, stimulus_location="PPN")
 
     optogenetics = metadata["Optogenetics"]
-    assert [item["name"] for item in optogenetics["OptogeneticEffectors"]] == ["ChrimsonR_PPN"]
-    assert [item["name"] for item in optogenetics["OptogeneticVirusInjections"]] == ["injection_PPN"]
-    assert [row["effector"] for row in optogenetics["OptogeneticSitesTable"]["rows"]] == ["ChrimsonR_PPN"]
+    assert list(optogenetics["OptogeneticEffectors"]) == ["ChrimsonR_PPN"]
+    assert list(optogenetics["OptogeneticVirusInjections"]) == ["injection_PPN"]
+    assert list(optogenetics["OptogeneticSitesTable"]["rows"]) == ["PPN"]
