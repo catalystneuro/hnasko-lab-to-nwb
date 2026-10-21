@@ -9,6 +9,7 @@ from pynwb.file import NWBFile
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.fiber_photometry_table import add_fiber_photometry_table_region
 from neuroconv.basedatainterface import BaseDataInterface
 from neuroconv.datainterfaces import TDTFiberPhotometryInterface
+from neuroconv.utils.checks import calculate_regular_series_rate
 
 
 class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
@@ -154,13 +155,10 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
                 timestamps=concatenated_timestamps,
                 sampling_rate=stream.fs,
             )
-            from neuroconv.utils.checks import calculate_regular_series_rate
 
-            calculated_rate = calculate_regular_series_rate(concatenated_timestamps)
-            if calculated_rate is not None:
-                timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=calculated_rate)
-            else:
-                timing_kwargs = dict(timestamps=concatenated_timestamps)
+        # One block, or blocks padded onto one grid, are written with a rate
+        if calculate_regular_series_rate(concatenated_timestamps) is not None:
+            timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=float(stream.fs))
         else:
             timing_kwargs = dict(timestamps=concatenated_timestamps)
 

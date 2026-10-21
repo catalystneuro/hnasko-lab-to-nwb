@@ -9,8 +9,7 @@ import pandas as pd
 
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     load_session_config,
-    varying_durations_session_to_nwb,
-    varying_frequencies_session_to_nwb,
+    session_to_nwb,
 )
 
 
@@ -67,14 +66,7 @@ def dataset_to_nwb(
         exception_file_path = output_dir_path / f"ERROR_sub_{subject_id}-ses_{session_id}.txt"
 
         try:
-            if session_id == "Varying durations":
-                varying_durations_session_to_nwb(
-                    **session_to_nwb_kwargs,
-                )
-            elif session_id == "Varying frequencies":
-                varying_frequencies_session_to_nwb(
-                    **session_to_nwb_kwargs,
-                )
+            session_to_nwb(protocol=session_id, **session_to_nwb_kwargs)
         except Exception:
             with open(
                 exception_file_path,
