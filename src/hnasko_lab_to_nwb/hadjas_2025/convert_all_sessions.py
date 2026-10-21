@@ -8,6 +8,7 @@ from tqdm import tqdm
 import pandas as pd
 
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
+    load_session_config,
     varying_durations_session_to_nwb,
     varying_frequencies_session_to_nwb,
 )
@@ -91,6 +92,9 @@ def get_session_to_nwb_kwargs_per_session(
 ):
     """Get the kwargs for session_to_nwb for each session in the dataset.
 
+    Cohorts, their overview sheet, data folder and converted inputs come from metadata/session_config.yaml.
+    Sessions whose protocol folder does not exist are listed in exceptions.txt in the data folder.
+
     Parameters
     ----------
     data_dir_path : Union[str, Path]
@@ -102,50 +106,34 @@ def get_session_to_nwb_kwargs_per_session(
     -------
     list[dict[str, Any]]
         A list of dictionaries containing the kwargs for session_to_nwb for each session.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the data directory or metadata file does not exist.
     """
-
     data_dir_path = Path(data_dir_path)
     subjects_metadata_file_path = Path(subjects_metadata_file_path)
     exception_file_path = data_dir_path / "exceptions.txt"
     session_to_nwb_kwargs_per_session = []
     session_ids = ["Varying durations", "Varying frequencies"]
-    excel_sheet_names = pd.ExcelFile(subjects_metadata_file_path).sheet_names
-    for sheet_name in excel_sheet_names:
-        with open(exception_file_path, mode="a") as f:
-            f.write(f"Recording type: {sheet_name}\n")
-        subjects_metadata = pd.read_excel(subjects_metadata_file_path, sheet_name=sheet_name).to_dict(orient="records")
-        for subject_metadata in subjects_metadata:
-            with open(exception_file_path, mode="a") as f:
-                f.write(f"Subject {subject_metadata['Animal ID']}\n")
+    session_config = load_session_config()
+    for recording_type, cohort_config in session_config["cohorts"].items():
+        subjects_metadata = pd.read_excel(subjects_metadata_file_path, sheet_name=cohort_config["sheet_name"])
+        if "genotype" in cohort_config:
+            subjects_metadata = subjects_metadata[
+                subjects_metadata["Genotype"].str.contains(cohort_config["genotype"], case=False)
+            ]
+        for subject_metadata in subjects_metadata.to_dict(orient="records"):
             stimulus_location = subject_metadata["Input"]
-            parent_protocol_folder_path = data_dir_path / sheet_name / stimulus_location / "Fiber photometry_TDT"
-            if not parent_protocol_folder_path.exists():
-                # raise FileNotFoundError(f"Folder {cohort_folder_path} does not exist")
-                with open(exception_file_path, mode="a") as f:
-                    f.write(f"Folder {parent_protocol_folder_path} does not exist\n\n")
+            if stimulus_location not in cohort_config["inputs"]:
                 continue
+            parent_protocol_folder_path = (
+                data_dir_path / cohort_config["data_folder"] / stimulus_location / "Fiber photometry_TDT"
+            )
             for session_id in session_ids:
                 protocol_folder_path = parent_protocol_folder_path / session_id
-                if sheet_name == "Cell_type recordings":
-                    genotype = subject_metadata["Genotype"]
-                    if "Anxa1" in genotype:
-                        genotype = "Anxa1"
-                    if "VGlut2" in genotype:
-                        genotype = "Vglut2"
-                    recording_site = subject_metadata["Recording Site"]
-                    protocol_folder_path = protocol_folder_path / f"{genotype} {recording_site}"
-                    recording_type = f"{sheet_name}_{genotype}"
-                else:
-                    recording_type = sheet_name
+                if "subgroup_folder_prefix" in cohort_config:
+                    prefix = cohort_config["subgroup_folder_prefix"]
+                    protocol_folder_path = protocol_folder_path / f"{prefix} {subject_metadata['Recording Site']}"
                 if not protocol_folder_path.exists():
-                    # raise FileNotFoundError(f"Folder {video_folder_path} does not exist")
                     with open(exception_file_path, mode="a") as f:
-                        f.write(f"Session {session_id}\n")
+                        f.write(f"Subject {subject_metadata['Animal ID']}, session {session_id}\n")
                         f.write(f"Folder {protocol_folder_path} does not exist\n\n")
                     continue
 

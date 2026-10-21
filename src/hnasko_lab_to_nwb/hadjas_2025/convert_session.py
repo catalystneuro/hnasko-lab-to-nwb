@@ -15,6 +15,12 @@ from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 METADATA_FOLDER_PATH = Path(__file__).parent / "metadata"
 SHARED_METADATA_FILE_NAMES = ("general_metadata.yaml", "subject_metadata.yaml", "devices_metadata.yaml")
+SESSION_CONFIG_FILE_PATH = METADATA_FOLDER_PATH / "session_config.yaml"
+
+
+def load_session_config() -> dict:
+    """Load the settings that differ between cohorts, protocols and subjects (metadata/session_config.yaml)."""
+    return load_dict_from_file(SESSION_CONFIG_FILE_PATH)
 
 
 def load_cohort_metadata(recording_type: str) -> dict:
