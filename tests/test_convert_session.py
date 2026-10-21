@@ -7,6 +7,8 @@ import pytest
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     filter_optogenetics_metadata,
     find_mat_file_path,
+    find_tdt_folder_paths,
+    get_target_area_for_subject,
     load_session_config,
     localize_session_start_time,
     normalize_hemisphere,
@@ -104,3 +106,25 @@ def test_normalize_hemisphere_fails_on_missing_or_unknown_values(value):
     # e.g. C3096 (DA subtypes) has no hemisphere in the overview sheet
     with pytest.raises(ValueError, match="Unknown hemisphere"):
         normalize_hemisphere(value)
+
+
+def test_find_tdt_folder_paths_matches_lowercase_block_names(tmp_path):
+    # e.g. C4708 (GRAB-DA): block folders and .mat keys are written c4708
+    for relative_path in ("varFreq_4s/c4708-240313-142052", "varFreq_250ms/c4708-240313-140222", "C4709-240313-1"):
+        (tmp_path / relative_path).mkdir(parents=True)
+
+    tdt_folder_paths = find_tdt_folder_paths(protocol_folder_path=tmp_path, subject_id="C4708")
+
+    assert [folder_path.name for folder_path in tdt_folder_paths] == ["c4708-240313-140222", "c4708-240313-142052"]
+
+
+def test_get_target_area_for_subject_matches_lowercase_mat_keys(tmp_path, write_processed_mat_file):
+    file_path = write_processed_mat_file(
+        file_path=tmp_path / "processed.mat",
+        stream_name="Gc_raw",
+        target_area="DLS",
+        subject_id="c4708",
+        segments=dict(s1s=np.ones(5)),
+    )
+
+    assert get_target_area_for_subject(file_path, "C4708") == ("DLS", "c4708")

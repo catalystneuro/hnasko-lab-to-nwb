@@ -84,34 +84,60 @@ def load_cohort_metadata(recording_type: str) -> dict:
     return dict_deep_update(metadata, load_dict_from_file(cohort_file_path))
 
 
-def get_target_area_for_subject(file_path: Path, subject_id: str) -> str:
-    """Extract available sites for a specific subject.
+def get_target_area_for_subject(file_path: Path, subject_id: str) -> tuple[str, str]:
+    """Find the target area group of a subject in a lab .mat file, matching the subject ID case-insensitively.
 
     Parameters
     ----------
     file_path : Path
         Path to the .mat file.
     subject_id : str
-        The subject ID to extract sites for.
+        The subject ID of the overview sheet.
 
     Returns
     -------
-    str
-        The target area associated with the subject.
+    tuple[str, str]
+        The target area group and the subject group name as written in the .mat file (e.g. "c4708").
     """
     import h5py
 
-    try:
-        with h5py.File(file_path, "r") as f:
-            signal_group = f["Gc_raw"]  # assuming the structure is the same for all streams
-            for target_area in signal_group.keys():
-                target_area_group: h5py.Group = signal_group[target_area]
-                # Assuming one target area per subject
-                if subject_id in target_area_group.keys():
-                    return target_area
-        raise ValueError(f"Subject ID {subject_id} not found in the .mat file.")
-    except Exception as e:
-        raise RuntimeError(f"Error extracting the target area for subject {subject_id}: {e}.")
+    with h5py.File(file_path, "r") as f:
+        signal_group = f["Gc_raw"]  # the same groups are in every stream
+        for target_area, target_area_group in signal_group.items():
+            for mat_subject_id in target_area_group.keys():
+                if mat_subject_id.lower() == subject_id.lower():
+                    return target_area, mat_subject_id
+    raise ValueError(f"Subject {subject_id} not found in {file_path}.")
+
+
+def find_tdt_folder_paths(protocol_folder_path: Path, subject_id: str) -> list[Path]:
+    """Find the TDT blocks of a subject in a protocol folder, in chronological order.
+
+    Blocks are named {subject_id}-{yymmdd}-{HHMMSS}, with the subject ID in either case, and are in the
+    protocol folder or in its varFreq_* subfolders.
+
+    Parameters
+    ----------
+    protocol_folder_path : Path
+        The protocol folder.
+    subject_id : str
+        The subject ID of the overview sheet.
+
+    Returns
+    -------
+    list[Path]
+        The block folders, sorted by recording date and time.
+    """
+    candidate_folder_paths = list(protocol_folder_path.iterdir())
+    candidate_folder_paths += list(protocol_folder_path.glob("varFreq_*/*"))
+    tdt_folder_paths = [
+        folder_path
+        for folder_path in candidate_folder_paths
+        if folder_path.is_dir() and folder_path.name.lower().startswith(f"{subject_id.lower()}-")
+    ]
+    if len(tdt_folder_paths) == 0:
+        raise FileNotFoundError(f"No TDT block for {subject_id} in {protocol_folder_path}")
+    return sorted(tdt_folder_paths, key=lambda folder_path: folder_path.name.split("-", 1)[1])
 
 
 def normalize_hemisphere(hemisphere) -> str:
@@ -297,13 +323,11 @@ def session_to_nwb(
     which has one block for all durations.
     """
     subject_id = subject_metadata["Animal ID"]
-    if subject_id in ["C4708", "C4709", "C4977", "C4978", "C3015", "C3016", "C4379", "C5113"]:
-        subject_id = subject_id.lower()
 
     session_config = load_session_config()
     protocol_config = session_config["protocols"][protocol]
     cohort_config = session_config["cohorts"][recording_type]
-    subject_config = session_config["subjects"].get(subject_metadata["Animal ID"], {})
+    subject_config = session_config["subjects"].get(subject_id, {})
     mat_cohort_folder = subject_config.get("mat_cohort_folder", cohort_config["data_folder"])
     session_id = protocol_config["session_id"]
     if subject_id in ["C5904", "C5966", "C5964", "C6609", "C6299", "C6612", "C6901", "C7241", "C7242"]:
@@ -320,12 +344,7 @@ def session_to_nwb(
     if normalize_hemisphere(subject_metadata["Hemisphere"]) == "Left":
         editable_metadata = update_coordinates_for_left_hemisphere(editable_metadata)
 
-    # TDT blocks, in chronological order (folders are named {subject_id}-{yymmdd}-{HHMMSS})
-    tdt_folder_paths = list(protocol_folder_path.glob(f"{subject_id}-*"))
-    tdt_folder_paths += list(protocol_folder_path.glob(f"varFreq_*/{subject_id}-*"))
-    if len(tdt_folder_paths) == 0:
-        raise FileNotFoundError(f"No TDT block for {subject_id} in {protocol_folder_path}")
-    tdt_folder_paths.sort(key=lambda folder_path: folder_path.name.split("-")[-2] + folder_path.name.split("-")[-1])
+    tdt_folder_paths = find_tdt_folder_paths(protocol_folder_path=protocol_folder_path, subject_id=subject_id)
 
     # Segments of the lab's .mat file, one per block
     if protocol == "Varying durations":
@@ -354,7 +373,7 @@ def session_to_nwb(
         cohort_data_folder=cohort_config["data_folder"],
         mat_cohort_folder=mat_cohort_folder,
     )
-    target_area = get_target_area_for_subject(mat_file_path, subject_id)
+    target_area, mat_subject_id = get_target_area_for_subject(mat_file_path, subject_id)
     raw_target_area = target_area
     if target_area in ("STN_to_Anxa1", "PPN_to_Anxa1"):
         raw_target_area = subject_metadata["Recording Site"]
@@ -374,7 +393,7 @@ def session_to_nwb(
 
     # Extract session starting time from TDT data
     # Assume that the tdt folders are named as {subject_id}-{session_starting_time_string}
-    session_starting_time_string = tdt_folder_paths[0].name.replace(f"{subject_id}-", "")
+    session_starting_time_string = tdt_folder_paths[0].name.split("-", 1)[1]
     session_start_datetime = datetime.strptime(session_starting_time_string, "%y%m%d-%H%M%S")
 
     segment_starting_times = ConcatenatedTDTFiberPhotometryInterface(**raw_source_data).segment_starting_times
@@ -390,7 +409,7 @@ def session_to_nwb(
     for stream_name, interface_name in stream_to_interface_name.items():
         source_data[interface_name] = dict(
             file_path=mat_file_path,
-            subject_id=subject_id,
+            subject_id=mat_subject_id,
             stream_name=stream_name,
             target_area=target_area,
             sampling_frequency=raw_stream_settings["sampling_frequency"] if "raw" in stream_name else 100.0,
