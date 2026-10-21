@@ -256,7 +256,9 @@ def varying_frequencies_session_to_nwb(
     if subject_id in ["C4708", "C4709", "C4977", "C4978", "C3015", "C3016", "C4379", "C5113"]:
         subject_id = subject_id.lower()
 
-    session_id = "varying_frequencies"
+    session_config = load_session_config()
+    protocol_config = session_config["protocols"]["Varying frequencies"]
+    session_id = protocol_config["session_id"]
     if subject_id in ["C5904", "C5966", "C5964", "C6609", "C6299", "C6612", "C6901", "C7241", "C7242"]:
         session_id = f"{session_id}_{subject_metadata['Recording Site']}"
 
@@ -270,24 +272,19 @@ def varying_frequencies_session_to_nwb(
     nwbfile_path = output_dir_path / f"sub-{subject_id}_ses-{session_id}.nwb"
 
     # Define session description and stimulation parameters
-    session_description = (
-        "The subject is placed in a plastic tub and undergoes 3 recording sessions corresponding "
-        "to a fixed duration of stimulation (i.e., 250ms, 1s, and 4s). Each session lasted 8 minutes. "
-        "The subject receives optogenetic stimulation at varying frequencies "
-        "(5 Hz, 10 Hz , 20 Hz and 40 Hz) 5 times for each duration with an ISI of 10s. "
-    )
+    session_description = protocol_config["session_description"]
 
     editable_metadata = load_cohort_metadata(recording_type)
     if subject_metadata["Hemisphere"] == "Left":
         editable_metadata = update_coordinates_for_left_hemisphere(editable_metadata)
 
-    tdt_stimulus_channel_to_frequency = {"H10_": 10.0, "H20_": 20.0, "H40_": 40.0, "H05_": 5.0}
+    tdt_stimulus_channel_to_frequency = protocol_config["epoc_name_to_frequency_in_hz"]
     mat_stim_ch_names = ["s250ms", "s1s", "s4s"]
-    add_video_conversion = False
+    cohort_config = session_config["cohorts"][recording_type]
+    add_video_conversion = stimulus_location in cohort_config.get("behavioral_video_inputs", [])
 
     # Handle exception for SN pan GABA recordings
-    if recording_type == "SN pan GABA recordings" and stimulus_location == "PPN":
-        add_video_conversion = True
+    if add_video_conversion:
         tdt_folder_paths = list(protocol_folder_path.glob(f"{subject_id}-*"))
         ordered_mat_stim_ch_names = ["AllDurs"]
     else:
@@ -481,7 +478,9 @@ def varying_durations_session_to_nwb(  #
     if subject_id in ["C4708", "C4709", "C4977", "C4978", "C3015", "C3016", "C4379", "C5113"]:
         subject_id = subject_id.lower()
 
-    session_id = "varying_durations"
+    session_config = load_session_config()
+    protocol_config = session_config["protocols"]["Varying durations"]
+    session_id = protocol_config["session_id"]
     if subject_id in ["C5904", "C5966", "C5964", "C6609", "C6299", "C6612", "C6901", "C7241", "C7242"]:
         session_id = f"{session_id}_{subject_metadata['Recording Site']}"
 
@@ -495,35 +494,17 @@ def varying_durations_session_to_nwb(  #
     nwbfile_path = output_dir_path / f"sub-{subject_id}_ses-{session_id}.nwb"
 
     # Define session description and stimulation parameters
-    session_description = (
-        "The subject is placed in a plastic tub and is recorded for 3.5 minutes. "
-        "The subject receives a 40 Hz stimulation at various durations (i.e. 250ms, 1s and 4s) "
-        "5 times for each duration) with an inter-stimulus interval (ISI) of 10s. "
-    )
+    session_description = protocol_config["session_description"]
 
     editable_metadata = load_cohort_metadata(recording_type)
     if subject_metadata["Hemisphere"] == "Left":
         editable_metadata = update_coordinates_for_left_hemisphere(editable_metadata)
 
-    tdt_stimulus_channel_to_frequency = {
-        "sms_": 40.0,
-        "s1s_": 40.0,
-        "s4s_": 40.0,
-        "ssm_": 40.0,
-        "ss1_": 40.0,
-        "ss4_": 40.0,
-    }  # include typos
+    tdt_stimulus_channel_to_frequency = protocol_config["epoc_name_to_frequency_in_hz"]
     mat_stim_ch_name = "LP5mW"
-    add_video_conversion = False
+    cohort_config = session_config["cohorts"][recording_type]
+    add_video_conversion = stimulus_location in cohort_config.get("behavioral_video_inputs", [])
 
-    # Handle exception for SN pan GABA recordings
-    if recording_type == "SN pan GABA recordings" and stimulus_location == "PPN":
-        add_video_conversion = True
-    elif (recording_type == "SN pan GABA recordings" and stimulus_location == "STN") or (
-        recording_type == "Str_DA_terminal recordings"
-    ):
-        # Update the TDT stimulus channel to frequency mapping for this specific case
-        tdt_stimulus_channel_to_frequency = {"S1s_": 40.0, "S4s_": 40.0, "S6s_": 40.0, "Sms_": 40.0}
     mat_file_path = list(protocol_folder_path.glob("*.mat"))
     if len(mat_file_path) == 0:
         raise FileNotFoundError(f"No .mat files found in {protocol_folder_path}")

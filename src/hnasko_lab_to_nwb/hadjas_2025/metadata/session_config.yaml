@@ -5,6 +5,7 @@ cohorts:
     sheet_name: SNr GABA  # sheet of ASAP FP Overview.xlsx
     data_folder: SN pan GABA recordings
     inputs: [PPN, STN]
+    behavioral_video_inputs: [PPN]  # AnyMaze videos, aligned to the TDT clock
   SN pan DA recordings:
     sheet_name: SNc pan-DA
     data_folder: SN pan DA recordings
@@ -39,3 +40,29 @@ rigs:
   RZ5P:
     fi1r_sampling_frequency: 24414.0625
     fi1r_signal_channel: 2
+# Protocols, keyed by the protocol folder name. Stimulation trains are TDT epocs; each epoc name maps to the
+# pulse frequency of its trains. Some blocks name the duration stores ssm_, ss1_ and ss4_; the 24 kHz rig
+# names them Sms_, S1s_, S4s_ and S6s_.
+protocols:
+  Varying durations:
+    session_id: varying_durations
+    session_description: "The subject is placed in a plastic tub and is recorded for 3.5 minutes. The subject receives a 40 Hz stimulation at various durations (i.e. 250ms, 1s and 4s) 5 times for each duration) with an inter-stimulus interval (ISI) of 10s. "
+    epoc_name_to_frequency_in_hz:
+      sms_: 40.0
+      s1s_: 40.0
+      s4s_: 40.0
+      ssm_: 40.0
+      ss1_: 40.0
+      ss4_: 40.0
+      S1s_: 40.0
+      S4s_: 40.0
+      S6s_: 40.0
+      Sms_: 40.0
+  Varying frequencies:
+    session_id: varying_frequencies
+    session_description: "The subject is placed in a plastic tub and undergoes 3 recording sessions corresponding to a fixed duration of stimulation (i.e., 250ms, 1s, and 4s). Each session lasted 8 minutes. The subject receives optogenetic stimulation at varying frequencies (5 Hz, 10 Hz , 20 Hz and 40 Hz) 5 times for each duration with an ISI of 10s. "
+    epoc_name_to_frequency_in_hz:
+      H10_: 10.0
+      H20_: 20.0
+      H40_: 40.0
+      H05_: 5.0

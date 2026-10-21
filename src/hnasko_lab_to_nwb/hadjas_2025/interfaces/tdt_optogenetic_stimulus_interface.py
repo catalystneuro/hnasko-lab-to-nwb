@@ -216,9 +216,13 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         opto_epochs_table.add_column(name="stimulus_frequency", description="Frequency of the stimulation in Hz.")
         # Populate
         tdt_events = self.get_events()
+        if not set(tdt_stimulus_channel_to_frequency) & set(tdt_events):
+            raise ValueError(
+                f"None of the stimulation epocs {list(tdt_stimulus_channel_to_frequency)} is in the TDT events "
+                f"{list(tdt_events)}."
+            )
         for stream_name, stimulus_frequency in tdt_stimulus_channel_to_frequency.items():
             if stream_name not in tdt_events:
-                warning(f"Stream name {stream_name} not found in TDT events. Skipping.")
                 continue
             for start_time, stop_time in zip(tdt_events[stream_name]["onset"], tdt_events[stream_name]["offset"]):
                 if np.isinf(start_time) or np.isinf(stop_time):
@@ -378,9 +382,13 @@ class ConcatenatedHadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         opto_epochs_table.add_column(name="stimulus_frequency", description="Frequency of the stimulation in Hz.")
         # Populate
         tdt_events = self.get_concatenated_events()
+        if not set(tdt_stimulus_channel_to_frequency) & set(tdt_events):
+            raise ValueError(
+                f"None of the stimulation epocs {list(tdt_stimulus_channel_to_frequency)} is in the TDT events "
+                f"{list(tdt_events)}."
+            )
         for stream_name, stimulus_frequency in tdt_stimulus_channel_to_frequency.items():
             if stream_name not in tdt_events:
-                warning(f"Stream name {stream_name} not found in TDT events. Skipping.")
                 continue
             for start_time, stop_time in zip(tdt_events[stream_name]["onset"], tdt_events[stream_name]["offset"]):
                 if np.isinf(start_time) or np.isinf(stop_time):
