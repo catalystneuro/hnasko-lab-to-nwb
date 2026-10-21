@@ -39,6 +39,6 @@ def test_concatenated_tdt_interface_stub_test_keeps_one_second_per_segment(
     interface = make_concatenated_tdt_interface(num_samples=500)
     nwbfile = mock_NWBFile()
 
-    interface.add_to_nwbfile(nwbfile=nwbfile, metadata=anxa1_metadata, stream_name="Fi1r", stub_test=True)
+    interface.add_to_nwbfile(nwbfile=nwbfile, metadata=anxa1_metadata, stub_test=True)
 
     assert len(nwbfile.acquisition["raw_signal_SNc"].data) == 3 * 100

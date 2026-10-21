@@ -25,12 +25,9 @@ class FakeTDTInterface:
     def _end_index(self, t2: float) -> int:
         return int(t2 * self._sampling_frequency) if t2 != 0.0 else len(self._data)
 
-    def load(self, t1: float = 0.0, t2: float = 0.0):
+    def load(self, t1: float = 0.0, t2: float = 0.0, evtype: list[str] = ["all"], store: str | None = None):
         stream = SimpleNamespace(data=self._data[: self._end_index(t2)], fs=self._sampling_frequency)
         return SimpleNamespace(streams=dict(Fi1r=stream))
-
-    def get_timestamps(self, t1: float = 0.0, t2: float = 0.0) -> dict:
-        return dict(Fi1r=np.arange(self._end_index(t2)) / self._sampling_frequency)
 
 
 @pytest.fixture
@@ -68,6 +65,9 @@ def make_concatenated_tdt_interface():
             for duration in ("250ms", "1s", "4s")
         ]
         interface.segment_starting_times = SEGMENT_STARTING_TIMES
+        interface.stream_name = "Fi1r"
+        interface.metadata_key = "Fi1r_SNc"
+        interface.stream_indices = None
         return interface
 
     return make
