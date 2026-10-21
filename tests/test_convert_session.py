@@ -143,3 +143,15 @@ def test_every_anxa1_session_id_carries_the_recording_site_of_its_folder():
     assert get_session_id("Varying durations", "Cell_type recordings_Anxa1", recording_site) == "varying_durations_DLS"
     assert get_session_id("Varying frequencies", "Cell_type recordings_Vglut2", "SNc") == "varying_frequencies"
     assert get_session_id("Varying durations", "GRABDA recordings", None) == "varying_durations"
+
+
+def test_find_tdt_folder_paths_fails_on_a_block_nested_in_another_block(tmp_path):
+    # e.g. varFreq_1s/C3164-240314-120848/C5008-240314-154241 in the lab's data share
+    block_folder_path = tmp_path / "varFreq_1s" / "C3164-240314-120848"
+    nested_block_folder_path = block_folder_path / "C5008-240314-154241"
+    nested_block_folder_path.mkdir(parents=True)
+    (block_folder_path / "block.tsq").touch()
+    (nested_block_folder_path / "block.tsq").touch()
+
+    with pytest.raises(ValueError, match="holds another block, C5008-240314-154241"):
+        find_tdt_folder_paths(protocol_folder_path=tmp_path, subject_id="C3164")

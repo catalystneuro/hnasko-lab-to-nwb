@@ -114,7 +114,7 @@ def find_tdt_folder_paths(protocol_folder_path: Path, subject_id: str) -> list[P
     """Find the TDT blocks of a subject in a protocol folder, in chronological order.
 
     Blocks are named {subject_id}-{yymmdd}-{HHMMSS}, with the subject ID in either case, and are in the
-    protocol folder or in its varFreq_* subfolders.
+    protocol folder or in its varFreq_* subfolders. A block folder holding another block raises.
 
     Parameters
     ----------
@@ -137,6 +137,13 @@ def find_tdt_folder_paths(protocol_folder_path: Path, subject_id: str) -> list[P
     ]
     if len(tdt_folder_paths) == 0:
         raise FileNotFoundError(f"No TDT block for {subject_id} in {protocol_folder_path}")
+    for folder_path in tdt_folder_paths:
+        nested_tsq_file_paths = list(folder_path.glob("*/*.tsq"))
+        if nested_tsq_file_paths:
+            raise ValueError(
+                f"TDT block {folder_path} holds another block, {nested_tsq_file_paths[0].parent.name}. "
+                "Move nested blocks out of block folders before converting."
+            )
     return sorted(tdt_folder_paths, key=lambda folder_path: folder_path.name.split("-", 1)[1])
 
 
