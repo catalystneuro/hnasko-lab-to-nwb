@@ -67,6 +67,7 @@ protocols:
       H20_: 20.0
       H40_: 40.0
       H05_: 5.0
+      HH5_: 5.0  # name of the 5 Hz store in the frequencies blocks of C3412, C3798 and C4707 (Vglut2, PPN)
 # Per-subject exceptions.
 subjects:
   # The processed signals of the 2022 SN pan DA STN subjects are in the SN pan GABA STN .mat files (site SNc).
