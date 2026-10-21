@@ -48,6 +48,8 @@ protocols:
   Varying durations:
     session_id: varying_durations
     session_description: "The subject is placed in a plastic tub and is recorded for 3.5 minutes. The subject receives a 40 Hz stimulation at various durations (i.e. 250ms, 1s and 4s) 5 times for each duration) with an inter-stimulus interval (ISI) of 10s. "
+    session_description_by_epoc:  # replaces session_description for blocks with this epoc (2022 recordings)
+      S6s_: "The subject is placed in a plastic tub and receives 40 Hz optogenetic stimulation trains of 250 ms, 1 s, 4 s and 16 s, in this order, with 10 s between the end of one train and the start of the next. The sequence is repeated 5 or 10 times depending on the cohort; the optogenetic epochs table lists every train."
     epoc_name_to_frequency_in_hz:
       sms_: 40.0
       s1s_: 40.0
