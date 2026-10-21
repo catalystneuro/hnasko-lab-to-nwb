@@ -80,7 +80,6 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
         nwbfile: NWBFile,
         metadata: dict,
         *,
-        trial_tags: list[str] | None = None,
         stub_test: bool = False,
         t1: float = 0.0,
         t2: float = 0.0,
@@ -94,8 +93,6 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
             The in-memory object to add the data to.
         metadata : dict
             Metadata dictionary with information used to create the NWBFile.
-        trial_tags : list[str], optional
-            Tag of the trial added for each block when there are several, e.g. its train duration.
         stub_test : bool, optional
             If True, only add a subset of the data (1s) to the NWBFile for testing purposes, default = False.
         t1 : float, optional
@@ -133,10 +130,6 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
 
             data_segments.append(data)
             timestamps_segments.append(timestamps)
-
-            # Add trials for each segment
-            if trial_tags is not None and len(self._folder_paths) > 1:
-                nwbfile.add_trial(start_time=timestamps[0], stop_time=timestamps[-1], tags=trial_tags[i])
 
         concatenated_data = np.concatenate(data_segments)
         concatenated_timestamps = np.concatenate(timestamps_segments)

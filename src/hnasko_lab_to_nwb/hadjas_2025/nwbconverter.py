@@ -16,7 +16,13 @@ from neuroconv.datainterfaces import ExternalVideoInterface
 class Hadjas2025NWBConverter(NWBConverter):
     """Primary conversion class for the Hadjas 2025 fiber photometry and optogenetics dataset."""
 
-    def __init__(self, source_data: dict, verbose: bool = True, video_time_alignment_dict: Optional[dict] = None):
+    def __init__(
+        self,
+        source_data: dict,
+        verbose: bool = True,
+        video_time_alignment_dict: Optional[dict] = None,
+        block_trials: Optional[list[dict]] = None,
+    ):
         """
         Initialize the NWBConverter with source data and optional video time alignment.
 
@@ -28,6 +34,9 @@ class Hadjas2025NWBConverter(NWBConverter):
             Whether to print verbose output during conversion, by default True.
         video_time_alignment_dict : Optional[dict], optional
             Dictionary for aligning video timestamps with session metadata, by default None.
+        block_trials : Optional[list[dict]], optional
+            One trial per TDT block of a session of several blocks, as add_trial arguments
+            (start_time, stop_time, tags), by default None.
         """
         data_interface_name_mapping = {
             "Video": ExternalVideoInterface,
@@ -44,6 +53,7 @@ class Hadjas2025NWBConverter(NWBConverter):
 
         super().__init__(source_data=source_data, verbose=verbose)
         self.video_time_alignment_dict = video_time_alignment_dict or {}
+        self.block_trials = block_trials or []
 
     def temporally_align_data_interfaces(self, metadata: dict | None = None, conversion_options: dict | None = None):
         # Keep the frame times of each .mp4 (frames were dropped in the AnyMaze export) and shift them to the TDT clock
@@ -55,13 +65,10 @@ class Hadjas2025NWBConverter(NWBConverter):
 
     def add_to_nwbfile(self, nwbfile: NWBFile, metadata, conversion_options: Optional[dict] = None) -> None:
         super().add_to_nwbfile(nwbfile=nwbfile, metadata=metadata, conversion_options=conversion_options)
-        # if "FiberPhotometry" in self.data_interface_objects.keys():
-        #     tdt_interface = self.data_interface_objects["FiberPhotometry"]
-        #     tdt_events = tdt_interface.get_events()
 
-        #     if "OptogeneticStimulusInterval" in metadata["Stimulus"]:
-        #         add_optogenetic_stimulation(nwbfile=nwbfile, metadata=metadata, tdt_events=tdt_events)
-
+        # Trials: one per TDT block, or one per behavioral video for the single block of SN pan GABA PPN sessions
+        for trial in self.block_trials:
+            nwbfile.add_trial(**trial)
         for interface_name, interface in self.data_interface_objects.items():
             if interface_name in ["Video_250ms", "Video_1s", "Video_4s"]:
                 (key,) = interface.temporal_alignment.keys()
