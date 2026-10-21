@@ -5,12 +5,15 @@ from pathlib import Path
 from typing import Union
 from zoneinfo import ZoneInfo
 
+import numpy as np
+
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface import (
     ConcatenatedTDTFiberPhotometryInterface,
 )
 from hnasko_lab_to_nwb.hadjas_2025.nwbconverter import Hadjas2025NWBConverter
 from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import (
     clear_tdt_block_cache,
+    read_tdt_epocs,
     read_tdt_start_timestamp,
     read_tdt_stream,
 )
@@ -217,6 +220,86 @@ def update_coordinates_for_left_hemisphere(metadata: dict) -> dict:
     return updated_metadata
 
 
+TRAIN_DURATION_IN_S_TO_LABEL = {0.25: "250ms", 1.0: "1s", 4.0: "4s", 16.0: "16s"}
+
+
+def get_train_duration_label(folder_path: Path, epoc_names: list[str]) -> str:
+    """Label a TDT block by the duration of its stimulation trains, read from the epocs (e.g. "250ms").
+
+    Parameters
+    ----------
+    folder_path : Path
+        Path to the TDT block folder.
+    epoc_names : list[str]
+        Names of the stimulation epocs of the protocol.
+
+    Returns
+    -------
+    str
+        The label of the median train duration of the block.
+    """
+    epocs = read_tdt_epocs(Path(folder_path))
+    durations = np.concatenate(
+        [np.asarray(epocs[name]["offset"]) - np.asarray(epocs[name]["onset"]) for name in epoc_names if name in epocs]
+        or [np.array([])]
+    )
+    durations = durations[np.isfinite(durations)]
+    if durations.size == 0:
+        raise ValueError(f"No stimulation epocs {epoc_names} with an offset in {folder_path}.")
+    median_duration = float(np.median(durations))
+    train_duration = min(TRAIN_DURATION_IN_S_TO_LABEL, key=lambda duration: abs(duration - median_duration))
+    if abs(train_duration - median_duration) > 0.1 * train_duration:
+        raise ValueError(f"Train duration {median_duration} s of {folder_path} is not one of the protocol's.")
+    return TRAIN_DURATION_IN_S_TO_LABEL[train_duration]
+
+
+def match_mat_segments(
+    mat_file_path: Path, target_area: str, mat_subject_id: str, folder_paths: list[Path]
+) -> list[str]:
+    """Find the segment of the lab's .mat file that holds each TDT block, by number of samples.
+
+    Each segment of the demodulated raw-rate signal (Gc_raw) has as many samples as the Fi1r stream of its block.
+    Segment names follow the lab's folder names, which are wrong for some blocks (e.g. the swapped varFreq_250ms
+    and varFreq_4s folders of C4604 and C8972), so they are not used. A session with one block and one segment
+    uses that segment whatever its length: the lab trimmed some single-block recordings (e.g. C3163 varying
+    durations).
+
+    Parameters
+    ----------
+    mat_file_path : Path
+        The lab's .mat file.
+    target_area : str
+        The target area group of the subject.
+    mat_subject_id : str
+        The subject group, as written in the .mat file.
+    folder_paths : list[Path]
+        The TDT blocks of the session.
+
+    Returns
+    -------
+    list[str]
+        One segment name per block.
+    """
+    import h5py
+
+    with h5py.File(mat_file_path, "r") as f:
+        subject_group = f["Gc_raw"][target_area][mat_subject_id]
+        segment_name_to_length = {name: subject_group[name].shape[-1] for name in subject_group}
+    if len(folder_paths) == 1 and len(segment_name_to_length) == 1:
+        return list(segment_name_to_length)
+    segment_names = []
+    for folder_path in folder_paths:
+        number_of_samples = np.asarray(read_tdt_stream(Path(folder_path), "Fi1r").data).shape[-1]
+        matches = [name for name, length in segment_name_to_length.items() if length == number_of_samples]
+        if len(matches) != 1:
+            raise ValueError(
+                f"Expected one segment of {mat_subject_id} in {mat_file_path.name} with {number_of_samples} samples "
+                f"for {folder_path.name}; segment lengths are {segment_name_to_length}."
+            )
+        segment_names.append(matches[0])
+    return segment_names
+
+
 def get_recording_site(recording_type: str, protocol_folder_path: Path) -> str | None:
     """Get the recording site of a Cell_type session from its subgroup folder ("Anxa1 DLS" gives "DLS").
 
@@ -396,24 +479,6 @@ def session_to_nwb(
 
     tdt_folder_paths = find_tdt_folder_paths(protocol_folder_path=protocol_folder_path, subject_id=subject_id)
 
-    # Segments of the lab's .mat file, one per block
-    if protocol == "Varying durations":
-        mat_segment_names = ["LP5mW"]
-    elif len(tdt_folder_paths) == 1:
-        mat_segment_names = ["AllDurs"]
-    else:
-        duration_mat_segment_names = ["s250ms", "s1s", "s4s"]
-        if mat_cohort_folder == "SN pan GABA recordings" and stimulus_location == "STN":
-            duration_mat_segment_names = ["s250ms5mW", "s1s10mW"]
-        folder_name_to_index = dict(varFreq_250ms=0, varFreq_1s=1, varFreq_4s=2)
-        mat_segment_names = []
-        for folder_path in tdt_folder_paths:
-            if folder_path.parent.name not in folder_name_to_index:
-                raise ValueError(f"Unknown sub-session folder name: {folder_path.parent.name}")
-            mat_segment_names.append(duration_mat_segment_names[folder_name_to_index[folder_path.parent.name]])
-    if len(mat_segment_names) != len(tdt_folder_paths):
-        raise ValueError(f"Expected {len(mat_segment_names)} TDT blocks in {protocol_folder_path}")
-
     raw_stream_settings = get_raw_stream_settings(tdt_folder_paths[0])
     # Gaps between blocks are NaN-padded on the 6 kHz rig only, as before
     fill_gaps = raw_stream_settings["rig_name"] == "RZ10x"
@@ -424,6 +489,17 @@ def session_to_nwb(
         mat_cohort_folder=mat_cohort_folder,
     )
     target_area, mat_subject_id = get_target_area_for_subject(mat_file_path, subject_id)
+    mat_segment_names = match_mat_segments(
+        mat_file_path=mat_file_path,
+        target_area=target_area,
+        mat_subject_id=mat_subject_id,
+        folder_paths=tdt_folder_paths,
+    )
+    # Varying-frequencies blocks have one train duration each; a session of several blocks has one trial per block
+    trial_tags = None
+    if len(tdt_folder_paths) > 1:
+        epoc_names = list(protocol_config["epoc_name_to_frequency_in_hz"])
+        trial_tags = [get_train_duration_label(folder_path, epoc_names) for folder_path in tdt_folder_paths]
     # The Anxa1 .mat files group subjects by stimulus site; their series are keyed by recording site
     raw_target_area = recording_site if target_area in ("STN_to_Anxa1", "PPN_to_Anxa1") else target_area
 
@@ -438,7 +514,7 @@ def session_to_nwb(
         stream_indices=raw_stream_settings["stream_indices"],
     )
     source_data.update(RawFiberPhotometry=raw_source_data)
-    conversion_options.update(RawFiberPhotometry=dict(stub_test=stub_test, fill_gaps=fill_gaps))
+    conversion_options.update(RawFiberPhotometry=dict(stub_test=stub_test, fill_gaps=fill_gaps, trial_tags=trial_tags))
 
     session_start_time = get_session_start_time(read_tdt_start_timestamp(tdt_folder_paths[0]))
 
