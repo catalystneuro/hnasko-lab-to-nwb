@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
@@ -8,6 +9,7 @@ from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     find_mat_file_path,
     load_session_config,
     localize_session_start_time,
+    normalize_hemisphere,
 )
 
 
@@ -90,3 +92,15 @@ def test_session_config_points_2022_sn_pan_da_stn_subjects_to_the_sn_pan_gaba_ma
     subjects_config = load_session_config()["subjects"]
     for subject_id in ("B8364", "B8369", "B8370", "B8427", "B8429", "B8612"):
         assert subjects_config[subject_id]["mat_cohort_folder"] == "SN pan GABA recordings"
+
+
+@pytest.mark.parametrize("value, hemisphere", [("Left", "Left"), ("L", "Left"), ("Right", "Right"), ("R", "Right")])
+def test_normalize_hemisphere_reads_full_and_short_values(value, hemisphere):
+    assert normalize_hemisphere(value) == hemisphere
+
+
+@pytest.mark.parametrize("value", [np.nan, "", "both"])
+def test_normalize_hemisphere_fails_on_missing_or_unknown_values(value):
+    # e.g. C3096 (DA subtypes) has no hemisphere in the overview sheet
+    with pytest.raises(ValueError, match="Unknown hemisphere"):
+        normalize_hemisphere(value)
