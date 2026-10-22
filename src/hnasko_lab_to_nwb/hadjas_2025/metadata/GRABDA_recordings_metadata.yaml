@@ -249,17 +249,17 @@ FiberPhotometry:
       of TS.
   dF_DLS:
     name: deltaF_over_F_DLS
-    description: The deltaF/F signal from GRABDA2m dopamine indicator in DLS neurons, excited at 465nm and calculated as (Gc
-      - fitted_af) / fitted_af.
-    unit: a.u.
+    description: The deltaF/F signal from GRABDA2m dopamine indicator in DLS neurons, excited at 465nm and calculated in percent as 100 * (Gc -
+      fitted_af) / fitted_af.
+    unit: percent
     fiber_photometry_table_region: [DLS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal
       of DLS.
   dF_TS:
     name: deltaF_over_F_TS
-    description: The deltaF/F signal from GRABDA2m dopamine indicator in TS neurons, excited at 465nm and calculated as (Gc
-      - fitted_af) / fitted_af.
-    unit: a.u.
+    description: The deltaF/F signal from GRABDA2m dopamine indicator in TS neurons, excited at 465nm and calculated in percent as 100 * (Gc -
+      fitted_af) / fitted_af.
+    unit: percent
     fiber_photometry_table_region: [TS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal
       of TS.

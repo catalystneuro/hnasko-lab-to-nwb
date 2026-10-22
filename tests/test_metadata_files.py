@@ -125,3 +125,13 @@ def test_opsin_injection_volume_and_titer_are_the_upper_bounds_of_the_ranges(rec
         assert "150 to 200 nl" in injection["description"]
     expected_titer = 1.0e13 if recording_type == "Cell_type recordings_Anxa1" else 8.5e12
     assert optogenetics["OptogeneticViruses"]["viral_vector_ogen"]["titer_in_vg_per_ml"] == expected_titer
+
+
+@pytest.mark.parametrize("recording_type", sorted(load_session_config()["cohorts"]))
+def test_delta_f_over_f_is_in_percent(recording_type):
+    # the lab's MATLAB code computes dF = 100 * (Gc - fit) / fit (issue #21, finding 8)
+    fiber_photometry = load_cohort_metadata(recording_type)["FiberPhotometry"]
+
+    delta_f_over_f_keys = [key for key in fiber_photometry if key.startswith("dF_")]
+    assert delta_f_over_f_keys
+    assert all(fiber_photometry[key]["unit"] == "percent" for key in delta_f_over_f_keys)
