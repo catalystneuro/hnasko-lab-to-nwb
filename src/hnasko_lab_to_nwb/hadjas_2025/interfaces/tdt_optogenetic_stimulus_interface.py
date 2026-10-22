@@ -6,6 +6,7 @@ from pydantic import DirectoryPath, validate_call
 from pynwb.file import NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import read_tdt_epocs, read_tdt_start_timestamp
+from hnasko_lab_to_nwb.hadjas_2025.utils.train_durations import label_train_duration
 from neuroconv.basetemporalalignmentinterface import BaseDataInterface
 from neuroconv.tools.nwb_helpers import _add_device_to_nwbfile
 from neuroconv.utils import DeepDict
@@ -237,12 +238,19 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
                 continue
             onsets = np.asarray(tdt_events[stream_name]["onset"], dtype=float)
             offsets = np.asarray(tdt_events[stream_name]["offset"], dtype=float)
-            # Trains without an offset (recording stopped first) or of zero length are not written
-            is_valid = np.isfinite(onsets) & np.isfinite(offsets) & (offsets > onsets)
+            # Trains without an offset (recording stopped first), of zero length, or of a duration that is not the
+            # protocol's (electrical artifacts, e.g. the 0.54 s events of C2659) are not written
+            train_durations = [label_train_duration(duration) for duration in offsets - onsets]
+            is_valid = (
+                np.isfinite(onsets)
+                & np.isfinite(offsets)
+                & (offsets > onsets)
+                & np.array([train_duration is not None for train_duration in train_durations], dtype=bool)
+            )
             if not is_valid.all():
                 logger.warning(
                     f"Dropped {np.count_nonzero(~is_valid)} of {is_valid.size} {stream_name} trains without an "
-                    f"offset or of zero length."
+                    f"offset, of zero length or of a duration that is not the protocol's."
                 )
             trains.extend(
                 (start_time, stop_time, stimulus_frequency)
