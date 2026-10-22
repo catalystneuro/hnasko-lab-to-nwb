@@ -5,12 +5,11 @@ import h5py
 import numpy as np
 import pytest
 
+from hnasko_lab_to_nwb.hadjas_2025.convert_session import load_cohort_metadata
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface import (
     ConcatenatedTDTFiberPhotometryInterface,
 )
-from neuroconv.utils import load_dict_from_file
 
-METADATA_FOLDER_PATH = Path(__file__).parents[1] / "src" / "hnasko_lab_to_nwb" / "hadjas_2025" / "metadata"
 SEGMENT_STARTING_TIMES = [0.0, 10.0, 20.0]
 
 
@@ -25,17 +24,14 @@ class FakeTDTInterface:
     def _end_index(self, t2: float) -> int:
         return int(t2 * self._sampling_frequency) if t2 != 0.0 else len(self._data)
 
-    def load(self, t1: float = 0.0, t2: float = 0.0):
+    def load(self, t1: float = 0.0, t2: float = 0.0, evtype: list[str] = ["all"], store: str | None = None):
         stream = SimpleNamespace(data=self._data[: self._end_index(t2)], fs=self._sampling_frequency)
         return SimpleNamespace(streams=dict(Fi1r=stream))
-
-    def get_timestamps(self, t1: float = 0.0, t2: float = 0.0) -> dict:
-        return dict(Fi1r=np.arange(self._end_index(t2)) / self._sampling_frequency)
 
 
 @pytest.fixture
 def anxa1_metadata() -> dict:
-    return load_dict_from_file(METADATA_FOLDER_PATH / "Cell_type_recordings_Anxa1_metadata.yaml")
+    return load_cohort_metadata("Cell_type recordings_Anxa1")
 
 
 @pytest.fixture
@@ -55,19 +51,22 @@ def write_processed_mat_file():
 
 @pytest.fixture
 def make_concatenated_tdt_interface():
-    """Return a function that builds a ConcatenatedTDTFiberPhotometryInterface over three fake 100 Hz blocks."""
+    """Return a function that builds a ConcatenatedTDTFiberPhotometryInterface over three fake blocks."""
 
-    def make(num_samples: int) -> ConcatenatedTDTFiberPhotometryInterface:
+    def make(num_samples: int, sampling_frequency: float = 100.0) -> ConcatenatedTDTFiberPhotometryInterface:
         interface = ConcatenatedTDTFiberPhotometryInterface.__new__(ConcatenatedTDTFiberPhotometryInterface)
         interface._tdt_interfaces = [
             FakeTDTInterface(
                 folder_path=Path(f"varFreq_{duration}") / "C0001-240101-120000",
                 data=np.ones(num_samples, dtype="float32"),
-                sampling_frequency=100.0,
+                sampling_frequency=sampling_frequency,
             )
             for duration in ("250ms", "1s", "4s")
         ]
         interface.segment_starting_times = SEGMENT_STARTING_TIMES
+        interface.stream_name = "Fi1r"
+        interface.metadata_key = "Fi1r_SNc"
+        interface.stream_indices = None
         return interface
 
     return make

@@ -10,20 +10,19 @@ readme = "README.md"
 authors = [{ name = "CatalystNeuro", email = "ben.dichter@catalystneuro.com" }]
 maintainers = [{ name = "CatalystNeuro", email = "ben.dichter@catalystneuro.com" }]
 license = { file = "LICENSE" }
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
 
 dependencies = [
-  "neuroconv==0.8.2",
+  "neuroconv @ git+https://github.com/catalystneuro/neuroconv.git@2ea9985805b36e0738a6f823585c2a8ed69272b2",
   "nwbinspector",
-  "ndx-fiber-photometry==0.2.2",
+  "ndx-fiber-photometry==0.2.4",
   "ndx-ophys-devices==0.3.1",
-  "ndx-optogenetics",
+  "ndx-optogenetics==0.4.1",
   "openpyxl",
   "opencv-python-headless",
   "tdt",
