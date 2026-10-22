@@ -184,88 +184,104 @@ FiberPhotometry:
         dichroic_mirror_metadata_key: dichroic_mirror
   Fi1r_DLS:
     name: raw_signal_DLS
-    description: The raw modulated fluorescence signal from GRABDA2m dopamine indicator in DLS neurons, excited at 465nm and
-      415nm, respectively.
+    description: Raw photodetector signal of the dorsolateral striatum (DLS) fiber (TDT Fi1r store). It carries the
+      GRABDA2m fluorescence excited by the 465 nm and 415 nm LEDs, each modulated at its own frequency (see the
+      excitation sources); the processed series in the ophys module are demodulated from it.
     fiber_photometry_table_region: [DLS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal in DLS.
   Fi1r_TS:
     name: raw_signal_TS
-    description: The raw modulated fluorescence signal from GRABDA2m dopamine indicator in TS neurons, excited at 465nm and
-      415nm, respectively.
+    description: Raw photodetector signal of the tail of the striatum (TS) fiber (TDT Fi1r store). It carries the
+      GRABDA2m fluorescence excited by the 465 nm and 415 nm LEDs, each modulated at its own frequency (see the
+      excitation sources); the processed series in the ophys module are demodulated from it.
     fiber_photometry_table_region: [TS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal in TS.
   Gc_raw_DLS:
     name: demodulated_calcium_signal_DLS
-    description: The demodulated fluorescence signal from GRABDA2m dopamine indicator in DLS neurons, excited at 465nm.
+    description: GRABDA2m fluorescence in the dorsolateral striatum (DLS) excited at 465 nm (the sensor), computed by the
+      lab with custom MATLAB code, which demodulated it from the raw signal and lowpass filtered at 6 Hz with a zero-phase
+      filter, at the sampling rate of the raw signal.
     unit: a.u.
     fiber_photometry_table_region: [DLS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
       of DLS.
   af_raw_DLS:
     name: demodulated_isosbestic_control_DLS
-    description: The demodulated fluorescence signal from GRABDA2m for isosbestic control in DLS neurons, excited at 415nm.
+    description: GRABDA2m fluorescence in the dorsolateral striatum (DLS) excited at 415 nm (the isosbestic control),
+      computed by the lab with custom MATLAB code, which demodulated it from the raw signal and lowpass filtered at 6 Hz with a
+      zero-phase filter, at the sampling rate of the raw signal.
     unit: a.u.
     fiber_photometry_table_region: [DLS_415]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
       of DLS.
   Gc_raw_TS:
     name: demodulated_calcium_signal_TS
-    description: The demodulated fluorescence signal from GRABDA2m dopamine indicator in TS neurons, excited at 465nm.
+    description: GRABDA2m fluorescence in the tail of the striatum (TS) excited at 465 nm (the sensor), computed by the
+      lab with custom MATLAB code, which demodulated it from the raw signal and lowpass filtered at 6 Hz with a zero-phase
+      filter, at the sampling rate of the raw signal.
     unit: a.u.
     fiber_photometry_table_region: [TS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
       of TS.
   af_raw_TS:
     name: demodulated_isosbestic_control_TS
-    description: The demodulated fluorescence signal from GRABDA2m for isosbestic control in TS neurons, excited at 415nm.
+    description: GRABDA2m fluorescence in the tail of the striatum (TS) excited at 415 nm (the isosbestic control),
+      computed by the lab with custom MATLAB code, which demodulated it from the raw signal and lowpass filtered at 6 Hz with a
+      zero-phase filter, at the sampling rate of the raw signal.
     unit: a.u.
     fiber_photometry_table_region: [TS_415]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
       of TS.
   Gc_DLS:
     name: downsampled_calcium_signal_DLS
-    description: The downsampled fluorescence signal from GRABDA2m dopamine indicator in DLS neurons, excited at 465nm and
-      downsampled at 100Hz.
+    description: GRABDA2m fluorescence in the dorsolateral striatum (DLS) excited at 465 nm (the sensor), computed by the
+      lab with custom MATLAB code, which demodulated it, lowpass filtered it at 6 Hz with a zero-phase filter and downsampled to
+      100 Hz.
     unit: a.u.
     fiber_photometry_table_region: [DLS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
       of DLS.
   af_DLS:
     name: downsampled_isosbestic_control_DLS
-    description: The downsampled fluorescence signal from GRABDA2m for isosbestic control in DLS neurons, excited at 415nm
-      and downsampled at 100Hz.
+    description: GRABDA2m fluorescence in the dorsolateral striatum (DLS) excited at 415 nm (the isosbestic control),
+      computed by the lab with custom MATLAB code, which demodulated it, lowpass filtered it at 6 Hz with a zero-phase filter and
+      downsampled to 100 Hz.
     unit: a.u.
     fiber_photometry_table_region: [DLS_415]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
       of DLS.
   Gc_TS:
     name: downsampled_calcium_signal_TS
-    description: The downsampled fluorescence signal from GRABDA2m dopamine indicator in TS neurons, excited at 465nm and
-      downsampled at 100Hz.
+    description: GRABDA2m fluorescence in the tail of the striatum (TS) excited at 465 nm (the sensor), computed by the
+      lab with custom MATLAB code, which demodulated it, lowpass filtered it at 6 Hz with a zero-phase filter and downsampled to
+      100 Hz.
     unit: a.u.
     fiber_photometry_table_region: [TS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
       of TS.
   af_TS:
     name: downsampled_isosbestic_control_TS
-    description: The downsampled fluorescence signal from GRABDA2m for isosbestic control in TS neurons, excited at 415nm
-      and downsampled at 100Hz.
+    description: GRABDA2m fluorescence in the tail of the striatum (TS) excited at 415 nm (the isosbestic control),
+      computed by the lab with custom MATLAB code, which demodulated it, lowpass filtered it at 6 Hz with a zero-phase filter and
+      downsampled to 100 Hz.
     unit: a.u.
     fiber_photometry_table_region: [TS_415]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
       of TS.
   dF_DLS:
     name: deltaF_over_F_DLS
-    description: The deltaF/F signal from GRABDA2m dopamine indicator in DLS neurons, excited at 465nm and calculated in percent as 100 * (Gc -
-      fitted_af) / fitted_af.
+    description: dF/F of the GRABDA2m signal in the dorsolateral striatum (DLS), in percent, computed by the lab with
+      custom MATLAB code. A biexponential curve was fit to the 100 Hz isosbestic signal and scaled to the 100 Hz 465
+      nm signal by robust linear regression; dF/F = 100 * (465 nm signal - scaled fit) / scaled fit.
     unit: percent
     fiber_photometry_table_region: [DLS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal
       of DLS.
   dF_TS:
     name: deltaF_over_F_TS
-    description: The deltaF/F signal from GRABDA2m dopamine indicator in TS neurons, excited at 465nm and calculated in percent as 100 * (Gc -
-      fitted_af) / fitted_af.
+    description: dF/F of the GRABDA2m signal in the tail of the striatum (TS), in percent, computed by the lab with custom
+      MATLAB code. A biexponential curve was fit to the 100 Hz isosbestic signal and scaled to the 100 Hz 465 nm
+      signal by robust linear regression; dF/F = 100 * (465 nm signal - scaled fit) / scaled fit.
     unit: percent
     fiber_photometry_table_region: [TS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal

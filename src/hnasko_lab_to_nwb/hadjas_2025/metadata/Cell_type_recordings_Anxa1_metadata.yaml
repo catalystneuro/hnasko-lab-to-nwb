@@ -172,89 +172,104 @@ FiberPhotometry:
         dichroic_mirror_metadata_key: dichroic_mirror
   Fi1r_SNc:
     name: raw_signal_SNc
-    description: The raw modulated fluorescence signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm
-      and 405nm, respectively.
+    description: Raw photodetector signal of the substantia nigra pars compacta (SNc) fiber (TDT Fi1r store). It
+      carries the GCaMP8f fluorescence excited by the 465 nm and 405 nm LEDs, each modulated at its own frequency (see
+      the excitation sources); the processed series in the ophys module are demodulated from it.
     fiber_photometry_table_region: [SNc_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
   Fi1r_DLS:
     name: raw_signal_DLS
-    description: The raw modulated fluorescence signal from GCaMP8f in DLS Anxa1+ neurons, excited at 465nm and 405nm, respectively.
+    description: Raw photodetector signal of the dorsolateral striatum (DLS) fiber (TDT Fi1r store). It carries the
+      GCaMP8f fluorescence excited by the 465 nm and 405 nm LEDs, each modulated at its own frequency (see the
+      excitation sources); the processed series in the ophys module are demodulated from it.
     fiber_photometry_table_region: [DLS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal in DLS.
   Gc_raw_SNc:
     name: demodulated_calcium_signal_SNc
-    description: The demodulated fluorescence signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm.
+    description: GCaMP8f fluorescence in the substantia nigra pars compacta (SNc) excited at 465 nm (the sensor), computed
+      by the lab with custom MATLAB code, which demodulated it from the raw signal and lowpass filtered at 6 Hz with a
+      zero-phase filter, at the sampling rate of the raw signal.
     unit: a.u.
     fiber_photometry_table_region: [SNc_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
       of SNc.
   af_raw_SNc:
     name: demodulated_isosbestic_control_SNc
-    description: The demodulated fluorescence signal from GCaMP8f for isosbestic control in SNc Anxa1+ neurons, excited at
-      405nm.
+    description: GCaMP8f fluorescence in the substantia nigra pars compacta (SNc) excited at 405 nm (the isosbestic
+      control), computed by the lab with custom MATLAB code, which demodulated it from the raw signal and lowpass filtered at 6
+      Hz with a zero-phase filter, at the sampling rate of the raw signal.
     unit: a.u.
     fiber_photometry_table_region: [SNc_405]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
       of SNc.
   Gc_SNc:
     name: downsampled_calcium_signal_SNc
-    description: The downsampled fluorescence signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm
-      and downsampled at 100Hz.
+    description: GCaMP8f fluorescence in the substantia nigra pars compacta (SNc) excited at 465 nm (the sensor), computed
+      by the lab with custom MATLAB code, which demodulated it, lowpass filtered it at 6 Hz with a zero-phase filter and
+      downsampled to 100 Hz.
     unit: a.u.
     fiber_photometry_table_region: [SNc_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
       of SNc.
   af_SNc:
     name: downsampled_isosbestic_control_SNc
-    description: The downsampled fluorescence signal from GCaMP8f for isosbestic control in SNc Anxa1+ neurons, excited at
-      405nm and downsampled at 100Hz.
+    description: GCaMP8f fluorescence in the substantia nigra pars compacta (SNc) excited at 405 nm (the isosbestic
+      control), computed by the lab with custom MATLAB code, which demodulated it, lowpass filtered it at 6 Hz with a zero-phase
+      filter and downsampled to 100 Hz.
     unit: a.u.
     fiber_photometry_table_region: [SNc_405]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
       of SNc.
   dF_SNc:
     name: deltaF_over_F_SNc
-    description: The deltaF/F signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm and calculated in percent as 100 * (Gc -
-      fitted_af) / fitted_af.
+    description: dF/F of the GCaMP8f signal in the substantia nigra pars compacta (SNc), in percent, computed by the lab
+      with custom MATLAB code. A biexponential curve was fit to the 100 Hz isosbestic signal and scaled to the 100 Hz
+      465 nm signal by robust linear regression; dF/F = 100 * (465 nm signal - scaled fit) / scaled fit.
     unit: percent
     fiber_photometry_table_region: [SNc_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal
       of SNc.
   Gc_raw_DLS:
     name: demodulated_calcium_signal_DLS
-    description: The demodulated fluorescence signal from GCaMP8f dopamine indicator in DLS Anxa1+ terminals, excited at 465nm.
+    description: GCaMP8f fluorescence in the dorsolateral striatum (DLS) excited at 465 nm (the sensor), computed by the
+      lab with custom MATLAB code, which demodulated it from the raw signal and lowpass filtered at 6 Hz with a zero-phase
+      filter, at the sampling rate of the raw signal.
     unit: a.u.
     fiber_photometry_table_region: [DLS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
       of DLS.
   af_raw_DLS:
     name: demodulated_isosbestic_control_DLS
-    description: The demodulated fluorescence signal from GCaMP8f for isosbestic control in DLS Anxa1+ terminals, excited
-      at 405nm.
+    description: GCaMP8f fluorescence in the dorsolateral striatum (DLS) excited at 405 nm (the isosbestic control),
+      computed by the lab with custom MATLAB code, which demodulated it from the raw signal and lowpass filtered at 6 Hz with a
+      zero-phase filter, at the sampling rate of the raw signal.
     unit: a.u.
     fiber_photometry_table_region: [DLS_405]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
       of DLS.
   Gc_DLS:
     name: downsampled_calcium_signal_DLS
-    description: The downsampled fluorescence signal from GCaMP8f dopamine indicator in DLS Anxa1+ terminals, excited at 465nm
-      and downsampled at 100Hz.
+    description: GCaMP8f fluorescence in the dorsolateral striatum (DLS) excited at 465 nm (the sensor), computed by the
+      lab with custom MATLAB code, which demodulated it, lowpass filtered it at 6 Hz with a zero-phase filter and downsampled to
+      100 Hz.
     unit: a.u.
     fiber_photometry_table_region: [DLS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
       of DLS.
   af_DLS:
     name: downsampled_isosbestic_control_DLS
-    description: The downsampled fluorescence signal from GCaMP8f for isosbestic control in DLS Anxa1+ terminals, excited
-      at 405nm and downsampled at 100Hz.
+    description: GCaMP8f fluorescence in the dorsolateral striatum (DLS) excited at 405 nm (the isosbestic control),
+      computed by the lab with custom MATLAB code, which demodulated it, lowpass filtered it at 6 Hz with a zero-phase filter and
+      downsampled to 100 Hz.
     unit: a.u.
     fiber_photometry_table_region: [DLS_405]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
       of DLS.
   dF_DLS:
     name: deltaF_over_F_DLS
-    description: The deltaF/F signal from GCaMP8f dopamine indicator in DLS Anxa1+ terminals, excited at 465nm and calculated in percent as 100 * (Gc -
-      fitted_af) / fitted_af.
+    description: dF/F of the GCaMP8f signal in the dorsolateral striatum (DLS), in percent, computed by the lab with
+      custom MATLAB code. A biexponential curve was fit to the 100 Hz isosbestic signal and scaled to the 100 Hz 465
+      nm signal by robust linear regression; dF/F = 100 * (465 nm signal - scaled fit) / scaled fit.
     unit: percent
     fiber_photometry_table_region: [DLS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal
