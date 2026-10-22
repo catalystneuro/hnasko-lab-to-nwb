@@ -1,3 +1,5 @@
+"""Raw fiber photometry signal of the TDT blocks of a session, concatenated in time."""
+
 from datetime import datetime
 from typing import List
 
@@ -13,12 +15,21 @@ from neuroconv.utils.checks import calculate_regular_series_rate
 
 
 class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
-    """
-    Data Interface for converting and concatenating fiber photometry data from multiple TDT output folders.
+    """Write the raw photodetector signal of the TDT blocks of a session as one fiber photometry series.
 
-    Each TDT output folder consists of a variety of TDT-specific file types (e.g. Tbk, Tdx, tev, tin, tsq).
-    One stream is read from each folder with the tdt.read_block function, concatenated, and written as a single
-    FiberPhotometryResponseSeries in the ndx-fiber-photometry format.
+    Input files: the TDT block folders of one session (.Tbk, .Tdx, .tev, .tin and .tsq files). Varying-durations
+    sessions have one block; varying-frequencies sessions have one block per train duration, except SN pan GABA
+    PPN, which has one. One stream store (Fi1r, the photodetector signal before demodulation) is read from each
+    block, and one of its channels is kept.
+
+    NWB objects written:
+
+    - a FiberPhotometryResponseSeries in nwbfile.acquisition, named by the response series metadata. The blocks
+      are concatenated in time. A single block is written with a starting time and rate; several blocks are
+      written with timestamps, each block starting at its recording time from the start of the first block.
+    - the devices of the FiberPhotometryTable rows in nwbfile.devices, and the FiberPhotometry lab metadata
+      (nwbfile.lab_meta_data["fiber_photometry"], with the viruses, injections, indicators and
+      FiberPhotometryTable), if no other interface added them first.
     """
 
     keywords = ("fiber photometry", "concatenated")
@@ -40,15 +51,21 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
         Parameters
         ----------
         folder_paths : List[DirectoryPath]
-            The paths to the TDT output folders, in chronological order.
+            The TDT block folders of the session, in chronological order.
         stream_name : str
             The TDT stream (store) to concatenate, e.g. "Fi1r".
         metadata_key : str
-            Key of the response series metadata under metadata["FiberPhotometry"].
+            Key of the response series metadata under metadata["FiberPhotometry"], e.g. "Fi1r_SNr".
         stream_indices : list of int, optional
-            Channels of the stream to keep. None keeps all channels.
+            The channel of a multichannel stream that holds the signal (get_rig_settings), e.g. [2] for the
+            three-channel Fi1r of RZ5P blocks. None for a stream of one channel.
         verbose : bool, optional
             Whether to print status messages, default = False.
+
+        Raises
+        ------
+        AssertionError
+            If the blocks are not in chronological order.
         """
         super().__init__(
             folder_paths=folder_paths,
@@ -84,21 +101,29 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
         t1: float = 0.0,
         t2: float = 0.0,
     ):
-        """
-        Add the data to an NWBFile.
+        """Add the concatenated raw series to the acquisition of an NWBFile.
 
         Parameters
         ----------
         nwbfile : pynwb.NWBFile
             The in-memory object to add the data to.
         metadata : dict
-            Metadata dictionary with information used to create the NWBFile.
+            Metadata dictionary with the "Devices", "DeviceModels" and "FiberPhotometry" sections. The response
+            series metadata under metadata["FiberPhotometry"][metadata_key] gives its name, description and
+            fiber_photometry_table_region.
         stub_test : bool, optional
-            If True, only add a subset of the data (1s) to the NWBFile for testing purposes, default = False.
+            If True, only add the first second of each block to the NWBFile for testing purposes, default = False.
         t1 : float, optional
-            Retrieve data starting at t1 (in seconds), default = 0 for start of recording.
+            Retrieve data of each block starting at t1 (in seconds from the block start), default = 0 for start of
+            recording.
         t2 : float, optional
-            Retrieve data ending at t2 (in seconds), default = 0 for end of recording.
+            Retrieve data of each block ending at t2 (in seconds from the block start), default = 0 for end of
+            recording.
+
+        Raises
+        ------
+        ValueError
+            If more than one channel of the stream would be kept.
         """
         from ndx_fiber_photometry import FiberPhotometryResponseSeries
 

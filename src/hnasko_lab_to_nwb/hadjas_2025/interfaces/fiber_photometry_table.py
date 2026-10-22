@@ -1,3 +1,5 @@
+"""FiberPhotometryTable region shared by the raw and processed fiber photometry interfaces."""
+
 from pynwb.file import NWBFile
 
 from neuroconv.tools.fiber_photometry import (
