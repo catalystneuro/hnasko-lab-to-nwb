@@ -9,11 +9,13 @@ from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     filter_optogenetics_metadata,
     find_mat_file_path,
     find_tdt_folder_paths,
+    get_raw_series_site,
     get_recording_site,
     get_session_description,
     get_session_start_time,
     get_session_id,
     get_target_area_for_subject,
+    load_cohort_metadata,
     load_session_config,
     normalize_hemisphere,
 )
@@ -147,6 +149,24 @@ def test_every_anxa1_session_id_carries_the_recording_site_of_its_folder():
     assert get_session_id("Varying durations", "Cell_type recordings_Anxa1", recording_site) == "varying_durations_DLS"
     assert get_session_id("Varying frequencies", "Cell_type recordings_Vglut2", "SNc") == "varying_frequencies"
     assert get_session_id("Varying durations", "GRABDA recordings", None) == "varying_durations"
+
+
+@pytest.mark.parametrize(
+    "recording_type, sheet_site, recording_site",
+    [
+        ("GRABDA recordings", "TS", None),
+        ("SN pan GABA recordings", "SNr", None),
+        ("Cell_type recordings_Vglut2", "SNc", "SNc"),
+        ("Cell_type recordings_Anxa1", "SNc", "DLS"),  # e.g. C5903: "SNc" in the sheet, blocks in Anxa1 DLS
+    ],
+)
+def test_raw_series_site_has_metadata_without_the_lab_mat(recording_type, sheet_site, recording_site):
+    raw_series_site = get_raw_series_site(
+        subject_metadata={"Recording Site": sheet_site}, recording_site=recording_site
+    )
+
+    assert raw_series_site == (recording_site or sheet_site)
+    assert f"Fi1r_{raw_series_site}" in load_cohort_metadata(recording_type)["FiberPhotometry"]
 
 
 def test_find_tdt_folder_paths_fails_on_a_block_nested_in_another_block(tmp_path):
