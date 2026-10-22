@@ -201,3 +201,11 @@ def test_processed_series_describe_the_lab_processing_steps(recording_type):
             assert "downsampled to 100 Hz" in description, key
         if key.startswith("dF_"):
             assert "biexponential" in description and "robust linear regression" in description, key
+
+
+@pytest.mark.parametrize("recording_type", sorted(load_session_config()["cohorts"]))
+def test_every_device_has_a_description(recording_type):
+    # NWB Inspector check_description
+    devices = load_cohort_metadata(recording_type)["Devices"]
+
+    assert [key for key, device in devices.items() if not device.get("description")] == []
