@@ -218,4 +218,5 @@ Optogenetics:
         effector_metadata_key: chrimsonR_PPN
   OptogeneticEpochsTable:
     name: optogenetic_epochs_table
-    description: Table containing optogenetic stimulation epochs.
+    description: One row per optogenetic stimulation train, from the train onset and offset events stored by TDT Synapse.
+      The pulse width was not recorded, so pulse_length_in_ms is NaN.
