@@ -1,7 +1,7 @@
 # Metadata for Hadjas 2025 --> Striatal DA terminal GCaMP6f recordings, STN stim
 NWBFile:
   keywords: [DLS fiber photometry recordings, TS fiber photometry recordings, dopaminergic axon terminals, VGLUT2-Cre x DAT-Flp,
-    STN optogenetic stimulation, PPN optogenetic stimulation, Parkinson's disease]
+    STN optogenetic stimulation, Parkinson's disease]
   experiment_description: Dopaminergic axon terminals recordings. Mice were freely moving on a plastic tub. Simultaneous passive
     optogenetic stimulation and fiber photometry recordings were conducted during the first two days. Excitatory inputs from
     either the STN or PPN to SN were stimulated. Recordings of GCaMP6f fluorescence signal captured striatal DA terminal activity
