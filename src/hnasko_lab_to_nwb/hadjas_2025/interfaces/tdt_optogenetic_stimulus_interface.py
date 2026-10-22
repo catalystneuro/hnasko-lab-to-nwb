@@ -41,11 +41,10 @@ def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
         ViralVectorInjection,
     )
 
-    #  check if Optogenetic lab metadata already exists
-    if "optogenetics" in nwbfile.lab_meta_data:
-        optogenetics = nwbfile.lab_meta_data["optogenetics"]
-        if isinstance(optogenetics, OptogeneticExperimentMetadata):
-            return optogenetics
+    # Reuse the optogenetic experiment metadata if it was already added (its name is fixed by ndx-optogenetics)
+    for lab_meta_data in nwbfile.lab_meta_data.values():
+        if isinstance(lab_meta_data, OptogeneticExperimentMetadata):
+            return lab_meta_data
 
     optogenetics_metadata = metadata["Optogenetics"]
 
