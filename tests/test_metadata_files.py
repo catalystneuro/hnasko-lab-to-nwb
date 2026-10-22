@@ -72,3 +72,12 @@ def test_every_rig_of_the_session_config_has_a_device_set():
     assert set(load_dict_from_file(METADATA_FOLDER_PATH / "rig_devices_metadata.yaml")) == set(
         load_session_config()["rigs"]
     )
+
+
+@pytest.mark.parametrize("rig_name", ["RZ5P", "RZ10x"])
+@pytest.mark.parametrize("recording_type", sorted(load_session_config()["cohorts"]))
+def test_every_device_model_has_a_manufacturer(recording_type, rig_name):
+    # manufacturer is required by every ndx-ophys-devices model
+    metadata = dict_deep_update(load_cohort_metadata(recording_type), load_rig_devices_metadata(rig_name))
+
+    assert [key for key, model in metadata["DeviceModels"].items() if not model.get("manufacturer")] == []

@@ -19,18 +19,27 @@ DeviceModels:
   emission_filter_model:
     type: BandOpticalFilterModel
     name: emission_filter_model
+    description: Part of the 5-port fluorescence mini cube (Doric Lenses) that filters and combines the excitation light and separates
+      the emitted fluorescence.
+    manufacturer: Doric Lenses
     filter_type: Bandpass
     center_wavelength_in_nm: 520.0
     bandwidth_in_nm: 40.0
   excitation_filter_model:
     type: BandOpticalFilterModel
     name: excitation_filter_model
+    description: Part of the 5-port fluorescence mini cube (Doric Lenses) that filters and combines the excitation light and separates
+      the emitted fluorescence.
+    manufacturer: Doric Lenses
     filter_type: Bandpass
     center_wavelength_in_nm: 445.0
     bandwidth_in_nm: 90.0
   dichroic_mirror_model:
     type: DichroicMirrorModel
     name: dichroic_mirror_model
+    description: Part of the 5-port fluorescence mini cube (Doric Lenses) that filters and combines the excitation light and separates
+      the emitted fluorescence.
+    manufacturer: Doric Lenses
   optogenetic_excitation_source_model:
     type: ExcitationSourceModel
     name: optogenetic_excitation_source_model
