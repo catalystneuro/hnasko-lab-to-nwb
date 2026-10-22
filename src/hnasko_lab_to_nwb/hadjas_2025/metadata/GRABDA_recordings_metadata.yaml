@@ -15,7 +15,7 @@ NWBFile:
     vg/ml, Addgene 62723) was injected in either STN (AP -2.00, ML +/-1.6, DV -4.5) or PPN (AP -4.48, ML +/- 1.1, DV -3.75).
     Mice were allowed to recover for 4 weeks before starting experiments.
 Subject:
-  genotype: VGlut2-cre
+  genotype: VGLUT2-Cre
 DeviceModels:
   optical_fiber_model_stimulation:
     type: OpticalFiberModel

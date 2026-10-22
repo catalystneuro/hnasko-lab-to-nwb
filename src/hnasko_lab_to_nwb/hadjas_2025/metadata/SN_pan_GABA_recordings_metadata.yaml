@@ -13,7 +13,7 @@ NWBFile:
     DV -4.4). For optogenetic stimulation, 150-200 nl of AAV5-Syn-FLEX-ChrimsonR-tdTomato (4 - 8.5e12 vg/ml, Addgene 62723)
     was injected in either STN (AP -2.00, ML +/-1.6, DV -4.5) or PPN (AP -4.48, ML +/- 1.1, DV -3.75).
 Subject:
-  genotype: VGlut2-cre x VGAT-flp
+  genotype: VGLUT2-Cre x VGAT-Flp
 Behavior:
   ExternalVideos:
     BehavioralVideo:

@@ -16,7 +16,7 @@ NWBFile:
     stimulation, 150-200 nl of AAV5-Syn-FLEX-ChrimsonR-tdTomato (4 - 8.5e12 vg/ml, Addgene 62723) was injected in STN (AP
     -2.00, ML +/-1.6, DV -4.5).
 Subject:
-  genotype: VGlut2-cre x DAT-flp
+  genotype: VGLUT2-Cre x DAT-Flp
 DeviceModels:
   optical_fiber_model_stimulation:
     type: OpticalFiberModel

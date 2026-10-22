@@ -42,7 +42,7 @@ def test_load_cohort_metadata_merges_shared_files_with_cohort_overrides():
 
     assert metadata["NWBFile"]["lab"] == "Hnasko"
     assert metadata["Subject"]["species"] == "Mus musculus"
-    assert metadata["Subject"]["genotype"] == "VGlut2-cre"
+    assert metadata["Subject"]["genotype"] == "VGLUT2-Cre"
     isosbestic_model = metadata["DeviceModels"]["excitation_source_model_isosbestic"]
     assert isosbestic_model["source_type"] == "LED"
     assert isosbestic_model["wavelength_range_in_nm"] == [410.0, 420.0]
@@ -141,3 +141,11 @@ def test_related_publication_is_a_doi():
     assert load_cohort_metadata("GRABDA recordings")["NWBFile"]["related_publications"] == [
         "doi:10.1101/2025.06.03.657460"
     ]
+
+
+@pytest.mark.parametrize("recording_type", sorted(load_session_config()["cohorts"]))
+def test_genotype_names_the_mouse_lines_as_the_preprint_does(recording_type):
+    # e.g. "VGLUT2-Cre x DAT-Flp": line names of the preprint, joined by " x "
+    lines = load_cohort_metadata(recording_type)["Subject"]["genotype"].split(" x ")
+
+    assert set(lines) <= {"VGLUT2-Cre", "VGAT-Flp", "DAT-Flp", "VGLUT2-PhiC31", "Anxa1-Cre"}
