@@ -19,7 +19,6 @@ DeviceModels:
     name: optical_fiber_model_1
     description: Chronically implantable optic fiber.
     manufacturer: RWD
-    model_number: <model of the optical fiber>
     numerical_aperture: 0.39
     core_diameter_in_um: 400.0
     active_length_in_mm: 6.0
@@ -36,14 +35,11 @@ DeviceModels:
     description: emission filter model for GCaMP6f fluorescence signal.
   excitation_filter_model:
     description: excitation filter model for GCaMP6f fluorescence signal.
-  dichroic_mirror_model:
-    description: <description of the dichroic mirror model>
 Devices:
   optical_fiber_SNc:
     type: OpticalFiber
     name: optical_fiber_SNc
     description: Chronically implanted optic fiber.
-    serial_number: <serial number of the optical fiber>
     fiber_insertion:
       insertion_position_ap_in_mm: -3.2
       insertion_position_ml_in_mm: 1.6
@@ -55,12 +51,6 @@ Devices:
     description: excitation source for the sensor's fluorescence signal (465nm) modulated at 210 Hz.
   excitation_source_isosbestic_control:
     description: excitation source for the sensor's isosbestic control (405nm) modulated at 330 Hz.
-  emission_filter:
-    description: <description of emission filter>
-  excitation_filter:
-    description: <description of excitation filter>
-  dichroic_mirror:
-    description: <description of the dichroic mirror>
 FiberPhotometry:
   FiberPhotometryViruses:
     viral_vector_gcamp6f:

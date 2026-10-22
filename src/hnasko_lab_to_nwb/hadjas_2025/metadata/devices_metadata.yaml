@@ -18,39 +18,29 @@ DeviceModels:
   photodetector_model:
     type: PhotodetectorModel
     name: photodetector_model
-    description: <description of the photodetector model>
-    manufacturer: <manufacturer of the photodetector>
-    model_number: <model of the photodetector>
     wavelength_range_in_nm: [500.0, 540.0]
     gain: 0.38
     gain_unit: A/W
   emission_filter_model:
     type: BandOpticalFilterModel
     name: emission_filter_model
-    manufacturer: <manufacturer of the emission filter>
-    model_number: <model of the emission filter>
     filter_type: Bandpass
     center_wavelength_in_nm: 520.0
     bandwidth_in_nm: 40.0
   excitation_filter_model:
     type: BandOpticalFilterModel
     name: excitation_filter_model
-    manufacturer: <manufacturer of the excitation filter>
-    model_number: <model of the excitation filter>
     filter_type: Bandpass
     center_wavelength_in_nm: 445.0
     bandwidth_in_nm: 90.0
   dichroic_mirror_model:
     type: DichroicMirrorModel
     name: dichroic_mirror_model
-    manufacturer: <manufacturer of the dichroic mirror>
-    model_number: <model of the dichroic mirror>
   optogenetic_excitation_source_model:
     type: ExcitationSourceModel
     name: optogenetic_excitation_source_model
     description: Red LED device used for optogenetic stimulation.
     manufacturer: Shanghai laser
-    model_number: <model of the LED device>
     source_type: LED
     excitation_mode: one-photon
     wavelength_range_in_nm: [580.0, 680.0]
@@ -66,8 +56,6 @@ Devices:
   photodetector:
     type: Photodetector
     name: photodetector
-    description: <description of the photodetector>
-    serial_number: <serial number of the photodetector>
     device_model_metadata_key: photodetector_model
   emission_filter:
     type: BandOpticalFilter
@@ -80,7 +68,6 @@ Devices:
   dichroic_mirror:
     type: DichroicMirror
     name: dichroic_mirror
-    serial_number: <serial number of the dichroic mirror>
     device_model_metadata_key: dichroic_mirror_model
   optogenetic_excitation_source:
     type: ExcitationSource
