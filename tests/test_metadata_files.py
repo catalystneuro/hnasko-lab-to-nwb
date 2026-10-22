@@ -81,3 +81,12 @@ def test_every_device_model_has_a_manufacturer(recording_type, rig_name):
     metadata = dict_deep_update(load_cohort_metadata(recording_type), load_rig_devices_metadata(rig_name))
 
     assert [key for key, model in metadata["DeviceModels"].items() if not model.get("manufacturer")] == []
+
+
+def test_optogenetic_light_source_is_the_635_nm_laser():
+    metadata = load_cohort_metadata("SN pan GABA recordings")
+
+    laser_model = metadata["DeviceModels"]["optogenetic_excitation_source_model"]
+    assert (laser_model["manufacturer"], laser_model["model_number"]) == ("Shanghai Laser", "RLM635TA-150FC")
+    assert laser_model["source_type"] == "laser"
+    assert metadata["Optogenetics"]["excitation_wavelength_in_nm"] == 635.0
