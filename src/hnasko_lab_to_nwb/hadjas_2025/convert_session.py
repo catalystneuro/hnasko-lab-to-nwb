@@ -22,6 +22,7 @@ from neuroconv.utils import dict_deep_update, load_dict_from_file
 METADATA_FOLDER_PATH = Path(__file__).parent / "metadata"
 SHARED_METADATA_FILE_NAMES = ("general_metadata.yaml", "subject_metadata.yaml", "devices_metadata.yaml")
 SESSION_CONFIG_FILE_PATH = METADATA_FOLDER_PATH / "session_config.yaml"
+RIG_DEVICES_METADATA_FILE_PATH = METADATA_FOLDER_PATH / "rig_devices_metadata.yaml"
 
 
 def load_session_config() -> dict:
@@ -84,6 +85,22 @@ def load_cohort_metadata(recording_type: str) -> dict:
         metadata = dict_deep_update(metadata, load_dict_from_file(METADATA_FOLDER_PATH / file_name))
     cohort_file_path = METADATA_FOLDER_PATH / f"{recording_type.replace(' ', '_')}_metadata.yaml"
     return dict_deep_update(metadata, load_dict_from_file(cohort_file_path))
+
+
+def load_rig_devices_metadata(rig_name: str) -> dict:
+    """Load the devices of one recording rig (metadata/rig_devices_metadata.yaml), which update the shared devices.
+
+    Parameters
+    ----------
+    rig_name : str
+        Rig name from get_rig_settings (e.g. "RZ5P", "RZ10x").
+
+    Returns
+    -------
+    dict
+        The rig's "DeviceModels" (and "Devices") entries.
+    """
+    return load_dict_from_file(RIG_DEVICES_METADATA_FILE_PATH)[rig_name]
 
 
 def get_target_area_for_subject(file_path: Path, subject_id: str) -> tuple[str, str]:
@@ -693,6 +710,7 @@ def session_to_nwb(
     tdt_folder_paths = find_tdt_folder_paths(protocol_folder_path=protocol_folder_path, subject_id=subject_id)
 
     raw_stream_settings = get_raw_stream_settings(tdt_folder_paths[0])
+    editable_metadata = dict_deep_update(editable_metadata, load_rig_devices_metadata(raw_stream_settings["rig_name"]))
     raw_source_data = dict(
         folder_paths=tdt_folder_paths,
         stream_name="Fi1r",

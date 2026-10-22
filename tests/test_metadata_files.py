@@ -2,8 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from hnasko_lab_to_nwb.hadjas_2025.convert_session import load_cohort_metadata
-from neuroconv.utils import load_dict_from_file
+from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
+    load_cohort_metadata,
+    load_rig_devices_metadata,
+    load_session_config,
+)
+from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 METADATA_FOLDER_PATH = Path(__file__).parents[1] / "src" / "hnasko_lab_to_nwb" / "hadjas_2025" / "metadata"
 
@@ -40,5 +44,31 @@ def test_load_cohort_metadata_merges_shared_files_with_cohort_overrides():
     assert metadata["Subject"]["species"] == "Mus musculus"
     assert metadata["Subject"]["genotype"] == "VGlut2-cre"
     isosbestic_model = metadata["DeviceModels"]["excitation_source_model_isosbestic"]
-    assert isosbestic_model["manufacturer"] == "Tucker-Davis Technologies"
+    assert isosbestic_model["source_type"] == "LED"
     assert isosbestic_model["wavelength_range_in_nm"] == [410.0, 420.0]
+
+
+@pytest.mark.parametrize(
+    "rig_name, led_manufacturer, photodetector_manufacturer, photodetector_model_number",
+    [
+        ("RZ5P", "Doric Lenses", "Newport", "2151"),
+        ("RZ10x", "Tucker-Davis Technologies", "Tucker-Davis Technologies", "RZ10x"),
+    ],
+)
+def test_rig_devices_complete_the_shared_device_models(
+    rig_name, led_manufacturer, photodetector_manufacturer, photodetector_model_number
+):
+    metadata = dict_deep_update(load_cohort_metadata("SN pan DA recordings"), load_rig_devices_metadata(rig_name))
+
+    device_models = metadata["DeviceModels"]
+    assert device_models["excitation_source_model_calcium"]["manufacturer"] == led_manufacturer
+    assert device_models["excitation_source_model_isosbestic"]["manufacturer"] == led_manufacturer
+    assert device_models["photodetector_model"]["manufacturer"] == photodetector_manufacturer
+    assert device_models["photodetector_model"]["model_number"] == photodetector_model_number
+    assert device_models["photodetector_model"]["detector_type"] == "photodiode"
+
+
+def test_every_rig_of_the_session_config_has_a_device_set():
+    assert set(load_dict_from_file(METADATA_FOLDER_PATH / "rig_devices_metadata.yaml")) == set(
+        load_session_config()["rigs"]
+    )

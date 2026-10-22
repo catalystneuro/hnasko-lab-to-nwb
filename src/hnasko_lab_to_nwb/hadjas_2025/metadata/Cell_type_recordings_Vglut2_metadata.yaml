@@ -29,8 +29,6 @@ DeviceModels:
   excitation_source_model_isosbestic:
     description: excitation source for the sensor's isosbestic control.
     wavelength_range_in_nm: [400.0, 410.0]
-  photodetector_model:
-    detector_type: Silicon photodiode
   emission_filter_model:
     description: emission filter model for GCaMP6f fluorescence signal.
   excitation_filter_model:
