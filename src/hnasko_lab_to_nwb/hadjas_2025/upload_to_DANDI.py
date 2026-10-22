@@ -1,3 +1,5 @@
+"""Upload converted NWB files to a dandiset on the DANDI archive."""
+
 from pathlib import Path
 from shutil import rmtree
 

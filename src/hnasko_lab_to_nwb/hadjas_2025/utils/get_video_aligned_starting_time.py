@@ -1,3 +1,5 @@
+"""Start time of an AnyMaze video relative to the session, from the lab's video metadata sheet."""
+
 from datetime import datetime
 from pathlib import Path
 from typing import Union
@@ -8,19 +10,27 @@ import pandas as pd
 def get_video_aligned_starting_time(
     video_metadata_file_path: Union[Path, str], video_file_path: Union[Path, str], session_starting_time: datetime
 ) -> float:
-    """Get the time offset to align the video with the session starting time.
+    """Get the start of a video in seconds from the session start, from the video metadata sheet.
 
-    Args:
-        video_metadata_file (Path, str):
-            Path to the video metadata excel file.
-        video_file_path (Path, str):
-            Path to the video file.
-        session_starting_time (datetime):
-            The starting time of the session.
+    Parameters
+    ----------
+    video_metadata_file_path : Union[Path, str]
+        Path to the video metadata Excel file, with a "file_name" and a "start_time" column (one row per video).
+    video_file_path : Union[Path, str]
+        Path to the video file; its name is looked up in "file_name".
+    session_starting_time : datetime
+        The start of the session's first TDT block, in local time without a time zone, as in "start_time".
 
-    Returns:
-        float:
-            The time offset in seconds to align the video with the session starting time.
+    Returns
+    -------
+    float
+        The time offset in seconds from the session start to the video start.
+
+    Raises
+    ------
+    AssertionError
+        If the metadata file or its columns are missing, the video has no row, or the video starts before the
+        session.
     """
     video_metadata_file_path = Path(video_metadata_file_path)
     video_file_path = Path(video_file_path)
