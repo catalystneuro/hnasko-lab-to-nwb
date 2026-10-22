@@ -123,6 +123,15 @@ def compare_nwb_files(file_path_a: Path, file_path_b: Path) -> list[str]:
 
 
 def main(path_a: str, path_b: str) -> None:
+    """Print the differences between two NWB files, or between the files of the same name in two folders.
+
+    Parameters
+    ----------
+    path_a : str
+        The first NWB file or folder of NWB files.
+    path_b : str
+        The second NWB file or folder of NWB files.
+    """
     path_a, path_b = Path(path_a), Path(path_b)
     if path_a.is_dir():
         file_names = sorted({path.name for path in path_a.glob("*.nwb")} | {path.name for path in path_b.glob("*.nwb")})
