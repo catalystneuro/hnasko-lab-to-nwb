@@ -13,6 +13,12 @@ NWBFile:
     DV -4.1). For optogenetic stimulation, 150-200 nl of AAV5-Syn-FLEX-ChrimsonR-tdTomato (4 - 8.5e12 vg/ml, Addgene 62723)
     was injected in either STN (AP -2.00, ML +/-1.6, DV -4.5) or PPN (AP -4.48, ML +/- 1.1, DV -3.75).
 Subject:
+  description: All mouse experiments were performed in accordance with protocols approved by UCSD Institutional Animal
+    Care and Use Committee. Male and female mice were bred at UCSD and group-housed on a 12-hour light/dark cycle,
+    with food and water ad libitum. VGLUT2-Cre (Slc17a6tm2(cre)Lowl, RRID:IMSR_JAX:016963) mice were obtained from the
+    Jackson Laboratory and maintained backcrossed on to C57BL/6J (RRID:IMSR_JAX:000664). DAT-Flp mice were provided by
+    Dr. Helen Bateup (UC Berkeley; Slc6a3em1(flpo)Hbat, RRID:IMSR_JAX:035436) or by Dr. Rajeshwar Awatramani
+    (Northwestern). Mice were VGLUT2-Cre x DAT-Flp.
   genotype: VGLUT2-Cre x DAT-Flp
 DeviceModels:
   optical_fiber_model_1:

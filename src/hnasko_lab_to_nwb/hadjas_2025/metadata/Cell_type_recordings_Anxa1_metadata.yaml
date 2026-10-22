@@ -13,6 +13,11 @@ NWBFile:
     vg/ml, Addgene 162379) in SNc (AP -3.20, ML +/-1.30, DV -4.30). Optic fibers were implanted in both SNc and DLS (400-um
     core, 0.39 NA, L = 6 or 4 mm, 1.25-mm black ceramic ferrule, RWD).
 Subject:
+  description: All mouse experiments were performed in accordance with protocols approved by UCSD Institutional Animal
+    Care and Use Committee. Male and female mice were bred at UCSD and group-housed on a 12-hour light/dark cycle,
+    with food and water ad libitum. VGLUT2-PhiC31 mice (Jeong et al. 2024) were provided by Dr. Byung Kook Lim (UC San
+    Diego) and Anxa1-Cre mice (RRID:MMRRC_069931-MU) by Dr. Rajeshwar Awatramani (Northwestern). Mice were
+    VGLUT2-PhiC31 x Anxa1-Cre.
   genotype: VGLUT2-PhiC31 x Anxa1-Cre
 DeviceModels:
   optical_fiber_model_1:

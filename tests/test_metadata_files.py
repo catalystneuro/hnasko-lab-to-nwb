@@ -149,3 +149,12 @@ def test_genotype_names_the_mouse_lines_as_the_preprint_does(recording_type):
     lines = load_cohort_metadata(recording_type)["Subject"]["genotype"].split(" x ")
 
     assert set(lines) <= {"VGLUT2-Cre", "VGAT-Flp", "DAT-Flp", "VGLUT2-PhiC31", "Anxa1-Cre"}
+
+
+@pytest.mark.parametrize("recording_type", sorted(load_session_config()["cohorts"]))
+def test_subject_description_names_only_the_cohort_mouse_lines(recording_type):
+    subject = load_cohort_metadata(recording_type)["Subject"]
+
+    lines = subject["genotype"].split(" x ")
+    for line in ("VGLUT2-Cre", "VGAT-Flp", "DAT-Flp", "VGLUT2-PhiC31", "Anxa1-Cre"):
+        assert (f"{line} " in subject["description"]) == (line in lines), line
