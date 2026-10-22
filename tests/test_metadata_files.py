@@ -107,3 +107,9 @@ def test_striatal_cohorts_have_4_mm_recording_fibers_and_a_200_um_snc_stimulatio
 
 def test_subject_age_is_the_range_older_than_6_weeks():
     assert load_cohort_metadata("GRABDA recordings")["Subject"]["age"] == "P6W/"
+
+
+@pytest.mark.parametrize("file_path", sorted(METADATA_FOLDER_PATH.glob("*.yaml")), ids=lambda path: path.name)
+def test_fdio_gcamp6f_has_its_addgene_catalog_number(file_path):
+    # pAAV-Ef1a-fDIO-GCaMP6f is Addgene 128315; the preprint gives 1283125
+    assert "1283125" not in file_path.read_text()

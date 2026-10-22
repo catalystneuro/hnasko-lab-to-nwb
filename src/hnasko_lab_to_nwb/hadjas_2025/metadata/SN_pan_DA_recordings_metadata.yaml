@@ -8,7 +8,7 @@ NWBFile:
     the SNc in VGLUT2-Cre x DAT-Flp mice.
   surgery: Mice > 6 weeks old were anesthetized with isofluorane (4% for induction and 1-2% for maintenance), and provided
     with pre- and post-surgical analgesic carprofen (5 mg/kg i.p). For calcium recordings in VGLUT2-Cre x DAT-Flp mice were
-    injected with 300 nl of AAV1-Ef1a-fDIO-GCaMP6f (4e12 vg/mL, Addgene 1283125) in SNc (AP -3.2, ML +/-1.3, DV 4.3). A fiber
+    injected with 300 nl of AAV1-Ef1a-fDIO-GCaMP6f (4e12 vg/mL, Addgene 128315) in SNc (AP -3.2, ML +/-1.3, DV -4.3). A fiber
     (400-um core, 0.39 NA, 6-mm length, 1.25-mm diameter black ceramic ferrule, RWD) was implanted in SNc (AP -3.2, ML +/-1.4,
     DV -4.1). For optogenetic stimulation, 150-200 nl of AAV5-Syn-FLEX-ChrimsonR-tdTomato (4 - 8.5e12 vg/ml, Addgene 62723)
     was injected in either STN (AP -2.00, ML +/-1.6, DV -4.5) or PPN (AP -4.48, ML +/- 1.1, DV -3.75).
@@ -52,7 +52,7 @@ FiberPhotometry:
       name: viral_vector_gcamp6f
       description: AAV1 viral vector expressing GCaMP6f calcium sensor under EF1a promoter for fiber photometry recording
         in SNc
-      manufacturer: Addgene (catalog number 1283125)
+      manufacturer: Addgene (catalog number 128315)
       construct_name: AAV1-Ef1a-fDIO-GCaMP6f
       titer_in_vg_per_ml: 4.0e+12
   FiberPhotometryVirusInjections:
