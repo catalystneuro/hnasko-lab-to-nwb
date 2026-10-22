@@ -75,7 +75,7 @@ FiberPhotometry:
     viral_vector_injection_SNr:
       name: viral_vector_injection_SNr
       description: Viral injection of GCaMP6f in SNr.
-      location: SNr
+      location: substantia nigra pars reticulata (SNr)
       hemisphere: right
       reference: bregma at the cortical surface
       ap_in_mm: -3.3
@@ -96,7 +96,7 @@ FiberPhotometry:
       patch cord coupled to a pigtailed rotary joint (Doric Lenses). The LED excitation power was below 0.2 mW.
     rows:
       SNr_465:
-        location: SNr
+        location: substantia nigra pars reticulata (SNr)
         excitation_wavelength_in_nm: 465.0
         emission_wavelength_in_nm: 515.0
         indicator_metadata_key: GCaMP6f_SNr
@@ -107,7 +107,7 @@ FiberPhotometry:
         excitation_filter_metadata_key: excitation_filter
         dichroic_mirror_metadata_key: dichroic_mirror
       SNr_405:
-        location: SNr
+        location: substantia nigra pars reticulata (SNr)
         excitation_wavelength_in_nm: 405.0
         emission_wavelength_in_nm: 515.0
         indicator_metadata_key: GCaMP6f_SNr
@@ -180,7 +180,7 @@ Optogenetics:
       name: viral_vector_injection_STN
       description: Viral injection into the Subthalamic Nucleus (STN). The injected volume was 150 to 200 nl across mice;
         volume_in_uL is the upper bound.
-      location: STN
+      location: subthalamic nucleus (STN)
       hemisphere: right
       reference: bregma at the cortical surface
       ap_in_mm: -2.0
@@ -192,7 +192,7 @@ Optogenetics:
       name: viral_vector_injection_PPN
       description: Viral injection into the Pedunculopontine Nucleus (PPN). The injected volume was 150 to 200 nl across mice;
         volume_in_uL is the upper bound.
-      location: PPN
+      location: pedunculopontine nucleus (PPN)
       hemisphere: right
       reference: bregma at the cortical surface
       ap_in_mm: -4.48
