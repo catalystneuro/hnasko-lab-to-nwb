@@ -117,7 +117,7 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
         for i, folder_path in enumerate(self._folder_paths):
             stream = read_tdt_stream(folder_path, self.stream_name)
 
-            # TDT stores are (channels, samples); keep the selected channels as a 1D series
+            # TDT stores are (channels, samples); keep the selected channel as a 1D series
             start_index = int(t1 * stream.fs)
             end_index = int(t2 * stream.fs) if t2 != 0.0 else None
             data = np.asarray(stream.data)[..., start_index:end_index]
@@ -125,7 +125,12 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
                 data = data.T
                 if self.stream_indices is not None:
                     data = data[:, self.stream_indices]
-                data = data.flatten()
+                if data.shape[1] != 1:
+                    raise ValueError(
+                        f"{self.stream_name} of {folder_path} has {data.shape[1]} channels; set stream_indices to the "
+                        "one channel that holds the signal."
+                    )
+                data = data[:, 0]
             timestamps = self.segment_starting_times[i] + t1 + np.arange(len(data)) / stream.fs
 
             data_segments.append(data)
