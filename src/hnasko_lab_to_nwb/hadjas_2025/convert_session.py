@@ -480,8 +480,8 @@ def get_session_id(protocol: str, recording_type: str, recording_site: str | Non
     return session_id
 
 
-def get_session_description(protocol: str, epoc_names: list[str]) -> str:
-    """Get the session description of a protocol, which differs for blocks with the 2022 16 s trains (S6s_).
+def get_session_description(protocol: str, epoc_names: list[str], number_of_blocks: int) -> str:
+    """Get the session description of a protocol, which differs for 2022 blocks and for sessions of one block.
 
     Parameters
     ----------
@@ -489,16 +489,22 @@ def get_session_description(protocol: str, epoc_names: list[str]) -> str:
         Protocol key of the session config.
     epoc_names : list[str]
         Epoc names of the session's first block.
+    number_of_blocks : int
+        Number of TDT blocks of the session.
 
     Returns
     -------
     str
-        The session description.
+        The session_description_by_epoc of the first epoc in epoc_names that has one (blocks with the 2022 16 s
+        trains, S6s_), else the session_description_single_block for a session of one block, else the
+        session_description of the protocol.
     """
     protocol_config = load_session_config()["protocols"][protocol]
     for epoc_name, session_description in protocol_config.get("session_description_by_epoc", {}).items():
         if epoc_name in epoc_names:
             return session_description
+    if number_of_blocks == 1 and "session_description_single_block" in protocol_config:
+        return protocol_config["session_description_single_block"]
     return protocol_config["session_description"]
 
 
@@ -812,7 +818,7 @@ def session_to_nwb(
     metadata["Subject"]["sex"] = subject_metadata["Sex"]
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = get_session_description(
-        protocol=protocol, epoc_names=list(read_tdt_epocs(tdt_folder_paths[0]))
+        protocol=protocol, epoc_names=list(read_tdt_epocs(tdt_folder_paths[0])), number_of_blocks=len(tdt_folder_paths)
     )
     metadata["NWBFile"]["session_start_time"] = session_start_time
     add_led_modulation_to_metadata(metadata=metadata, led_modulation=get_led_modulation(session_start_time))

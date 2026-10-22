@@ -65,9 +65,14 @@ led_modulation:
 protocols:
   Varying durations:
     session_id: varying_durations
-    session_description: "The subject is placed in a plastic tub and is recorded for 3.5 minutes. The subject receives a 40 Hz stimulation at various durations (i.e. 250ms, 1s and 4s) 5 times for each duration) with an inter-stimulus interval (ISI) of 10s. "
+    session_description: "The mouse is placed in a plastic tub and receives 40 Hz optogenetic stimulation trains of 250 ms,
+      1 s and 4 s, in this order, repeated 5 times, with 10 s between the end of one train and the start of the next. The
+      optogenetic epochs table lists every train."
     session_description_by_epoc:  # replaces session_description for blocks with this epoc (2022 recordings)
-      S6s_: "The subject is placed in a plastic tub and receives 40 Hz optogenetic stimulation trains of 250 ms, 1 s, 4 s and 16 s, in this order, with 10 s between the end of one train and the start of the next. The sequence is repeated 5 or 10 times depending on the cohort; the optogenetic epochs table lists every train."
+      S6s_: "The mouse is placed in a plastic tub and receives 40 Hz optogenetic stimulation trains of 250 ms, 1 s, 4 s and
+        16 s, in this order, repeated 5 or 10 times depending on the cohort, with 10 s between the end of one train and the
+        start of the next. The 16 s trains come from the earliest cohorts and were not analyzed in the paper. The
+        optogenetic epochs table lists every train."
     epoc_name_to_frequency_in_hz:
       sms_: 40.0
       s1s_: 40.0
@@ -81,7 +86,16 @@ protocols:
       Sms_: 40.0
   Varying frequencies:
     session_id: varying_frequencies
-    session_description: "The subject is placed in a plastic tub and undergoes 3 recording sessions corresponding to a fixed duration of stimulation (i.e., 250ms, 1s, and 4s). Each session lasted 8 minutes. The subject receives optogenetic stimulation at varying frequencies (5 Hz, 10 Hz , 20 Hz and 40 Hz) 5 times for each duration with an ISI of 10s. "
+    session_description: "The session has one recording block per train duration (250 ms, 1 s and 4 s), in recording
+      order; the order of the durations, ascending or descending, was counterbalanced across mice. In each block the mouse
+      is placed in a plastic tub and receives optogenetic stimulation trains at 5, 10, 20 and 40 Hz, in this order,
+      repeated 5 times (10 times in some 2022 recordings), with 20 s between the end of one train and the start of the
+      next. The trials table has one trial per block and the optogenetic epochs table lists every train."
+    session_description_single_block:  # replaces session_description for sessions recorded in one block (SN pan GABA, PPN)
+      "The session is recorded in one block. The mouse is placed in a plastic tub and receives optogenetic stimulation
+      trains of 250 ms, then 1 s, then 4 s. For each train duration, trains at 5, 10, 20 and 40 Hz, in this order, are
+      repeated 5 times, with 20 s between the end of one train and the start of the next. The trials table has one trial
+      per train duration and the optogenetic epochs table lists every train."
     epoc_name_to_frequency_in_hz:
       H10_: 10.0
       H20_: 20.0
