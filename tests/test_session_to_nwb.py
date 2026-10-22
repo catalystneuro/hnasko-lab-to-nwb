@@ -53,6 +53,7 @@ def test_raw_only_conversion_runs_without_the_lab_mat(tmp_path, fake_tdt_block):
         assert list(nwbfile.acquisition) == ["raw_signal_DLS"]
         assert nwbfile.acquisition["raw_signal_DLS"].data.shape == (NUMBER_OF_SAMPLES,)
         assert "ophys" not in nwbfile.processing
+        assert nwbfile.subject.age == "P6W/"
         epochs = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe()
         assert list(epochs["start_time"]) == [1.0, 2.0, 4.0]
         assert list(epochs["train_duration"]) == ["250ms", "1s", "4s"]
