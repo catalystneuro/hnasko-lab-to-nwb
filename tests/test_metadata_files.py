@@ -135,3 +135,9 @@ def test_delta_f_over_f_is_in_percent(recording_type):
     delta_f_over_f_keys = [key for key in fiber_photometry if key.startswith("dF_")]
     assert delta_f_over_f_keys
     assert all(fiber_photometry[key]["unit"] == "percent" for key in delta_f_over_f_keys)
+
+
+def test_related_publication_is_a_doi():
+    assert load_cohort_metadata("GRABDA recordings")["NWBFile"]["related_publications"] == [
+        "doi:10.1101/2025.06.03.657460"
+    ]
