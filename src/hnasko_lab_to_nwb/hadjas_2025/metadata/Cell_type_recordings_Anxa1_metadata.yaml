@@ -1,6 +1,6 @@
 # Metadata for Hadjas 2025 --> Parkinson's-vulnerable Anxa1+ dopamine subtypes, STN & PPN stim
 NWBFile:
-  keywords: [SNc fiber photometry recordings, DLS fiber photometry recordings, Anxa1+ dopamine subtypes, VGLUT2-PhiC x Anxa1-Cre,
+  keywords: [SNc fiber photometry recordings, DLS fiber photometry recordings, Anxa1+ dopamine subtypes, VGLUT2-PhiC31 x Anxa1-Cre,
     STN optogenetic stimulation, PPN optogenetic stimulation, Parkinson's disease]
   experiment_description: Parkinson's-vulnerable Anxa1+ dopamine subtypes recordings. Mice were freely moving on a plastic
     tub. Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the first two
@@ -13,7 +13,7 @@ NWBFile:
     vg/ml, Addgene 162379) in SNc (AP -3.20, ML +/-1.30, DV -4.30). Optic fibers were implanted in both SNc and DLS (400-um
     core, 0.39 NA, L = 6 or 4 mm, 1.25-mm black ceramic ferrule, RWD).
 Subject:
-  genotype: Vglut2-phiC X Anxa1-cre
+  genotype: VGLUT2-PhiC31 x Anxa1-Cre
 DeviceModels:
   optical_fiber_model_1:
     type: OpticalFiberModel
