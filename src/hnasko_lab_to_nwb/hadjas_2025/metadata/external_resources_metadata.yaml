@@ -5,3 +5,7 @@ ExternalResources:
     Mus musculus:
       id: NCBITaxon:10090
       uri: http://purl.obolibrary.org/obo/NCBITaxon_10090
+  strain:
+    C57BL/6J:  # the background all transgenic lines were backcrossed onto
+      id: RRID:IMSR_JAX:000664
+      uri: https://scicrunch.org/resolver/RRID:IMSR_JAX:000664

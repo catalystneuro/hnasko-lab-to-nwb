@@ -216,3 +216,10 @@ def test_species_has_its_ncbi_taxon_term():
     species = load_cohort_metadata("GRABDA recordings")["Subject"]["species"]
 
     assert load_external_resources_metadata()["species"][species]["id"] == "NCBITaxon:10090"
+
+
+@pytest.mark.parametrize("recording_type", sorted(load_session_config()["cohorts"]))
+def test_strain_has_its_rrid_term(recording_type):
+    strain = load_cohort_metadata(recording_type)["Subject"]["strain"]
+
+    assert load_external_resources_metadata()["strain"][strain]["id"] == "RRID:IMSR_JAX:000664"
