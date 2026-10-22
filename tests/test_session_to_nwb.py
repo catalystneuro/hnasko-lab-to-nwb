@@ -55,6 +55,8 @@ def test_raw_only_conversion_runs_without_the_lab_mat(tmp_path, fake_tdt_block):
         assert "ophys" not in nwbfile.processing
         epochs = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe()
         assert list(epochs["start_time"]) == [1.0, 2.0, 4.0]
+        assert list(epochs["train_duration"]) == ["250ms", "1s", "4s"]
+        assert list(epochs["tdt_block"]) == ["C0001-240117-101500"] * 3
         # a 2024 block: 465 nm LED at 330 Hz
         assert nwbfile.devices["excitation_source_calcium_signal"].description.endswith("Modulated at 330 Hz.")
         # a 6 kHz block: RZ10x devices
