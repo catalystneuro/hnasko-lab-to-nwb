@@ -57,6 +57,26 @@ def test_raw_only_conversion_runs_without_the_lab_mat(tmp_path, fake_tdt_block):
         assert list(epochs["start_time"]) == [1.0, 2.0, 4.0]
 
 
+def test_sn_pan_gaba_ppn_sessions_convert_without_behavioral_videos(tmp_path, fake_tdt_block):
+    # the AnyMaze videos are not part of the Hadjas 2025 paper, and the data share has none
+    protocol_folder_path = tmp_path / "SN pan GABA recordings" / "PPN" / "Fiber photometry_TDT" / "Varying durations"
+    (protocol_folder_path / "C0001-240117-101500").mkdir(parents=True)
+    output_dir_path = tmp_path / "nwb"
+
+    session_to_nwb(
+        output_dir_path=output_dir_path,
+        subject_metadata=dict(SUBJECT_METADATA, **{"Recording Site": "SNr"}),
+        protocol_folder_path=protocol_folder_path,
+        recording_type="SN pan GABA recordings",
+        stimulus_location="PPN",
+        protocol="Varying durations",
+        data_streams=dict(processed=False),
+    )
+
+    with NWBHDF5IO(output_dir_path / "sub-C0001_ses-varying_durations.nwb", "r") as io:
+        assert list(io.read().acquisition) == ["raw_signal_SNr"]
+
+
 def test_unknown_data_streams_raise(tmp_path, fake_tdt_block):
     with pytest.raises(ValueError, match="Unknown data streams"):
         session_to_nwb(

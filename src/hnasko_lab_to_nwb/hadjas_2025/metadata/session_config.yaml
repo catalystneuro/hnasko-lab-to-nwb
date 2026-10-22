@@ -4,7 +4,7 @@
 data_streams:
   raw: true  # Fi1r photodetector signal of the TDT blocks
   processed: true  # demodulated, downsampled and dF/F signals of the lab's .mat file
-  behavioral_video: true  # AnyMaze videos of the cohorts' behavioral_video_inputs
+  behavioral_video: false  # AnyMaze videos of the cohorts' behavioral_video_inputs, not part of the Hadjas 2025 paper
 # Each cohort key is the recording type of its metadata file (<recording type>_metadata.yaml).
 cohorts:
   SN pan GABA recordings:
