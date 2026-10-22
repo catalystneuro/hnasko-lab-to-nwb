@@ -223,6 +223,39 @@ def update_coordinates_for_left_hemisphere(metadata: dict) -> dict:
 TRAIN_DURATION_IN_S_TO_LABEL = {0.25: "250ms", 1.0: "1s", 4.0: "4s", 16.0: "16s"}
 
 
+def label_train_duration(duration: float) -> str | None:
+    """Label a train duration in seconds (e.g. 0.26 gives "250ms"); None if it is not one of the protocol's."""
+    train_duration = min(TRAIN_DURATION_IN_S_TO_LABEL, key=lambda protocol_duration: abs(protocol_duration - duration))
+    if abs(train_duration - duration) > 0.1 * train_duration:
+        return None
+    return TRAIN_DURATION_IN_S_TO_LABEL[train_duration]
+
+
+def read_trains(folder_path: Path, epoc_names: list[str]) -> tuple[np.ndarray, np.ndarray]:
+    """Read the onsets and offsets of the stimulation trains of a TDT block that have an offset.
+
+    Parameters
+    ----------
+    folder_path : Path
+        Path to the TDT block folder.
+    epoc_names : list[str]
+        Names of the stimulation epocs of the protocol.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        Onsets and offsets of the trains, in seconds from the block start.
+    """
+    epocs = read_tdt_epocs(Path(folder_path))
+    names = [name for name in epoc_names if name in epocs]
+    onsets = np.concatenate([np.asarray(epocs[name]["onset"]) for name in names] or [np.array([])])
+    offsets = np.concatenate([np.asarray(epocs[name]["offset"]) for name in names] or [np.array([])])
+    has_offset = np.isfinite(offsets)
+    if not has_offset.any():
+        raise ValueError(f"No stimulation epocs {epoc_names} with an offset in {folder_path}.")
+    return onsets[has_offset], offsets[has_offset]
+
+
 def get_train_duration_label(folder_path: Path, epoc_names: list[str]) -> str:
     """Label a TDT block by the duration of its stimulation trains, read from the epocs (e.g. "250ms").
 
@@ -238,19 +271,53 @@ def get_train_duration_label(folder_path: Path, epoc_names: list[str]) -> str:
     str
         The label of the median train duration of the block.
     """
-    epocs = read_tdt_epocs(Path(folder_path))
-    durations = np.concatenate(
-        [np.asarray(epocs[name]["offset"]) - np.asarray(epocs[name]["onset"]) for name in epoc_names if name in epocs]
-        or [np.array([])]
-    )
-    durations = durations[np.isfinite(durations)]
-    if durations.size == 0:
-        raise ValueError(f"No stimulation epocs {epoc_names} with an offset in {folder_path}.")
-    median_duration = float(np.median(durations))
-    train_duration = min(TRAIN_DURATION_IN_S_TO_LABEL, key=lambda duration: abs(duration - median_duration))
-    if abs(train_duration - median_duration) > 0.1 * train_duration:
+    onsets, offsets = read_trains(folder_path, epoc_names)
+    median_duration = float(np.median(offsets - onsets))
+    label = label_train_duration(median_duration)
+    if label is None:
         raise ValueError(f"Train duration {median_duration} s of {folder_path} is not one of the protocol's.")
-    return TRAIN_DURATION_IN_S_TO_LABEL[train_duration]
+    return label
+
+
+def get_train_duration_trials(folder_path: Path, epoc_names: list[str]) -> list[dict]:
+    """Get one trial per train duration of a block that holds the train durations one after the other.
+
+    This is the varying-frequencies protocol recorded in a single block (SN pan GABA PPN). Each trial spans the
+    trains of one duration, from the onset of the first to the offset of the last. Trains of zero length are left
+    out, as in the optogenetic epochs.
+
+    Parameters
+    ----------
+    folder_path : Path
+        Path to the TDT block folder.
+    epoc_names : list[str]
+        Names of the stimulation epocs of the protocol.
+
+    Returns
+    -------
+    list[dict]
+        add_trial arguments (start_time, stop_time, tags), in time order.
+    """
+    onsets, offsets = read_trains(folder_path, epoc_names)
+    has_length = offsets > onsets
+    onsets, offsets = onsets[has_length], offsets[has_length]
+    labels = np.array([label_train_duration(duration) for duration in offsets - onsets])
+    trials = []
+    for label in set(labels):
+        if label is None:
+            raise ValueError(f"A train of {folder_path} has a duration that is not one of the protocol's.")
+        trials.append(
+            dict(
+                start_time=float(onsets[labels == label].min()),
+                stop_time=float(offsets[labels == label].max()),
+                tags=str(label),
+            )
+        )
+    trials = sorted(trials, key=lambda trial: trial["start_time"])
+    for trial, next_trial in zip(trials, trials[1:]):
+        if trial["stop_time"] > next_trial["start_time"]:
+            raise ValueError(f"Trains of different durations alternate in {folder_path}.")
+    return trials
 
 
 def get_block_trials(
@@ -572,11 +639,14 @@ def session_to_nwb(
     )
     session_start_time = get_session_start_time(read_tdt_start_timestamp(tdt_folder_paths[0]))
     segment_starting_times = ConcatenatedTDTFiberPhotometryInterface(**raw_source_data).segment_starting_times
-    block_trials = get_block_trials(
-        folder_paths=tdt_folder_paths,
-        segment_starting_times=segment_starting_times,
-        epoc_names=list(protocol_config["epoc_name_to_frequency_in_hz"]),
-    )
+    epoc_names = list(protocol_config["epoc_name_to_frequency_in_hz"])
+    if protocol == "Varying frequencies" and len(tdt_folder_paths) == 1:
+        # SN pan GABA PPN records the three train durations one after the other in one block
+        block_trials = get_train_duration_trials(folder_path=tdt_folder_paths[0], epoc_names=epoc_names)
+    else:
+        block_trials = get_block_trials(
+            folder_paths=tdt_folder_paths, segment_starting_times=segment_starting_times, epoc_names=epoc_names
+        )
 
     source_data = dict()
     conversion_options = dict()

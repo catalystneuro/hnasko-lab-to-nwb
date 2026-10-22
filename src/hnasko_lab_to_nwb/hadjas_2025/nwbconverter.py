@@ -35,8 +35,8 @@ class Hadjas2025NWBConverter(NWBConverter):
         video_time_alignment_dict : Optional[dict], optional
             Dictionary for aligning video timestamps with session metadata, by default None.
         block_trials : Optional[list[dict]], optional
-            One trial per TDT block of a session of several blocks, as add_trial arguments
-            (start_time, stop_time, tags), by default None.
+            One trial per TDT block of a session of several blocks, or per train duration of a varying-frequencies
+            session of one block, as add_trial arguments (start_time, stop_time, tags), by default None.
         """
         data_interface_name_mapping = {
             "Video": ExternalVideoInterface,
@@ -66,13 +66,5 @@ class Hadjas2025NWBConverter(NWBConverter):
     def add_to_nwbfile(self, nwbfile: NWBFile, metadata, conversion_options: Optional[dict] = None) -> None:
         super().add_to_nwbfile(nwbfile=nwbfile, metadata=metadata, conversion_options=conversion_options)
 
-        # Trials: one per TDT block, or one per behavioral video for the single block of SN pan GABA PPN sessions
         for trial in self.block_trials:
             nwbfile.add_trial(**trial)
-        for interface_name, interface in self.data_interface_objects.items():
-            if interface_name in ["Video_250ms", "Video_1s", "Video_4s"]:
-                (key,) = interface.temporal_alignment.keys()
-                frame_times = interface.temporal_alignment[key].get_times()
-                nwbfile.add_trial(
-                    start_time=frame_times[0], stop_time=frame_times[-1], tags=interface_name.replace("Video_", "")
-                )
