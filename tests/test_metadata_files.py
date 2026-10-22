@@ -90,3 +90,16 @@ def test_optogenetic_light_source_is_the_635_nm_laser():
     assert (laser_model["manufacturer"], laser_model["model_number"]) == ("Shanghai Laser", "RLM635TA-150FC")
     assert laser_model["source_type"] == "laser"
     assert metadata["Optogenetics"]["excitation_wavelength_in_nm"] == 635.0
+
+
+@pytest.mark.parametrize("recording_type", ["GRABDA recordings", "Str_DA_terminal recordings"])
+def test_striatal_cohorts_have_4_mm_recording_fibers_and_a_200_um_snc_stimulation_fiber(recording_type):
+    metadata = load_cohort_metadata(recording_type)
+
+    devices, device_models = metadata["Devices"], metadata["DeviceModels"]
+    for site in ("DLS", "TS"):
+        recording_fiber_model = device_models[devices[f"optical_fiber_{site}"]["device_model_metadata_key"]]
+        assert (recording_fiber_model["core_diameter_in_um"], recording_fiber_model["active_length_in_mm"]) == (400, 4)
+    stimulation_fiber = devices["optical_fiber_SNc"]
+    assert stimulation_fiber["fiber_insertion"]["insertion_position_ap_in_mm"] == -3.2
+    assert device_models[stimulation_fiber["device_model_metadata_key"]]["core_diameter_in_um"] == 200
