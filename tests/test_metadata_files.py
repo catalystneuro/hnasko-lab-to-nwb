@@ -5,6 +5,7 @@ import pytest
 
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     load_cohort_metadata,
+    load_external_resources_metadata,
     load_rig_devices_metadata,
     load_session_config,
 )
@@ -209,3 +210,9 @@ def test_every_device_has_a_description(recording_type):
     devices = load_cohort_metadata(recording_type)["Devices"]
 
     assert [key for key, device in devices.items() if not device.get("description")] == []
+
+
+def test_species_has_its_ncbi_taxon_term():
+    species = load_cohort_metadata("GRABDA recordings")["Subject"]["species"]
+
+    assert load_external_resources_metadata()["species"][species]["id"] == "NCBITaxon:10090"

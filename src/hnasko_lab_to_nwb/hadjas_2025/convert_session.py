@@ -24,6 +24,7 @@ METADATA_FOLDER_PATH = Path(__file__).parent / "metadata"
 SHARED_METADATA_FILE_NAMES = ("general_metadata.yaml", "subject_metadata.yaml", "devices_metadata.yaml")
 SESSION_CONFIG_FILE_PATH = METADATA_FOLDER_PATH / "session_config.yaml"
 RIG_DEVICES_METADATA_FILE_PATH = METADATA_FOLDER_PATH / "rig_devices_metadata.yaml"
+EXTERNAL_RESOURCES_METADATA_FILE_PATH = METADATA_FOLDER_PATH / "external_resources_metadata.yaml"
 
 
 def load_session_config() -> dict:
@@ -102,6 +103,20 @@ def load_rig_devices_metadata(rig_name: str) -> dict:
         The rig's "DeviceModels" (and "Devices") entries.
     """
     return load_dict_from_file(RIG_DEVICES_METADATA_FILE_PATH)[rig_name]
+
+
+def load_external_resources_metadata() -> dict:
+    """Load the ontology terms of all cohorts (metadata/external_resources_metadata.yaml).
+
+    NeuroConv writes them into the file as HERD references. They are set on the metadata after the last
+    dict_deep_update, which cannot merge the lists of terms (it matches list items by their "name" key).
+
+    Returns
+    -------
+    dict
+        The "ExternalResources" metadata, one map of terms per kind of value, keyed by the value they annotate.
+    """
+    return load_dict_from_file(EXTERNAL_RESOURCES_METADATA_FILE_PATH)["ExternalResources"]
 
 
 def get_target_area_for_subject(file_path: Path, subject_id: str) -> tuple[str, str]:
@@ -813,6 +828,7 @@ def session_to_nwb(
     # Update default metadata with the editable in the corresponding yaml file
     metadata = converter.get_metadata()
     metadata = dict_deep_update(metadata, editable_metadata)
+    metadata["ExternalResources"] = load_external_resources_metadata()
 
     metadata["Subject"]["subject_id"] = subject_id
     metadata["Subject"]["sex"] = subject_metadata["Sex"]
