@@ -1,4 +1,10 @@
 # Settings that differ between cohorts, protocols and subjects of the Hadjas 2025 dataset.
+# Data streams written to every session; set one to false to skip it. A raw-only conversion (processed: false)
+# needs only the TDT blocks, not the lab's .mat file. Optogenetic epochs are always written.
+data_streams:
+  raw: true  # Fi1r photodetector signal of the TDT blocks
+  processed: true  # demodulated, downsampled and dF/F signals of the lab's .mat file
+  behavioral_video: true  # AnyMaze videos of the cohorts' behavioral_video_inputs
 # Each cohort key is the recording type of its metadata file (<recording type>_metadata.yaml).
 cohorts:
   SN pan GABA recordings:

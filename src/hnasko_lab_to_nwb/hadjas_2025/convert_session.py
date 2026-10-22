@@ -500,6 +500,7 @@ def session_to_nwb(
     recording_type: str,
     stimulus_location: str,
     protocol: str,
+    data_streams: dict | None = None,
     stub_test: bool = False,
     overwrite: bool = False,
     verbose: bool = False,
@@ -520,6 +521,9 @@ def session_to_nwb(
         Location of the stimulus (e.g., "PPN", "STN").
     protocol : str
         Protocol key of the session config: "Varying durations" or "Varying frequencies".
+    data_streams : dict, optional
+        Data streams to write ("raw", "processed", "behavioral_video": True or False), updating the data_streams
+        of the session config (default is None, which uses the session config).
     stub_test : bool, optional
         If True, convert only the first second of each block (default is False).
     overwrite : bool, optional
@@ -540,6 +544,10 @@ def session_to_nwb(
     cohort_config = session_config["cohorts"][recording_type]
     subject_config = session_config["subjects"].get(subject_id, {})
     mat_cohort_folder = subject_config.get("mat_cohort_folder", cohort_config["data_folder"])
+    data_streams = dict(session_config["data_streams"], **(data_streams or {}))
+    unknown_data_streams = set(data_streams) - set(session_config["data_streams"])
+    if unknown_data_streams:
+        raise ValueError(f"Unknown data streams {sorted(unknown_data_streams)}.")
     protocol_folder_path = Path(protocol_folder_path)
     recording_site = get_recording_site(recording_type=recording_type, protocol_folder_path=protocol_folder_path)
     session_id = get_session_id(protocol=protocol, recording_type=recording_type, recording_site=recording_site)
@@ -556,35 +564,13 @@ def session_to_nwb(
     tdt_folder_paths = find_tdt_folder_paths(protocol_folder_path=protocol_folder_path, subject_id=subject_id)
 
     raw_stream_settings = get_raw_stream_settings(tdt_folder_paths[0])
-
-    mat_file_path = find_mat_file_path(
-        protocol_folder_path=protocol_folder_path,
-        cohort_data_folder=cohort_config["data_folder"],
-        mat_cohort_folder=mat_cohort_folder,
-    )
-    target_area, mat_subject_id = get_target_area_for_subject(mat_file_path, subject_id)
-    mat_segment_names = match_mat_segments(
-        mat_file_path=mat_file_path,
-        target_area=target_area,
-        mat_subject_id=mat_subject_id,
-        folder_paths=tdt_folder_paths,
-    )
-
-    source_data = dict()
-    conversion_options = dict()
-
-    # Raw fiber photometry
     raw_source_data = dict(
         folder_paths=tdt_folder_paths,
         stream_name="Fi1r",
         metadata_key=f"Fi1r_{get_raw_series_site(subject_metadata=subject_metadata, recording_site=recording_site)}",
         stream_indices=raw_stream_settings["stream_indices"],
     )
-    source_data.update(RawFiberPhotometry=raw_source_data)
-    conversion_options.update(RawFiberPhotometry=dict(stub_test=stub_test))
-
     session_start_time = get_session_start_time(read_tdt_start_timestamp(tdt_folder_paths[0]))
-
     segment_starting_times = ConcatenatedTDTFiberPhotometryInterface(**raw_source_data).segment_starting_times
     block_trials = get_block_trials(
         folder_paths=tdt_folder_paths,
@@ -592,31 +578,52 @@ def session_to_nwb(
         epoc_names=list(protocol_config["epoc_name_to_frequency_in_hz"]),
     )
 
+    source_data = dict()
+    conversion_options = dict()
+
+    # Raw fiber photometry
+    if data_streams["raw"]:
+        source_data.update(RawFiberPhotometry=raw_source_data)
+        conversion_options.update(RawFiberPhotometry=dict(stub_test=stub_test))
+
     # Processed fiber photometry from the lab's .mat file
-    stream_to_interface_name = {
-        "Gc_raw": "DemodulatedFiberPhotometry_Calcium",
-        "af_raw": "DemodulatedFiberPhotometry_Isosbestic",
-        "Gc": "DownsampledFiberPhotometry_Calcium",
-        "af": "DownsampledFiberPhotometry_Isosbestic",
-        "dF": "DeltaFOverF",
-    }
-    for stream_name, interface_name in stream_to_interface_name.items():
-        source_data[interface_name] = dict(
-            file_path=mat_file_path,
-            subject_id=mat_subject_id,
-            stream_name=stream_name,
+    if data_streams["processed"]:
+        mat_file_path = find_mat_file_path(
+            protocol_folder_path=protocol_folder_path,
+            cohort_data_folder=cohort_config["data_folder"],
+            mat_cohort_folder=mat_cohort_folder,
+        )
+        target_area, mat_subject_id = get_target_area_for_subject(mat_file_path, subject_id)
+        mat_segment_names = match_mat_segments(
+            mat_file_path=mat_file_path,
             target_area=target_area,
-            sampling_frequency=raw_stream_settings["sampling_frequency"] if "raw" in stream_name else 100.0,
+            mat_subject_id=mat_subject_id,
+            folder_paths=tdt_folder_paths,
         )
-        conversion_options[interface_name] = dict(
-            stub_test=stub_test,
-            stimulus_channel_names=mat_segment_names,
-            segment_starting_times=segment_starting_times,
-        )
+        stream_to_interface_name = {
+            "Gc_raw": "DemodulatedFiberPhotometry_Calcium",
+            "af_raw": "DemodulatedFiberPhotometry_Isosbestic",
+            "Gc": "DownsampledFiberPhotometry_Calcium",
+            "af": "DownsampledFiberPhotometry_Isosbestic",
+            "dF": "DeltaFOverF",
+        }
+        for stream_name, interface_name in stream_to_interface_name.items():
+            source_data[interface_name] = dict(
+                file_path=mat_file_path,
+                subject_id=mat_subject_id,
+                stream_name=stream_name,
+                target_area=target_area,
+                sampling_frequency=raw_stream_settings["sampling_frequency"] if "raw" in stream_name else 100.0,
+            )
+            conversion_options[interface_name] = dict(
+                stub_test=stub_test,
+                stimulus_channel_names=mat_segment_names,
+                segment_starting_times=segment_starting_times,
+            )
 
     # Behavioral video
     video_time_alignment_dict = None
-    if stimulus_location in cohort_config.get("behavioral_video_inputs", []):
+    if data_streams["behavioral_video"] and stimulus_location in cohort_config.get("behavioral_video_inputs", []):
         from hnasko_lab_to_nwb.hadjas_2025.utils import get_video_aligned_starting_time
 
         video_time_alignment_dict = dict()
