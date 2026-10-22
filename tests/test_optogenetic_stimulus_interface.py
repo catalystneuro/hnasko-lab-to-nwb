@@ -5,6 +5,7 @@ from pynwb.testing.mock.file import mock_NWBFile
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import filter_optogenetics_metadata, load_session_config
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.tdt_optogenetic_stimulus_interface import (
     Hadjas2025TDTOptogeneticStimulusInterface,
+    get_optogenetic_experiment_metadata,
 )
 
 
@@ -96,3 +97,13 @@ def test_epochs_are_written_in_time_order(tmp_path, stn_metadata):
     epochs = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe()
     assert list(epochs["start_time"]) == [10.0, 31.0, 73.0, 94.0]
     assert list(epochs["stimulus_frequency"]) == [10.0, 20.0, 5.0, 10.0]
+
+
+def test_optogenetic_experiment_metadata_is_added_once(stn_metadata):
+    nwbfile = mock_NWBFile()
+
+    first = get_optogenetic_experiment_metadata(nwbfile=nwbfile, metadata=stn_metadata)
+    second = get_optogenetic_experiment_metadata(nwbfile=nwbfile, metadata=stn_metadata)
+
+    assert second is first
+    assert list(nwbfile.lab_meta_data) == [first.name]
