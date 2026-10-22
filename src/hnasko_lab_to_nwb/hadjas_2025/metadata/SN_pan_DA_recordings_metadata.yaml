@@ -195,13 +195,16 @@ Optogenetics:
       viral_vector_injection_metadata_key: viral_vector_injection_PPN
   OptogeneticSitesTable:
     name: optogenetic_sites_table
-    description: Information about each optogenetic site, including the excitation source, and targeted effector.
+    description: Information about each optogenetic site, including the excitation source, the optical fiber that
+      delivered the light to the input's terminals in SN, and the targeted effector.
     rows:
       STN:
         excitation_source_metadata_key: optogenetic_excitation_source
+        optical_fiber_metadata_key: optical_fiber_SNc
         effector_metadata_key: chrimsonR_STN
       PPN:
         excitation_source_metadata_key: optogenetic_excitation_source
+        optical_fiber_metadata_key: optical_fiber_SNc
         effector_metadata_key: chrimsonR_PPN
   OptogeneticEpochsTable:
     name: optogenetic_epochs_table
