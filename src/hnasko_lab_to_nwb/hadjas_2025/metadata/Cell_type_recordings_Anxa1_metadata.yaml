@@ -80,8 +80,8 @@ FiberPhotometry:
   FiberPhotometryViruses:
     viral_vector_gcamp8f:
       name: viral_vector_gcamp8f
-      description: AAV1 viral vector expressing GCaMP8f calcium sensor under FLEX promoter for fiber photometry recording
-        in SNc and DLS
+      description: AAV5 viral vector expressing GCaMP8f under the synapsin promoter in Cre-expressing (Anxa1+) neurons
+        (FLEX), for fiber photometry recording in SNc and DLS.
       manufacturer: Addgene (catalog number 162379)
       construct_name: AAV5-Syn-FLEX-GCaMP8f
       titer_in_vg_per_ml: 1.0e+13
@@ -282,7 +282,8 @@ Optogenetics:
   OptogeneticViruses:
     viral_vector_ogen:
       name: viral_vector_ogen
-      description: AAVDJ-Ef1a-pSIO-ChrimsonR-tdTomato (1e13 vg/ml, Vectorbuilder) viral vector was used for optogenetic experiments.
+      description: AAVDJ viral vector expressing ChrimsonR-tdTomato under the EF1a promoter in PhiC31-expressing (VGLUT2+)
+        neurons (pSIO), used for optogenetic stimulation.
       manufacturer: Vectorbuilder
       construct_name: AAVDJ-Ef1a-pSIO-ChrimsonR-tdTomato
       titer_in_vg_per_ml: 1.0e+13
@@ -315,13 +316,13 @@ Optogenetics:
     chrimsonR_STN:
       name: chrimsonR_STN
       description: ChrimsonR opsin used for optogenetic stimulation injected into the STN.
-      manufacturer: Addgene
+      manufacturer: Vectorbuilder
       label: ChrimsonR-tdTomato
       viral_vector_injection_metadata_key: viral_vector_injection_STN
     chrimsonR_PPN:
       name: chrimsonR_PPN
       description: ChrimsonR opsin used for optogenetic stimulation injected into the PPN.
-      manufacturer: Addgene
+      manufacturer: Vectorbuilder
       label: ChrimsonR-tdTomato
       viral_vector_injection_metadata_key: viral_vector_injection_PPN
   OptogeneticSitesTable:
