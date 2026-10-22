@@ -225,9 +225,7 @@ def test_strain_has_its_rrid_term(recording_type):
     assert load_external_resources_metadata()["strain"][strain]["id"] == "RRID:IMSR_JAX:000664"
 
 
-@pytest.mark.parametrize(
-    "recording_type", ["SN pan DA recordings", "SN pan GABA recordings", "Cell_type recordings_Vglut2"]
-)
+@pytest.mark.parametrize("recording_type", sorted(load_session_config()["cohorts"]))
 def test_every_location_has_brain_region_terms(recording_type):
     brain_region_terms = load_external_resources_metadata()["brain_regions"]
 

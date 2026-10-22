@@ -31,3 +31,15 @@ ExternalResources:
         uri: https://purl.brain-bican.org/ontology/mbao/MBA_1052
       - id: UBERON:0002142
         uri: http://purl.obolibrary.org/obo/UBERON_0002142
+    # The Allen atlas has no DLS or TS subdivision: both get caudoputamen (CP) and the UBERON dorsal striatum, and the
+    # location string keeps the subregion
+    dorsolateral striatum (DLS):
+      - id: MBA:672
+        uri: https://purl.brain-bican.org/ontology/mbao/MBA_672
+      - id: UBERON:0005382
+        uri: http://purl.obolibrary.org/obo/UBERON_0005382
+    tail of the striatum (TS):
+      - id: MBA:672
+        uri: https://purl.brain-bican.org/ontology/mbao/MBA_672
+      - id: UBERON:0005382
+        uri: http://purl.obolibrary.org/obo/UBERON_0005382
