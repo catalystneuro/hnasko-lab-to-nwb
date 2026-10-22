@@ -64,7 +64,15 @@ include = ["src/"]
 line-length = 120
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F"]
+select = ["E4", "E7", "E9", "F", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+# Docstring rules apply to the hadjas_2025 modules only, not to its notebooks
+"!src/hnasko_lab_to_nwb/hadjas_2025/**" = ["D"]
+"*.ipynb" = ["D"]
 
 [project.urls]
 Repository="https://github.com/catalystneuro/hnasko-lab-to-nwb"
