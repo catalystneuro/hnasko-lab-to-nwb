@@ -29,7 +29,6 @@ DeviceModels:
     name: optical_fiber_model_1
     description: Chronically implantable optic fiber.
     manufacturer: RWD
-    model_number: <model of the optical fiber>
     numerical_aperture: 0.39
     core_diameter_in_um: 400.0
     active_length_in_mm: 6.0
@@ -53,7 +52,6 @@ Devices:
     type: OpticalFiber
     name: optical_fiber_SNr
     description: Chronically implanted optic fiber.
-    serial_number: <serial number of the optical fiber>
     fiber_insertion:
       insertion_position_ap_in_mm: -3.3
       insertion_position_ml_in_mm: 1.4
