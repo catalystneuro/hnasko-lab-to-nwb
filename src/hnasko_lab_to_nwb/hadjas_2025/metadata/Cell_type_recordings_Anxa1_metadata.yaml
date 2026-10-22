@@ -205,9 +205,9 @@ FiberPhotometry:
       of SNc.
   dF_SNc:
     name: deltaF_over_F_SNc
-    description: The deltaF/F signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm and calculated
-      as (Gc - fitted_af) / fitted_af.
-    unit: a.u.
+    description: The deltaF/F signal from GCaMP8f calcium indicator in SNc Anxa1+ neurons, excited at 465nm and calculated in percent as 100 * (Gc -
+      fitted_af) / fitted_af.
+    unit: percent
     fiber_photometry_table_region: [SNc_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal
       of SNc.
@@ -244,9 +244,9 @@ FiberPhotometry:
       of DLS.
   dF_DLS:
     name: deltaF_over_F_DLS
-    description: The deltaF/F signal from GCaMP8f dopamine indicator in DLS Anxa1+ terminals, excited at 465nm and calculated
-      as (Gc - fitted_af) / fitted_af.
-    unit: a.u.
+    description: The deltaF/F signal from GCaMP8f dopamine indicator in DLS Anxa1+ terminals, excited at 465nm and calculated in percent as 100 * (Gc -
+      fitted_af) / fitted_af.
+    unit: percent
     fiber_photometry_table_region: [DLS_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the deltaF/F signal
       of DLS.
