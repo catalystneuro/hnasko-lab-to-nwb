@@ -60,18 +60,22 @@ Devices:
   photodetector:
     type: Photodetector
     name: photodetector
+    description: Photodetector that records the fluorescence collected by the fiber (raw Fi1r signal).
     device_model_metadata_key: photodetector_model
   emission_filter:
     type: BandOpticalFilter
     name: emission_filter
+    description: Emission filter of the fluorescence mini cube.
     device_model_metadata_key: emission_filter_model
   excitation_filter:
     type: BandOpticalFilter
     name: excitation_filter
+    description: Excitation filter of the fluorescence mini cube.
     device_model_metadata_key: excitation_filter_model
   dichroic_mirror:
     type: DichroicMirror
     name: dichroic_mirror
+    description: Dichroic mirror of the fluorescence mini cube.
     device_model_metadata_key: dichroic_mirror_model
   optogenetic_excitation_source:
     type: ExcitationSource
