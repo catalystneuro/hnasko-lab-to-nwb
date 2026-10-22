@@ -187,3 +187,17 @@ def test_locations_are_full_anatomical_names_with_the_abbreviation(recording_typ
 
     assert locations
     assert [location for location in locations if not re.fullmatch(r"[a-z ]+ \([A-Za-z]+\)", location)] == []
+
+
+@pytest.mark.parametrize("recording_type", sorted(load_session_config()["cohorts"]))
+def test_processed_series_describe_the_lab_processing_steps(recording_type):
+    fiber_photometry = load_cohort_metadata(recording_type)["FiberPhotometry"]
+
+    for key, series in fiber_photometry.items():
+        description = series.get("description", "")
+        if key.startswith(("Gc_raw_", "af_raw_", "Gc_", "af_")):
+            assert "lowpass filtered" in description and "6 Hz" in description, key
+        if key.startswith(("Gc_", "af_")) and not key.startswith(("Gc_raw_", "af_raw_")):
+            assert "downsampled to 100 Hz" in description, key
+        if key.startswith("dF_"):
+            assert "biexponential" in description and "robust linear regression" in description, key
