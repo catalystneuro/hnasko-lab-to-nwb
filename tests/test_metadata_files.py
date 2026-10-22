@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -167,3 +168,22 @@ def test_experiment_description_mentions_only_the_converted_sessions(recording_t
 
     for word in ("shock", "video", "anymaze", "first two days"):
         assert word not in experiment_description
+
+
+def find_locations(value) -> list[str]:
+    """Return the values of every "location" key in a nested metadata structure."""
+    if isinstance(value, dict):
+        own_location = [value["location"]] if "location" in value else []
+        return own_location + [location for item in value.values() for location in find_locations(item)]
+    if isinstance(value, list):
+        return [location for item in value for location in find_locations(item)]
+    return []
+
+
+@pytest.mark.parametrize("recording_type", sorted(load_session_config()["cohorts"]))
+def test_locations_are_full_anatomical_names_with_the_abbreviation(recording_type):
+    # e.g. "substantia nigra pars compacta (SNc)"
+    locations = find_locations(load_cohort_metadata(recording_type))
+
+    assert locations
+    assert [location for location in locations if not re.fullmatch(r"[a-z ]+ \([A-Za-z]+\)", location)] == []

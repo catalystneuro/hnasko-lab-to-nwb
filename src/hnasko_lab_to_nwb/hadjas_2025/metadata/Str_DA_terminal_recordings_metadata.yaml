@@ -102,7 +102,7 @@ FiberPhotometry:
     viral_vector_injection_DLS:
       name: viral_vector_injection_DLS
       description: Viral injection of GCaMP6f in DLS.
-      location: Dorsolateral Striatum (DLS)
+      location: dorsolateral striatum (DLS)
       hemisphere: right
       reference: bregma at the cortical surface
       ap_in_mm: 0.5
@@ -113,7 +113,7 @@ FiberPhotometry:
     viral_vector_injection_TS:
       name: viral_vector_injection_TS
       description: Viral injection of GCaMP6f in TS.
-      location: Tail Striatum (TS)
+      location: tail of the striatum (TS)
       hemisphere: right
       reference: bregma at the cortical surface
       ap_in_mm: -1.25
@@ -141,7 +141,7 @@ FiberPhotometry:
       patch cord coupled to a pigtailed rotary joint (Doric Lenses). The LED excitation power was below 0.2 mW.
     rows:
       DLS_465:
-        location: DLS
+        location: dorsolateral striatum (DLS)
         excitation_wavelength_in_nm: 465.0
         emission_wavelength_in_nm: 515.0
         indicator_metadata_key: GCaMP6f_DLS
@@ -152,7 +152,7 @@ FiberPhotometry:
         excitation_filter_metadata_key: excitation_filter
         dichroic_mirror_metadata_key: dichroic_mirror
       DLS_405:
-        location: DLS
+        location: dorsolateral striatum (DLS)
         excitation_wavelength_in_nm: 405.0
         emission_wavelength_in_nm: 515.0
         indicator_metadata_key: GCaMP6f_DLS
@@ -163,7 +163,7 @@ FiberPhotometry:
         excitation_filter_metadata_key: excitation_filter
         dichroic_mirror_metadata_key: dichroic_mirror
       TS_465:
-        location: TS
+        location: tail of the striatum (TS)
         excitation_wavelength_in_nm: 465.0
         emission_wavelength_in_nm: 515.0
         indicator_metadata_key: GCaMP6f_TS
@@ -174,7 +174,7 @@ FiberPhotometry:
         excitation_filter_metadata_key: excitation_filter
         dichroic_mirror_metadata_key: dichroic_mirror
       TS_405:
-        location: TS
+        location: tail of the striatum (TS)
         excitation_wavelength_in_nm: 405.0
         emission_wavelength_in_nm: 515.0
         indicator_metadata_key: GCaMP6f_TS
@@ -290,7 +290,7 @@ Optogenetics:
       name: viral_vector_injection_STN
       description: Viral injection into the Subthalamic Nucleus (STN). The injected volume was 150 to 200 nl across mice;
         volume_in_uL is the upper bound.
-      location: STN
+      location: subthalamic nucleus (STN)
       hemisphere: right
       reference: bregma at the cortical surface
       ap_in_mm: -2.0
