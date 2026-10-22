@@ -113,3 +113,15 @@ def test_subject_age_is_the_range_older_than_6_weeks():
 def test_fdio_gcamp6f_has_its_addgene_catalog_number(file_path):
     # pAAV-Ef1a-fDIO-GCaMP6f is Addgene 128315; the preprint gives 1283125
     assert "1283125" not in file_path.read_text()
+
+
+@pytest.mark.parametrize("recording_type", sorted(load_session_config()["cohorts"]))
+def test_opsin_injection_volume_and_titer_are_the_upper_bounds_of_the_ranges(recording_type):
+    # the preprint gives 150 to 200 nl of ChrimsonR at 4 to 8.5e12 vg/ml (1e13 vg/ml for the Anxa1 cohort)
+    optogenetics = load_cohort_metadata(recording_type)["Optogenetics"]
+
+    for injection in optogenetics["OptogeneticVirusInjections"].values():
+        assert injection["volume_in_uL"] == 0.2
+        assert "150 to 200 nl" in injection["description"]
+    expected_titer = 1.0e13 if recording_type == "Cell_type recordings_Anxa1" else 8.5e12
+    assert optogenetics["OptogeneticViruses"]["viral_vector_ogen"]["titer_in_vg_per_ml"] == expected_titer
