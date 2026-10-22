@@ -1,0 +1,7 @@
+# Ontology terms shared by all Hadjas 2025 cohorts, written into the file as HERD references. Each map is keyed by the
+# exact value it annotates (Subject.species, Subject.strain, or a location string).
+ExternalResources:
+  species:
+    Mus musculus:
+      id: NCBITaxon:10090
+      uri: http://purl.obolibrary.org/obo/NCBITaxon_10090
