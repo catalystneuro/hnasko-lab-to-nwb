@@ -9,3 +9,25 @@ ExternalResources:
     C57BL/6J:  # the background all transgenic lines were backcrossed onto
       id: RRID:IMSR_JAX:000664
       uri: https://scicrunch.org/resolver/RRID:IMSR_JAX:000664
+  # Allen Mouse Brain Atlas (MBA) and UBERON terms for the fiber, injection and recording locations
+  brain_regions:
+    substantia nigra pars compacta (SNc):
+      - id: MBA:374
+        uri: https://purl.brain-bican.org/ontology/mbao/MBA_374
+      - id: UBERON:0001965
+        uri: http://purl.obolibrary.org/obo/UBERON_0001965
+    substantia nigra pars reticulata (SNr):
+      - id: MBA:381
+        uri: https://purl.brain-bican.org/ontology/mbao/MBA_381
+      - id: UBERON:0001966
+        uri: http://purl.obolibrary.org/obo/UBERON_0001966
+    subthalamic nucleus (STN):
+      - id: MBA:470
+        uri: https://purl.brain-bican.org/ontology/mbao/MBA_470
+      - id: UBERON:0001906
+        uri: http://purl.obolibrary.org/obo/UBERON_0001906
+    pedunculopontine nucleus (PPN):
+      - id: MBA:1052
+        uri: https://purl.brain-bican.org/ontology/mbao/MBA_1052
+      - id: UBERON:0002142
+        uri: http://purl.obolibrary.org/obo/UBERON_0002142
