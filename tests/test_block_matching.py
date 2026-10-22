@@ -5,7 +5,12 @@ import numpy as np
 import pytest
 
 from hnasko_lab_to_nwb.hadjas_2025 import convert_session
-from hnasko_lab_to_nwb.hadjas_2025.convert_session import get_block_trials, get_train_duration_label, match_mat_segments
+from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
+    get_block_trials,
+    get_train_duration_label,
+    get_train_duration_trials,
+    match_mat_segments,
+)
 
 FREQUENCY_EPOCS = ["H10_", "H20_", "H40_", "H05_"]
 
@@ -89,3 +94,29 @@ def test_block_trials_span_each_block_and_carry_its_train_duration(monkeypatch, 
         dict(start_time=591.0, stop_time=594.0, tags="1s"),
     ]
     assert get_block_trials(folder_paths[:1], [0.0], FREQUENCY_EPOCS) == []
+
+
+def test_single_block_frequencies_trials_span_the_trains_of_each_duration(monkeypatch):
+    # SN pan GABA PPN (e.g. C4550): one block with the 250 ms, then 1 s, then 4 s trains of every frequency
+    epocs = {
+        "H05_": dict(onset=np.array([34.5, 522.3, 1167.1]), offset=np.array([34.75, 523.3, 1171.1])),
+        "H40_": dict(onset=np.array([95.3, 585.3, 1239.1]), offset=np.array([95.56, 586.3, 1243.1])),
+        "H10_": dict(onset=np.array([54.8, 60.0]), offset=np.array([55.05, 60.0])),  # zero-length train, dropped
+    }
+    monkeypatch.setattr(convert_session, "read_tdt_epocs", lambda folder_path: epocs)
+
+    trials = get_train_duration_trials(Path("C4550-240117-133254"), FREQUENCY_EPOCS)
+
+    assert trials == [
+        dict(start_time=34.5, stop_time=95.56, tags="250ms"),
+        dict(start_time=522.3, stop_time=586.3, tags="1s"),
+        dict(start_time=1167.1, stop_time=1243.1, tags="4s"),
+    ]
+
+
+def test_single_block_trials_fail_when_train_durations_alternate(monkeypatch):
+    epocs = {"H10_": dict(onset=np.array([10.0, 31.0, 52.0]), offset=np.array([10.25, 32.0, 52.25]))}
+    monkeypatch.setattr(convert_session, "read_tdt_epocs", lambda folder_path: epocs)
+
+    with pytest.raises(ValueError, match="alternate"):
+        get_train_duration_trials(Path("C0001-240101-120000"), FREQUENCY_EPOCS)

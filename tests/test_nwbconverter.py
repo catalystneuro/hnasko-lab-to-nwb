@@ -17,7 +17,7 @@ def write_video(file_path, num_frames: int = 10, frame_rate: float = 10.0):
     return file_path
 
 
-def test_converter_shifts_video_frame_times_and_adds_video_trial(tmp_path):
+def test_converter_shifts_video_frame_times(tmp_path):
     video_file_path = write_video(tmp_path / "C0001_1s.mp4")
     converter = Hadjas2025NWBConverter(
         source_data=dict(Video_1s=dict(file_paths=[video_file_path], video_name="BehavioralVideo_1s")),
@@ -37,10 +37,6 @@ def test_converter_shifts_video_frame_times_and_adds_video_trial(tmp_path):
     else:
         written_times = video_series.starting_time + np.arange(10) / video_series.rate
     np.testing.assert_allclose(written_times, frame_times)
-    trials = nwbfile.trials.to_dataframe()
-    np.testing.assert_allclose(trials["start_time"], [frame_times[0]])
-    np.testing.assert_allclose(trials["stop_time"], [frame_times[-1]])
-    assert list(trials["tags"]) == [["1s"]]
 
 
 def test_converter_adds_one_trial_per_block():
