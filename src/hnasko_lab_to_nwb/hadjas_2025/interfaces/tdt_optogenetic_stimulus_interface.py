@@ -1,3 +1,5 @@
+"""Optogenetic stimulation trains of the TDT blocks of a session, as ndx-optogenetics epochs."""
+
 import logging
 from pathlib import Path
 from typing import List
@@ -18,6 +20,10 @@ logger = logging.getLogger(__name__)
 def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
     """Get or create the OptogeneticExperimentMetadata in the NWBFile.
 
+    Builds the viral vectors, injections and effectors of metadata["Optogenetics"], and the OptogeneticSitesTable
+    with one row per stimulation site. The optical fiber and excitation source of each row are added to
+    nwbfile.devices from the shared "Devices" registry. The result is added to nwbfile.lab_meta_data.
+
     Parameters
     ----------
     nwbfile : NWBFile
@@ -29,6 +35,11 @@ def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
     -------
     OptogeneticExperimentMetadata
         The OptogeneticExperimentMetadata object.
+
+    Raises
+    ------
+    ValueError
+        If metadata["Optogenetics"] has no effector.
     """
     from ndx_optogenetics import (
         OptogeneticSitesTable,
@@ -109,15 +120,21 @@ def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
 
 
 class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
-    """
-    Data Interface for converting and concatenating optogenetic stimulus data from multiple Hnasko Lab tdt folders.
+    """Write the optogenetic stimulation trains of the TDT blocks of a session as one epochs table.
 
-    Extracts optogenetic stimulus signals from TDT system, then parses into the ndx-optogenetic format.
+    Input files: the TDT block folders of one session (.Tbk, .Tdx, .tev, .tin and .tsq files). TDT Synapse stores
+    the onset and offset of each stimulation train as an epoc, under a name per train duration (e.g. "s1s_",
+    varying-durations protocol) or per pulse frequency (e.g. "H10_", varying-frequencies protocol). The epocs of
+    all blocks are read, with times from the start of the first block.
 
-    Verified to work with:
-    - SNr GABA recordings (PPN stimulation)
-    - GRAB-DA recordings (DLS & TS sites, PPN stimulation)
-    - SNc pan-DA recordings (STN stimulation)
+    NWB objects written:
+
+    - the OptogeneticExperimentMetadata in nwbfile.lab_meta_data (viral vectors, injections, effectors and the
+      OptogeneticSitesTable), and the optical fiber and excitation source of each site in nwbfile.devices.
+    - an OptogeneticEpochsTable in nwbfile.intervals, named by metadata["Optogenetics"]["OptogeneticEpochsTable"],
+      with one row per train in time order. Besides the ndx-optogenetics columns it has stimulus_frequency,
+      train_duration (the protocol duration of the train) and tdt_block (the block folder name). Trains without
+      an offset, of zero length or of a duration that is not the protocol's are left out and logged.
     """
 
     keywords = ("processed optogenetic stimulus",)
@@ -135,8 +152,8 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
 
         Parameters
         ----------
-        file_path : FilePath
-            The path to the .mat file containing the processed optogenetic stimulus data.
+        folder_paths : List[DirectoryPath]
+            The TDT block folders of the session, in chronological order.
         verbose : bool, optional
             Whether to print status messages, default = True.
         """
@@ -144,11 +161,9 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
             folder_paths=folder_paths,
             verbose=verbose,
         )
-        # This module should be here so ndx_optogenetics is in the global namespace when an pynwb.io object is created
 
     def get_metadata(self) -> DeepDict:
-        """
-        Get metadata for the Hadjas2025TDTOptogeneticStimulusInterface.
+        """Get metadata for the Hadjas2025TDTOptogeneticStimulusInterface.
 
         Returns
         -------
@@ -159,8 +174,7 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         return metadata
 
     def get_metadata_schema(self) -> dict:
-        """
-        Get the metadata schema for the Hadjas2025TDTOptogeneticStimulusInterface.
+        """Get the metadata schema for the Hadjas2025TDTOptogeneticStimulusInterface.
 
         Returns
         -------
@@ -171,14 +185,18 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         return metadata_schema
 
     def get_events(self) -> dict:
-        """
-        Get the epocs of all blocks, with times in seconds from the start of the first block.
+        """Get the epocs of all blocks, with times in seconds from the start of the first block.
 
         Returns
         -------
         dict
             {epoc name: {"onset": list, "offset": list, "block_name": list}}, with the name of the TDT block folder
             of each event.
+
+        Raises
+        ------
+        AssertionError
+            If the blocks are not in chronological order.
         """
         folder_paths = self.source_data["folder_paths"]
         start_timestamps = [read_tdt_start_timestamp(folder_path) for folder_path in folder_paths]
@@ -203,17 +221,23 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         metadata: dict,
         tdt_stimulus_channel_to_frequency: dict,
     ):
-        """
-        Add the data to an NWBFile.
+        """Add the optogenetic experiment metadata and the epochs table of the trains to an NWBFile.
 
         Parameters
         ----------
         nwbfile : pynwb.NWBFile
             The in-memory object to add the data to.
         metadata : dict
-            Metadata dictionary with information used to create the NWBFile.
+            Metadata dictionary with the "Optogenetics" section (including "OptogeneticEpochsTable",
+            "power_in_mW" and "excitation_wavelength_in_nm") and the "Devices" and "DeviceModels" registry.
         tdt_stimulus_channel_to_frequency : dict
-            Mapping of TDT stimulus channel names to their corresponding frequencies.
+            Pulse frequency in Hz of each stimulation epoc name of the protocol, e.g. {"H10_": 10.0}
+            (epoc_name_to_frequency_in_hz of the session config).
+
+        Raises
+        ------
+        ValueError
+            If none of the epoc names is in the TDT blocks.
         """
         from ndx_optogenetics import (
             OptogeneticEpochsTable,
