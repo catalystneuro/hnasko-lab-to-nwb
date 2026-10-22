@@ -1,4 +1,9 @@
-"""Primary script to run to convert an entire session for of data using the NWBConverter."""
+"""Convert one session of the Hadjas 2025 dataset to NWB with Hadjas2025NWBConverter.
+
+A session is one protocol (varying durations or varying frequencies) of one subject. session_to_nwb finds the
+session's TDT blocks and the lab's processed .mat file, builds the metadata from the files in metadata/ and the
+session config (metadata/session_config.yaml), and writes sub-<subject ID>_ses-<session ID>.nwb.
+"""
 
 from datetime import date, datetime
 from pathlib import Path
@@ -202,21 +207,20 @@ def normalize_hemisphere(hemisphere) -> str:
 
 
 def update_coordinates_for_left_hemisphere(metadata: dict) -> dict:
-    """
-    Update medio-lateral coordinates and hemisphere references in metadata dictionary.
+    """Move the coordinates of the metadata to the left hemisphere, for subjects implanted on the left.
 
-    This function converts all positive ML (medio-lateral) coordinates to negative values
-    and updates hemisphere references from "right" to the specified hemisphere (default "left").
+    The metadata files give right-hemisphere coordinates. Every positive "ml_in_mm" or "insertion_position_ml_in_mm"
+    value is made negative, and every "hemisphere" value "right" becomes "left", at any depth.
 
     Parameters
     ----------
     metadata : dict
-        The metadata dictionary to update (typically loaded from YAML file)
+        The metadata dictionary to update (typically loaded from the YAML files).
 
     Returns
     -------
     dict
-        The updated metadata dictionary with modified coordinates and hemisphere references
+        An updated copy of the metadata; the input is not changed.
     """
     import copy
 
@@ -664,6 +668,9 @@ def session_to_nwb(
 ):
     """Convert one session (one protocol of one subject) to NWB.
 
+    The file is written to output_dir_path / f"sub-{subject_id}_ses-{session_id}.nwb", or to the nwb_stub
+    subfolder for a stub test. The session ID is from get_session_id.
+
     Parameters
     ----------
     output_dir_path : Union[str, Path]
@@ -693,6 +700,12 @@ def session_to_nwb(
     Varying-durations sessions have one TDT block in the protocol folder. Varying-frequencies sessions have one
     block per train duration in varFreq_* subfolders, written as one concatenated series, except SN pan GABA PPN,
     which has one block for all durations.
+
+    The metadata is merged in this order: the shared and cohort metadata files (load_cohort_metadata), moved to
+    the left hemisphere if the subject was implanted on the left, the devices of the rig (load_rig_devices_metadata),
+    then the subject, session and LED modulation fields set here. The ontology terms
+    (load_external_resources_metadata) are set after the last merge. Optogenetics entries for other stimulus
+    sites are removed.
     """
     subject_id = subject_metadata["Animal ID"]
 
