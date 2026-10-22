@@ -43,11 +43,11 @@ DeviceModels:
   optogenetic_excitation_source_model:
     type: ExcitationSourceModel
     name: optogenetic_excitation_source_model
-    description: Red LED device used for optogenetic stimulation.
-    manufacturer: Shanghai laser
-    source_type: LED
+    description: 635 nm red laser used for optogenetic stimulation.
+    manufacturer: Shanghai Laser
+    model_number: RLM635TA-150FC
+    source_type: laser
     excitation_mode: one-photon
-    wavelength_range_in_nm: [580.0, 680.0]
 Devices:
   excitation_source_calcium_signal:
     type: ExcitationSource
@@ -76,5 +76,5 @@ Devices:
   optogenetic_excitation_source:
     type: ExcitationSource
     name: optogenetic_excitation_source
-    description: Red LED device used for optogenetic stimulation.
+    description: Red laser that delivered the optogenetic stimulation trains.
     device_model_metadata_key: optogenetic_excitation_source_model
