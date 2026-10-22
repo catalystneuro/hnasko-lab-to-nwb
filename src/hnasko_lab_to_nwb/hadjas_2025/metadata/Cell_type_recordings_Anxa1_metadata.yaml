@@ -265,25 +265,27 @@ Optogenetics:
   OptogeneticVirusInjections:
     viral_vector_injection_STN:
       name: viral_vector_injection_STN
-      description: Viral injection into the Subthalamic Nucleus (STN).
+      description: Viral injection into the Subthalamic Nucleus (STN). The injected volume was 150 to 200 nl across mice;
+        volume_in_uL is the upper bound.
       location: STN
       hemisphere: right
       reference: bregma at the cortical surface
       ap_in_mm: -2.0
       ml_in_mm: 1.6
       dv_in_mm: -4.5
-      volume_in_uL: 0.15
+      volume_in_uL: 0.2
       viral_vector_metadata_key: viral_vector_ogen
     viral_vector_injection_PPN:
       name: viral_vector_injection_PPN
-      description: Viral injection into the Pedunculopontine Nucleus (PPN).
+      description: Viral injection into the Pedunculopontine Nucleus (PPN). The injected volume was 150 to 200 nl across mice;
+        volume_in_uL is the upper bound.
       location: PPN
       hemisphere: right
       reference: bregma at the cortical surface
       ap_in_mm: -4.48
       ml_in_mm: 1.1
       dv_in_mm: -3.75
-      volume_in_uL: 0.15
+      volume_in_uL: 0.2
       viral_vector_metadata_key: viral_vector_ogen
   OptogeneticEffectors:
     chrimsonR_STN:
