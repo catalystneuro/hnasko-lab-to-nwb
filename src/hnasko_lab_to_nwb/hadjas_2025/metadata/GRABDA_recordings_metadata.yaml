@@ -2,10 +2,13 @@
 NWBFile:
   keywords: [DLS fiber photometry recordings, TS fiber photometry recordings, Dopamine release, VGLUT2-Cre, STN optogenetic
       stimulation, PPN optogenetic stimulation, Parkinson's disease]
-  experiment_description: Striatal dopamine release in dorsolateral and tail striatum recordings. Mice were freely moving
-    on a plastic tub. Simultaneous passive optogenetic stimulation and fiber photometry recordings were conducted during the
-    first two days. Excitatory inputs from either the STN or PPN to SN were stimulated and the DA release in striatal subregions
-    (DLS or TS) in VGLUT2-Cre mice were recorded.
+  experiment_description: Dopamine release in the dorsolateral striatum (DLS) or the tail of the striatum (TS) during
+    optogenetic stimulation of excitatory inputs to the substantia nigra (SN). In VGLUT2-Cre mice, the dopamine sensor
+    GRAB-DA2m was expressed in DLS or TS and ChrimsonR was expressed in glutamatergic neurons of either the
+    subthalamic nucleus (STN) or the pedunculopontine nucleus (PPN). Light was delivered through a separate fiber over
+    SNc. Freely moving mice in a plastic tub received trains of 635 nm laser pulses delivered to the input's terminals
+    in SN while fluorescence was recorded. Each session follows one of two protocols, varying train durations or varying pulse
+    frequencies, described in the session description.
   surgery: Mice > 6 weeks old were anesthetized with isoflurane (4% for induction; 1-2% for maintenance). For monitoring DA
     release in striatal subregions (DLS and TS) in VGLUT2-Cre mice were injected with 300 nl of AAV9-EF1a-GRABDA2m (2e12 vg/mL,
     Addgene 140553) in either DLS (AP +0.5, ML +/-2.25, DV -2.95) or TS (AP -1.25, ML +/-2.9, DV -3.45). A fiber (200-um core,

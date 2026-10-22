@@ -2,10 +2,12 @@
 NWBFile:
   keywords: [SNc fiber photometry recordings, SNr GABAergic neurons, VGLUT2-Cre x VGAT-Flp, STN optogenetic stimulation, PPN
       optogenetic stimulation, Parkinson's disease]
-  experiment_description: SNr GABAergic neurons recordings. Mice were freely moving on a plastic tub. Simultaneous passive
-    optogenetic stimulation and fiber photometry recordings were conducted during the first two days. Excitatory inputs from
-    either the STN or PPN to SN were stimulated. Recordings of GCaMP6f fluorescence signal captured pan-GABA activity in the
-    SNr in VGLUT2-Cre x VGAT-Flp mice.
+  experiment_description: Activity of SNr GABA neurons during optogenetic stimulation of excitatory inputs to the
+    substantia nigra (SN). In VGLUT2-Cre x VGAT-Flp mice, GCaMP6f was expressed in SNr GABA neurons and ChrimsonR was
+    expressed in glutamatergic neurons of either the subthalamic nucleus (STN) or the pedunculopontine nucleus (PPN).
+    Light was delivered through the SNr recording fiber. Freely moving mice in a plastic tub received trains of 635 nm
+    laser pulses delivered to the input's terminals in SN while fluorescence was recorded. Each session follows one of two protocols, varying train durations or varying pulse
+    frequencies, described in the session description.
   surgery: Mice > 6 weeks old were anesthetized with isofluorane (4% for induction and 1-2% for maintenance), and provided
     with pre- and post-surgical analgesic carprofen (5 mg/kg i.p). For calcium recordings in VGLUT2-Cre x VGAT-Flp mice were
     injected with 300 nl of AAV1-Ef1a-fDIO-GCaMP6f (4e12 vg/mL, Addgene 128315) in SNr (AP -3.3, ML +/-1.3, DV -4.6). A fiber

@@ -2,10 +2,12 @@
 NWBFile:
   keywords: [DLS fiber photometry recordings, TS fiber photometry recordings, dopaminergic axon terminals, VGLUT2-Cre x DAT-Flp,
     STN optogenetic stimulation, Parkinson's disease]
-  experiment_description: Dopaminergic axon terminals recordings. Mice were freely moving on a plastic tub. Simultaneous passive
-    optogenetic stimulation and fiber photometry recordings were conducted during the first two days. Excitatory inputs from
-    either the STN or PPN to SN were stimulated. Recordings of GCaMP6f fluorescence signal captured striatal DA terminal activity
-    in VGLUT2-Cre x DAT-Flp mice.
+  experiment_description: Activity of dopamine axon terminals in the dorsolateral striatum (DLS) or the tail of the
+    striatum (TS) during optogenetic stimulation of subthalamic nucleus (STN) inputs to the substantia nigra (SN). In
+    VGLUT2-Cre x DAT-Flp mice, GCaMP6f was expressed in dopamine neurons and ChrimsonR in STN glutamatergic neurons.
+    Light was delivered through a separate fiber over SNc. Freely moving mice in a plastic tub received trains of 635
+    nm laser pulses delivered to the input's terminals in SN while fluorescence was recorded. Each session follows one of two protocols, varying train durations or varying pulse
+    frequencies, described in the session description.
   surgery: Mice > 6 weeks old were anesthetized with isofluorane (4% for induction and 1-2% for maintenance), and provided
     with pre- and post-surgical analgesic carprofen (5 mg/kg i.p). For calcium recordings of striatal DA terminals in VGLUT2-Cre
     x DAT-Flp mice were injected with 300 nl of AAV1-Ef1a-fDIO-GCaMP6f (4e12 vg/mL, Addgene 128315) in either DLS (AP +0.5,
