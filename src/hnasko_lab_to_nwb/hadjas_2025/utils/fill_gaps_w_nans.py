@@ -50,7 +50,7 @@ def fill_gaps_w_nans(data: np.ndarray, timestamps: np.ndarray, sampling_rate: fl
         num_nans = int(np.floor(time_diff * sampling_rate)) - 1
 
         # Create NaN arrays for the gap
-        nan_data = np.full(num_nans, np.nan)
+        nan_data = np.full(num_nans, np.nan, dtype=data.dtype)
         nan_timestamps = timestamps[gap_idx] + (np.arange(1, num_nans + 1) * expected_interval)
 
         filled_data.append(nan_data)

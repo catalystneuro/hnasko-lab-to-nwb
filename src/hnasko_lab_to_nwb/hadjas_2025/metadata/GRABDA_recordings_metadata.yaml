@@ -231,7 +231,7 @@ Ophys:
       - name: raw_signal_DLS
         description: The raw modulated fluorescence signal from GRABDA2m dopamine indicator in DLS neurons, excited at 465nm and 415nm, respectively.
         stream_name: Fi1r # TODO check stream name
-        stream_indices: None
+        stream_indices: null
         target_area: DLS
         unit: a.u.
         fiber_photometry_table_region: [0]
@@ -239,7 +239,7 @@ Ophys:
       - name: raw_signal_TS
         description: The raw modulated fluorescence signal from GRABDA2m dopamine indicator in TS neurons, excited at 465nm and 415nm, respectively.
         stream_name: Fi1r # TODO check stream name
-        stream_indices: None
+        stream_indices: null
         target_area: TS
         unit: a.u.
         fiber_photometry_table_region: [2]

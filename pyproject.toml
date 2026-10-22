@@ -72,3 +72,6 @@ Repository="https://github.com/catalystneuro/hnasko-lab-to-nwb"
 
 [tool.codespell]
 ignore-regex = '"image/png": ".*"'
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
