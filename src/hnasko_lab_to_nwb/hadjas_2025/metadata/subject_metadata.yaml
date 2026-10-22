@@ -8,5 +8,5 @@ Subject:
     (Slc6a3em1(flpo)Hbat, RRID:IMSR_JAX:035436) were generously provided by Dr. Helen Bateup (UC Berkeley). VGLUT2-PhiC31
     (Jeong et al. 2024) mice were generously provided by Dr. Lim (UC San Diego). DAT-Flp (Slc6a3em1(flpo)NW Jax and RRID)
     and Anxa1-Cre (RRID:MMRRC_069931-MU) were generously provided by Dr.Awatramani (Northwestern).
-  age: P6W
+  age: P6W/  # older than 6 weeks at surgery (ISO 8601 interval with no upper bound)
   strain: C57BL/6J

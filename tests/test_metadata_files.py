@@ -103,3 +103,7 @@ def test_striatal_cohorts_have_4_mm_recording_fibers_and_a_200_um_snc_stimulatio
     stimulation_fiber = devices["optical_fiber_SNc"]
     assert stimulation_fiber["fiber_insertion"]["insertion_position_ap_in_mm"] == -3.2
     assert device_models[stimulation_fiber["device_model_metadata_key"]]["core_diameter_in_um"] == 200
+
+
+def test_subject_age_is_the_range_older_than_6_weeks():
+    assert load_cohort_metadata("GRABDA recordings")["Subject"]["age"] == "P6W/"
