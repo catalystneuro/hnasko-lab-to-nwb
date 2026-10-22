@@ -5,7 +5,8 @@ data_streams:
   raw: true  # Fi1r photodetector signal of the TDT blocks
   processed: true  # demodulated, downsampled and dF/F signals of the lab's .mat file
   behavioral_video: false  # AnyMaze videos of the cohorts' behavioral_video_inputs, not part of the Hadjas 2025 paper
-# Each cohort key is the recording type of its metadata file (<recording type>_metadata.yaml).
+# Each cohort key is the recording type of its metadata file (<recording type>_metadata.yaml). inputs lists the
+# stimulated inputs converted (Input column of the sheet, and the input folder under data_folder).
 cohorts:
   SN pan GABA recordings:
     sheet_name: SNr GABA  # sheet of ASAP FP Overview.xlsx
@@ -102,7 +103,8 @@ protocols:
       H40_: 40.0
       H05_: 5.0
       HH5_: 5.0  # name of the 5 Hz store in the frequencies blocks of C3412, C3798 and C4707 (Vglut2, PPN)
-# Per-subject exceptions.
+# Per-subject exceptions. mat_cohort_folder is the data folder of the cohort whose .mat file holds the subject's
+# processed signals, when it is not the subject's own.
 subjects:
   # The processed signals of the 2022 SN pan DA STN subjects are in the SN pan GABA STN .mat files (site SNc).
   B8364: {mat_cohort_folder: SN pan GABA recordings}
