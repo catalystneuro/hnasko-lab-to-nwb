@@ -74,3 +74,14 @@ def test_single_block_series_is_written_with_its_rate(anxa1_metadata, make_conca
     series = nwbfile.acquisition["raw_signal_SNc"]
     assert series.timestamps is None
     assert (series.starting_time, series.rate) == (0.0, RZ10X_SAMPLING_FREQUENCY)
+
+
+def test_concatenated_tdt_series_starts_each_block_at_t1(anxa1_metadata, make_concatenated_tdt_interface):
+    interface = make_concatenated_tdt_interface(num_samples=500)
+    nwbfile = mock_NWBFile()
+
+    interface.add_to_nwbfile(nwbfile=nwbfile, metadata=anxa1_metadata, t1=0.5, t2=0.8)
+
+    series = nwbfile.acquisition["raw_signal_SNc"]
+    expected_timestamps = np.concatenate([start + 0.5 + np.arange(30) / 100.0 for start in SEGMENT_STARTING_TIMES])
+    np.testing.assert_allclose(series.timestamps, expected_timestamps)

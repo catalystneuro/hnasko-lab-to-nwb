@@ -126,7 +126,7 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
                 if self.stream_indices is not None:
                     data = data[:, self.stream_indices]
                 data = data.flatten()
-            timestamps = self.segment_starting_times[i] + np.arange(len(data)) / stream.fs
+            timestamps = self.segment_starting_times[i] + t1 + np.arange(len(data)) / stream.fs
 
             data_segments.append(data)
             timestamps_segments.append(timestamps)
