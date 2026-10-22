@@ -183,7 +183,26 @@ def test_find_tdt_folder_paths_fails_on_a_block_nested_in_another_block(tmp_path
 
 def test_varying_durations_with_16_s_trains_have_their_own_description():
     # 2022 recordings (24 kHz rig) add 16 s trains (S6s_); C1496 is on the same rig with the 3-duration protocol
-    description = get_session_description("Varying durations", ["Sms_", "S1s_", "S4s_", "S6s_", "Tick"])
+    description = get_session_description(
+        "Varying durations", ["Sms_", "S1s_", "S4s_", "S6s_", "Tick"], number_of_blocks=1
+    )
 
     assert "250 ms, 1 s, 4 s and 16 s" in description
-    assert get_session_description("Varying durations", ["sms_", "s1s_", "s4s_", "Cam1", "Tick"]) != description
+    assert "not analyzed in the paper" in description
+    assert (
+        get_session_description("Varying durations", ["sms_", "s1s_", "s4s_", "Cam1", "Tick"], number_of_blocks=1)
+        != description
+    )
+
+
+def test_varying_frequencies_descriptions_give_the_order_and_interval_of_the_trains():
+    # issue #21, finding 10: the trains of the frequencies protocol are 20 s apart, not 10 s
+    epoc_names = ["H05_", "H10_", "H20_", "H40_"]
+    description = get_session_description("Varying frequencies", epoc_names, number_of_blocks=3)
+    single_block_description = get_session_description("Varying frequencies", epoc_names, number_of_blocks=1)
+
+    for text in (description, single_block_description):
+        assert "5, 10, 20 and 40 Hz, in this order" in text
+        assert "20 s between the end of one train" in text
+    assert "one trial per block" in description
+    assert "one trial per train duration" in single_block_description
