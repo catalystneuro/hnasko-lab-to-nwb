@@ -39,12 +39,6 @@ DeviceModels:
   excitation_source_model_isosbestic:
     description: excitation source for GCaMP6f sensor's isosbestic control.
     wavelength_range_in_nm: [400.0, 410.0]
-  emission_filter_model:
-    description: emission filter model for GCaMP6f fluorescence signal.
-  excitation_filter_model:
-    description: excitation filter model for GCaMP6f fluorescence signal.
-  dichroic_mirror_model:
-    description: dichroic mirror model for GCaMP6f fluorescence signal.
 Devices:
   optical_fiber_SNr:
     type: OpticalFiber
@@ -61,12 +55,6 @@ Devices:
     description: excitation source for the sensor's fluorescence signal (465nm).
   excitation_source_isosbestic_control:
     description: excitation source for the sensor's isosbestic control (405nm).
-  emission_filter:
-    description: emission filter for GCaMP6f fluorescence signal.
-  excitation_filter:
-    description: excitation filter for GCaMP6f fluorescence signal.
-  dichroic_mirror:
-    description: dichroic mirror for GCaMP6f fluorescence signal.
 FiberPhotometry:
   FiberPhotometryViruses:
     viral_vector_gcamp6f:
@@ -97,7 +85,8 @@ FiberPhotometry:
       viral_vector_injection_metadata_key: viral_vector_injection_SNr
   FiberPhotometryTable:
     name: fiber_photometry_table
-    description: For monitoring calcium dynamics in SNr GABAergic neurons, a fiber was implanted in SNr.
+    description: For monitoring calcium dynamics in SNr GABAergic neurons, a fiber was implanted in SNr. Excitation light was delivered, and fluorescence collected, through a 400 um core, 0.57 NA low-autofluorescence
+      patch cord coupled to a pigtailed rotary joint (Doric Lenses). The LED excitation power was below 0.2 mW.
     rows:
       SNr_465:
         location: SNr

@@ -40,10 +40,6 @@ DeviceModels:
   excitation_source_model_isosbestic:
     description: excitation source for the sensor's isosbestic control.
     wavelength_range_in_nm: [400.0, 410.0]
-  emission_filter_model:
-    description: emission filter model for GCaMP8f fluorescence signal.
-  excitation_filter_model:
-    description: excitation filter model for GCaMP8f fluorescence signal.
 Devices:
   optical_fiber_DLS:
     type: OpticalFiber
@@ -118,7 +114,8 @@ FiberPhotometry:
       viral_vector_injection_metadata_key: viral_vector_injection_DLS
   FiberPhotometryTable:
     name: fiber_photometry_table
-    description: For monitoring calcium dynamics in Anxa1+ neurons and terminals, a fiber was implanted in SNc and DLS.
+    description: For monitoring calcium dynamics in Anxa1+ neurons and terminals, a fiber was implanted in SNc and DLS. Excitation light was delivered, and fluorescence collected, through a 400 um core, 0.57 NA low-autofluorescence
+      patch cord coupled to a pigtailed rotary joint (Doric Lenses). The LED excitation power was below 0.2 mW.
     rows:
       SNc_465:
         location: SNc
