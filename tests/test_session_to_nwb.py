@@ -98,3 +98,26 @@ def test_unknown_data_streams_raise(tmp_path, fake_tdt_block):
             protocol="Varying durations",
             data_streams=dict(processd=False),
         )
+
+
+def test_anxa1_session_description_states_the_recording_site(tmp_path, fake_tdt_block):
+    # Anxa1 mice have a session per recording site (issue #21, finding 15)
+    protocol_folder_path = (
+        tmp_path / "Cell_type recordings" / "PPN" / "Fiber photometry_TDT" / "Varying durations" / "Anxa1 DLS"
+    )
+    (protocol_folder_path / "C0001-240117-101500").mkdir(parents=True)
+    output_dir_path = tmp_path / "nwb"
+
+    session_to_nwb(
+        output_dir_path=output_dir_path,
+        subject_metadata=dict(SUBJECT_METADATA, **{"Recording Site": "SNc"}),
+        protocol_folder_path=protocol_folder_path,
+        recording_type="Cell_type recordings_Anxa1",
+        stimulus_location="PPN",
+        protocol="Varying durations",
+        data_streams=dict(processed=False),
+    )
+
+    with NWBHDF5IO(output_dir_path / "sub-C0001_ses-varying_durations_DLS.nwb", "r") as io:
+        session_description = io.read().session_description
+        assert session_description.endswith("recorded through the dorsolateral striatum (DLS) fiber.")
