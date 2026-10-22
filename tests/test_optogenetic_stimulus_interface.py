@@ -120,3 +120,17 @@ def test_pulse_length_is_nan_as_pulses_were_not_recorded(tmp_path, stn_metadata)
     epochs_table = nwbfile.intervals["optogenetic_epochs_table"]
     assert np.isnan(epochs_table.to_dataframe()["pulse_length_in_ms"]).all()
     assert "pulse width was not recorded" in epochs_table.description
+
+
+def test_trains_of_a_duration_outside_the_protocol_are_dropped_and_logged(tmp_path, stn_metadata, caplog):
+    # e.g. C2659 varying frequencies: a 0.54 s artifact in every H*_ store before the first 4 s train
+    events = {"H10_": dict(onset=np.array([9.69, 71.19]), offset=np.array([10.23, 75.19]))}
+    nwbfile = mock_NWBFile()
+
+    make_interface(tmp_path, events).add_to_nwbfile(
+        nwbfile=nwbfile, metadata=stn_metadata, tdt_stimulus_channel_to_frequency={"H10_": 10.0}
+    )
+
+    epochs = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe()
+    assert list(epochs["start_time"]) == [71.19]
+    assert "Dropped 1 of 2 H10_ trains" in caplog.text
