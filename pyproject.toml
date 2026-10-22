@@ -15,6 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 dependencies = [
@@ -26,10 +27,22 @@ dependencies = [
   "openpyxl",
   "opencv-python-headless",
   "tdt",
-  "dandi",
+  "dandi>=0.60",
   "remfile",
+  "h5py",
+  "numpy",
+  "pandas",
+  "pydantic",
+  "pytz",
+  "tqdm",
+]
+
+[project.optional-dependencies]
+analysis = [
   "ipykernel",
-  "remfile",
+  "matplotlib",
+  "scipy",
+  "statsmodels",
 ]
 
 [dependency-groups]
@@ -48,11 +61,14 @@ packages = ["src/hnasko_lab_to_nwb"]
 [tool.hatch.build.targets.sdist]
 include = ["src/"]
 
-[tool.black]
-line-length = 120
-
 [tool.ruff]
 line-length = 120
 
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
 [project.urls]
 Repository="https://github.com/catalystneuro/hnasko-lab-to-nwb"
+
+[tool.codespell]
+ignore-regex = '"image/png": ".*"'
