@@ -158,3 +158,12 @@ def test_subject_description_names_only_the_cohort_mouse_lines(recording_type):
     lines = subject["genotype"].split(" x ")
     for line in ("VGLUT2-Cre", "VGAT-Flp", "DAT-Flp", "VGLUT2-PhiC31", "Anxa1-Cre"):
         assert (f"{line} " in subject["description"]) == (line in lines), line
+
+
+@pytest.mark.parametrize("recording_type", sorted(load_session_config()["cohorts"]))
+def test_experiment_description_mentions_only_the_converted_sessions(recording_type):
+    # shock sessions, videos and AnyMaze are not part of the Hadjas 2025 dandiset
+    experiment_description = load_cohort_metadata(recording_type)["NWBFile"]["experiment_description"].lower()
+
+    for word in ("shock", "video", "anymaze", "first two days"):
+        assert word not in experiment_description
