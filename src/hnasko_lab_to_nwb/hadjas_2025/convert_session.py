@@ -820,6 +820,10 @@ def session_to_nwb(
     metadata["NWBFile"]["session_description"] = get_session_description(
         protocol=protocol, epoc_names=list(read_tdt_epocs(tdt_folder_paths[0])), number_of_blocks=len(tdt_folder_paths)
     )
+    if cohort_config.get("site_in_session_id", False):
+        # Anxa1 mice have one session per recording site
+        site_location = metadata["FiberPhotometry"]["FiberPhotometryTable"]["rows"][f"{recording_site}_465"]["location"]
+        metadata["NWBFile"]["session_description"] += f" Fluorescence was recorded through the {site_location} fiber."
     metadata["NWBFile"]["session_start_time"] = session_start_time
     add_led_modulation_to_metadata(metadata=metadata, led_modulation=get_led_modulation(session_start_time))
 
