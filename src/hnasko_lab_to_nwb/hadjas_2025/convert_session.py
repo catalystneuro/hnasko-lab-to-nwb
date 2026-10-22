@@ -357,6 +357,24 @@ def get_recording_site(recording_type: str, protocol_folder_path: Path) -> str |
     return Path(protocol_folder_path).name.removeprefix(f"{cohort_config['subgroup_folder_prefix']} ")
 
 
+def get_raw_series_site(subject_metadata: dict, recording_site: str | None) -> str:
+    """Get the recording site that keys the raw series metadata (e.g. "Fi1r_DLS").
+
+    Parameters
+    ----------
+    subject_metadata : dict
+        Row of the overview sheet for the subject.
+    recording_site : str or None
+        The recording site from get_recording_site.
+
+    Returns
+    -------
+    str
+        The site of the Cell_type subgroup folder, or else the Recording Site of the overview sheet.
+    """
+    return recording_site if recording_site is not None else subject_metadata["Recording Site"]
+
+
 def get_session_id(protocol: str, recording_type: str, recording_site: str | None) -> str:
     """Get the session ID: the protocol's, followed by the recording site for cohorts recorded at several sites.
 
@@ -551,8 +569,6 @@ def session_to_nwb(
         mat_subject_id=mat_subject_id,
         folder_paths=tdt_folder_paths,
     )
-    # The Anxa1 .mat files group subjects by stimulus site; their series are keyed by recording site
-    raw_target_area = recording_site if target_area in ("STN_to_Anxa1", "PPN_to_Anxa1") else target_area
 
     source_data = dict()
     conversion_options = dict()
@@ -561,7 +577,7 @@ def session_to_nwb(
     raw_source_data = dict(
         folder_paths=tdt_folder_paths,
         stream_name="Fi1r",
-        metadata_key=f"Fi1r_{raw_target_area}",
+        metadata_key=f"Fi1r_{get_raw_series_site(subject_metadata=subject_metadata, recording_site=recording_site)}",
         stream_indices=raw_stream_settings["stream_indices"],
     )
     source_data.update(RawFiberPhotometry=raw_source_data)
