@@ -59,6 +59,9 @@ def test_raw_only_conversion_runs_without_the_lab_mat(tmp_path, fake_tdt_block):
         assert nwbfile.devices["excitation_source_calcium_signal"].description.endswith("Modulated at 330 Hz.")
         # a 6 kHz block: RZ10x devices
         assert nwbfile.devices["photodetector"].model.manufacturer == "Tucker-Davis Technologies"
+        # GRAB-DA mice are stimulated through a separate fiber over SNc
+        optogenetic_sites = nwbfile.lab_meta_data["optogenetic_experiment_metadata"].optogenetic_sites_table
+        assert optogenetic_sites["optical_fiber"][0].name == "optical_fiber_SNc"
 
 
 def test_sn_pan_gaba_ppn_sessions_convert_without_behavioral_videos(tmp_path, fake_tdt_block):
