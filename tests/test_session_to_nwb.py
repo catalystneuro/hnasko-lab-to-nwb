@@ -121,3 +121,32 @@ def test_anxa1_session_description_states_the_recording_site(tmp_path, fake_tdt_
     with NWBHDF5IO(output_dir_path / "sub-C0001_ses-varying_durations_DLS.nwb", "r") as io:
         session_description = io.read().session_description
         assert session_description.endswith("recorded through the dorsolateral striatum (DLS) fiber.")
+
+
+def test_converted_file_carries_the_ontology_references(tmp_path, fake_tdt_block):
+    protocol_folder_path = tmp_path / "GRABDA recordings" / "PPN" / "Fiber photometry_TDT" / "Varying durations"
+    (protocol_folder_path / "C0001-240117-101500").mkdir(parents=True)
+    output_dir_path = tmp_path / "nwb"
+
+    session_to_nwb(
+        output_dir_path=output_dir_path,
+        subject_metadata=SUBJECT_METADATA,
+        protocol_folder_path=protocol_folder_path,
+        recording_type="GRABDA recordings",
+        stimulus_location="PPN",
+        protocol="Varying durations",
+        data_streams=dict(processed=False),
+    )
+
+    with NWBHDF5IO(output_dir_path / "sub-C0001_ses-varying_durations.nwb", "r") as io:
+        references = io.read().external_resources.to_dataframe()
+        assert set(zip(references["key"], references["entity_id"])) == {
+            ("Mus musculus", "NCBITaxon:10090"),
+            ("C57BL/6J", "RRID:IMSR_JAX:000664"),
+            ("pedunculopontine nucleus (PPN)", "MBA:1052"),
+            ("pedunculopontine nucleus (PPN)", "UBERON:0002142"),
+            ("dorsolateral striatum (DLS)", "MBA:672"),
+            ("dorsolateral striatum (DLS)", "UBERON:0005382"),
+            ("tail of the striatum (TS)", "MBA:672"),
+            ("tail of the striatum (TS)", "UBERON:0005382"),
+        }
