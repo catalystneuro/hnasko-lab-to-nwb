@@ -107,3 +107,16 @@ def test_optogenetic_experiment_metadata_is_added_once(stn_metadata):
 
     assert second is first
     assert list(nwbfile.lab_meta_data) == [first.name]
+
+
+def test_pulse_length_is_nan_as_pulses_were_not_recorded(tmp_path, stn_metadata):
+    events = {"H10_": dict(onset=np.array([10.0]), offset=np.array([11.0]))}
+    nwbfile = mock_NWBFile()
+
+    make_interface(tmp_path, events).add_to_nwbfile(
+        nwbfile=nwbfile, metadata=stn_metadata, tdt_stimulus_channel_to_frequency={"H10_": 10.0}
+    )
+
+    epochs_table = nwbfile.intervals["optogenetic_epochs_table"]
+    assert np.isnan(epochs_table.to_dataframe()["pulse_length_in_ms"]).all()
+    assert "pulse width was not recorded" in epochs_table.description

@@ -255,7 +255,7 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
                 stop_time=stop_time,
                 stimulus_frequency=stimulus_frequency,
                 stimulation_on=True,
-                pulse_length_in_ms=1.0,  # Unknown
+                pulse_length_in_ms=np.nan,  # TDT stores only the train onsets and offsets
                 period_in_ms=(1 / stimulus_frequency) * 1000,
                 number_pulses_per_pulse_train=number_pulses_per_pulse_train,
                 number_trains=1,
