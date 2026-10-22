@@ -1,3 +1,5 @@
+"""Processed fiber photometry signals of the lab's .mat files (demodulated, downsampled and dF/F)."""
+
 from pathlib import Path
 import h5py
 import numpy as np
@@ -35,12 +37,22 @@ def get_series_target_area(target_area: str, file_path: Path) -> str:
 
 
 class Hadjas2025ProcessedFiberPhotometryInterface(BaseDataInterface):
-    """
-    Data Interface for converting processed fiber photometry data from Hnasko Lab custom .mat files.
+    """Write one processed signal of the lab's .mat file for a session as one fiber photometry series.
 
-    Extracts demodulated fiber photometry signals from MATLAB v7.3 files created by the Hnasko lab analysis
-    pipeline. One segment of the .mat file is read per TDT block of the session, and the segments are written,
-    concatenated, as one series in the ndx-fiber-photometry format.
+    Input file: the MATLAB v7.3 .mat file written by the lab's analysis code for one cohort and protocol. It holds
+    one group per stream ("Gc_raw" and "af_raw", the calcium and isosbestic signals demodulated at the Fi1r rate;
+    "Gc" and "af", the same signals downsampled to 100 Hz; "dF", dF/F), then one group per target area and one per
+    subject, with one segment per TDT block. One stream of one subject is read per interface; the segments of the
+    session's blocks are read and concatenated in time.
+
+    NWB objects written:
+
+    - a FiberPhotometryResponseSeries in the "ophys" processing module (nwbfile.processing["ophys"], created if
+      missing), named by the response series metadata. A single segment is written with a starting time and
+      rate; several segments are written with timestamps, each segment starting at the recording time of its
+      block from the start of the first block.
+    - the devices of the FiberPhotometryTable rows in nwbfile.devices, and the FiberPhotometry lab metadata
+      (nwbfile.lab_meta_data["fiber_photometry"]), if no other interface added them first.
     """
 
     keywords = ("processed fiber photometry",)
@@ -67,13 +79,20 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseDataInterface):
         stream_name : str
             The processed stream, e.g. "Gc_raw", "af_raw", "Gc", "af" or "dF".
         subject_id : str
-            The subject group in the .mat file.
+            The subject group in the .mat file, as written there (e.g. "c4708").
         target_area : str
-            The target area group of the subject in the .mat file.
+            The target area group of the subject in the .mat file. With the recording site of Anxa1 files
+            (get_series_target_area), it gives the key of the series metadata, f"{stream_name}_{target_area}".
         sampling_frequency : float
-            The sampling frequency of the stream, in Hz.
+            The sampling frequency of the stream, in Hz: the Fi1r rate for "Gc_raw" and "af_raw", 100 Hz for the
+            others.
         verbose : bool, optional
             Whether to print status messages, default = False.
+
+        Raises
+        ------
+        ValueError
+            If the target area or the subject is not in the stream group of the .mat file.
         """
         super().__init__(
             file_path=file_path,
@@ -100,8 +119,7 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseDataInterface):
             self._segment_names = list(f[stream_name][target_area][subject_id])
 
     def _extract_signal(self, stimulus_channel_name: str, t1: float = 0.0, t2: float = 0.0) -> np.ndarray:
-        """
-        Read one segment of the processed signal of the subject, between t1 and t2.
+        """Read one segment of the processed signal of the subject, between t1 and t2.
 
         Parameters
         ----------
@@ -138,25 +156,34 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseDataInterface):
         t1: float = 0.0,
         t2: float = 0.0,
     ):
-        """
-        Add the data to an NWBFile.
+        """Add the concatenated processed series to the "ophys" processing module of an NWBFile.
 
         Parameters
         ----------
         nwbfile : pynwb.NWBFile
             The in-memory object to add the data to.
         metadata : dict
-            Metadata dictionary with information used to create the NWBFile.
+            Metadata dictionary with the "Devices", "DeviceModels" and "FiberPhotometry" sections. The response
+            series metadata under metadata["FiberPhotometry"][metadata_key] gives its name, description, unit and
+            fiber_photometry_table_region.
         stimulus_channel_names : list[str]
-            Segments of the .mat file to concatenate, one per TDT block.
+            Segments of the .mat file to concatenate, one per TDT block, in the order of the blocks
+            (match_mat_segments).
         segment_starting_times : list[float]
-            Starting time (in seconds) of each segment.
+            Starting time of each segment, in seconds from the start of the first block.
         stub_test : bool, optional
-            If True, only add a subset of the data (1s per segment) to the NWBFile for testing purposes, default = False.
+            If True, only add the first second of each segment to the NWBFile for testing purposes, default = False.
         t1 : float, optional
-            Retrieve data starting at t1 (in seconds), default = 0 for start of recording.
+            Retrieve data of each segment starting at t1 (in seconds from the segment start), default = 0 for start
+            of recording.
         t2 : float, optional
-            Retrieve data ending at t2 (in seconds), default = 0 for end of recording.
+            Retrieve data of each segment ending at t2 (in seconds from the segment start), default = 0 for end of
+            recording.
+
+        Raises
+        ------
+        ValueError
+            If a segment is not in the subject group of the .mat file.
         """
         from ndx_fiber_photometry import FiberPhotometryResponseSeries
 
