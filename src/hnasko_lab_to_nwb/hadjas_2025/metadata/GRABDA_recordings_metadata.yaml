@@ -92,7 +92,7 @@ FiberPhotometry:
     viral_vector_grabda:
       name: viral_vector_grabda
       description: AAV9 viral vector expressing GRABDA2m dopamine sensor under EF1a promoter for fiber photometry recording
-        in VTA
+        in DLS or TS
       manufacturer: Addgene (catalog number 140553)
       construct_name: AAV9-EF1a-GRABDA2m
       titer_in_vg_per_ml: 2.0e+12
