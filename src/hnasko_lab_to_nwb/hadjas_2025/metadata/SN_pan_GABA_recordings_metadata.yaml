@@ -60,9 +60,9 @@ Devices:
       hemisphere: right
     device_model_metadata_key: optical_fiber_model_1
   excitation_source_calcium_signal:
-    description: excitation source for the sensor's fluorescence signal (465nm) modulated at 210 Hz.
+    description: excitation source for the sensor's fluorescence signal (465nm).
   excitation_source_isosbestic_control:
-    description: excitation source for the sensor's isosbestic control (405nm) modulated at 330 Hz.
+    description: excitation source for the sensor's isosbestic control (405nm).
   emission_filter:
     description: emission filter for GCaMP6f fluorescence signal.
   excitation_filter:
@@ -131,8 +131,7 @@ FiberPhotometry:
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
   Gc_raw_SNr:
     name: demodulated_calcium_signal_SNr
-    description: The demodulated fluorescence signal from GCaMP6f calcium indicator in SNr GABAergic neurons, excited at 465nm
-      and demodulated at 330Hz.
+    description: The demodulated fluorescence signal from GCaMP6f calcium indicator in SNr GABAergic neurons, excited at 465nm.
     unit: a.u.
     fiber_photometry_table_region: [SNr_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
@@ -140,7 +139,7 @@ FiberPhotometry:
   af_raw_SNr:
     name: demodulated_isosbestic_control_SNr
     description: The demodulated fluorescence signal from GCaMP6f for isosbestic control in SNr GABAergic neurons, excited
-      at 405nm and demodulated at 210Hz.
+      at 405nm.
     unit: a.u.
     fiber_photometry_table_region: [SNr_405]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
