@@ -47,6 +47,18 @@ rigs:
   RZ5P:
     fi1r_sampling_frequency: 24414.0625
     fi1r_signal_channel: 2
+# Modulation frequency of the excitation LEDs, in Hz, for blocks recorded from first_recording_date on (lab MATLAB
+# code). Blocks recorded before 2024 (the RZ5P blocks and the 2023 RZ10x blocks of C2450 and C2454) have the 465 nm
+# LED at 210 Hz and the isosbestic LED at 330 Hz; blocks from 2024 on have them the other way round. The rig is not
+# visible in the blocks of new recordings (FP1 and FP3 are both RZ10x), so check the carriers with the lab and add
+# an entry when they change.
+led_modulation:
+  - first_recording_date: 2022-01-01
+    calcium_signal_in_hz: 210.0
+    isosbestic_control_in_hz: 330.0
+  - first_recording_date: 2024-01-01
+    calcium_signal_in_hz: 330.0
+    isosbestic_control_in_hz: 210.0
 # Protocols, keyed by the protocol folder name. Stimulation trains are TDT epocs; each epoc name maps to the
 # pulse frequency of its trains. Some blocks name the duration stores ssm_, ss1_ and ss4_; the 24 kHz rig
 # names them Sms_, S1s_, S4s_ and S6s_.

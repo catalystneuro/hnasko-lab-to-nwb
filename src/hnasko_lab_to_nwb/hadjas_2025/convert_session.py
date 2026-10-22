@@ -1,6 +1,6 @@
 """Primary script to run to convert an entire session for of data using the NWBConverter."""
 
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Union
 from zoneinfo import ZoneInfo
@@ -524,6 +524,61 @@ def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_
     return mat_file_paths[0]
 
 
+def get_led_modulation(session_start_time: datetime) -> dict:
+    """Get the modulation frequencies of the excitation LEDs of a session from its recording date.
+
+    Parameters
+    ----------
+    session_start_time : datetime
+        Start time of the session's first block, in the lab's time zone.
+
+    Returns
+    -------
+    dict
+        "calcium_signal_in_hz" (465 nm LED) and "isosbestic_control_in_hz", from the last led_modulation entry of
+        the session config whose first_recording_date is on or before the recording date.
+    """
+    recording_date = session_start_time.date()
+    entries = [
+        entry
+        for entry in load_session_config()["led_modulation"]
+        if date.fromisoformat(str(entry["first_recording_date"])) <= recording_date
+    ]
+    if len(entries) == 0:
+        raise ValueError(f"No LED modulation in the session config for a recording on {recording_date}.")
+    entry = max(entries, key=lambda entry: date.fromisoformat(str(entry["first_recording_date"])))
+    return dict(
+        calcium_signal_in_hz=entry["calcium_signal_in_hz"], isosbestic_control_in_hz=entry["isosbestic_control_in_hz"]
+    )
+
+
+def add_led_modulation_to_metadata(metadata: dict, led_modulation: dict) -> None:
+    """State the LED modulation frequencies in the excitation sources and the demodulated series, in place.
+
+    Parameters
+    ----------
+    metadata : dict
+        The session metadata.
+    led_modulation : dict
+        The modulation frequencies from get_led_modulation.
+    """
+    signal_to_frequency = dict(
+        calcium_signal=led_modulation["calcium_signal_in_hz"],
+        isosbestic_control=led_modulation["isosbestic_control_in_hz"],
+    )
+    for signal, frequency in signal_to_frequency.items():
+        excitation_source = metadata["Devices"][f"excitation_source_{signal}"]
+        excitation_source["description"] = f"{excitation_source['description']} Modulated at {frequency:g} Hz."
+    demodulated_series_prefix_to_signal = dict(Gc_raw_="calcium_signal", af_raw_="isosbestic_control")
+    for key, series_metadata in metadata["FiberPhotometry"].items():
+        for prefix, signal in demodulated_series_prefix_to_signal.items():
+            if key.startswith(prefix):
+                series_metadata["description"] = (
+                    f"{series_metadata['description']} Demodulated at {signal_to_frequency[signal]:g} Hz, the "
+                    "modulation frequency of its LED."
+                )
+
+
 def get_session_start_time(start_timestamp: float) -> datetime:
     """Return the start time of a TDT block in the lab's time zone (America/Los_Angeles).
 
@@ -752,6 +807,7 @@ def session_to_nwb(
         protocol=protocol, epoc_names=list(read_tdt_epocs(tdt_folder_paths[0]))
     )
     metadata["NWBFile"]["session_start_time"] = session_start_time
+    add_led_modulation_to_metadata(metadata=metadata, led_modulation=get_led_modulation(session_start_time))
 
     # Remove entries for other stimulus sites from metadata
     filter_optogenetics_metadata(metadata=metadata, stimulus_location=stimulus_location)
