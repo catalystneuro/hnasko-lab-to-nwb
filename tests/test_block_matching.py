@@ -106,11 +106,16 @@ def test_match_mat_segments_fails_without_a_segment_of_the_block_length(
         match_mat_segments(file_path, "SNc", "B8364", [Path("B8364-220426-130909")], epoc_names=[])
 
 
-def test_match_mat_segments_uses_the_only_segment_of_a_single_block_session(tmp_path, write_processed_mat_file):
-    # e.g. C3163 varying durations: the lab trimmed the recording, so the lengths differ
+def test_match_mat_segments_fails_when_the_only_segment_is_another_recording(
+    tmp_path, write_processed_mat_file, block_sample_counts
+):
+    # e.g. C3163 varying durations: the lab's segment was computed from a block of 2024-03-05, not from the
+    # 2024-02-27 block of the data share
     file_path = write_processed_mat_file(tmp_path / "processed.mat", "Gc_raw", "SNc", "C3163", {"LP5mW": np.ones(3)})
+    block_sample_counts["C3163-240227-080654"] = 4
 
-    assert match_mat_segments(file_path, "SNc", "C3163", [Path("C3163-240227-080654")], epoc_names=[]) == ["LP5mW"]
+    with pytest.raises(ValueError, match="with 4 samples"):
+        match_mat_segments(file_path, "SNc", "C3163", [Path("C3163-240227-080654")], epoc_names=[])
 
 
 def test_block_trials_span_each_block_and_carry_its_train_duration(monkeypatch, block_sample_counts):
