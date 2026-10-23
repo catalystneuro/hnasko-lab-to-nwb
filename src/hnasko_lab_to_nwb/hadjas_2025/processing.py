@@ -13,6 +13,12 @@ from scipy import optimize, signal
 
 PROCESSED_RATE = 100.0  # Hz, rate of the resampled signals and dF/F
 LOWPASS_CUTOFF = 6.0  # Hz, cutoff of the lowpass filter of the demodulation
+# Rates of the two exponentials searched for start points of the bi-exponential fit, per sample at 100 Hz: time
+# constants from 1 s to about 30 years, decaying or growing, and a constant term
+BIEXPONENTIAL_RATES = np.concatenate([-np.logspace(-9, -2, 36), [0.0], np.logspace(-9, -2, 36)])
+# Bands of the larger absolute rate of a start point: one start point per band, from time constants of 1 s to 10 s
+# (1e-3 to 1e-2 per sample) to slower than 10^4 s
+START_POINT_RATE_BANDS = [0.0, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
 
 
 def demodulate(raw_signal: np.ndarray, sampling_frequency: float, carrier_frequency: float) -> np.ndarray:
@@ -121,6 +127,46 @@ def robustfit(x: np.ndarray, y: np.ndarray, tune: float = 4.685, max_iterations:
     return coefficients
 
 
+def biexponential(x: np.ndarray, a: float, b: float, c: float, d: float) -> np.ndarray:
+    """Return a * exp(b * x) + c * exp(d * x), the "exp2" model of MATLAB's fit."""
+    return a * np.exp(b * x) + c * np.exp(d * x)
+
+
+def get_biexponential_start_points(x: np.ndarray, y: np.ndarray) -> list[list[float]]:
+    """Find start points for the bi-exponential fit by a grid search over the two rates.
+
+    For each pair of rates of BIEXPONENTIAL_RATES the model is linear in the amplitudes, which are fitted by least
+    squares on every 10th sample. The start points are the pairs with the smallest error within each band of
+    START_POINT_RATE_BANDS (by the larger absolute rate), so that slow and fast curves are both tried.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Sample numbers of the fitted samples.
+    y : np.ndarray
+        Fitted signal.
+
+    Returns
+    -------
+    list[list[float]]
+        One start point [a, b, c, d] per band that has a candidate.
+    """
+    x_coarse, y_coarse = x[::10], y[::10]
+    best_per_band = {}
+    for i, b in enumerate(BIEXPONENTIAL_RATES):
+        for d in BIEXPONENTIAL_RATES[i + 1 :]:
+            with np.errstate(over="ignore"):
+                design = np.column_stack([np.exp(b * x_coarse), np.exp(d * x_coarse)])
+            if not np.all(np.isfinite(design)):
+                continue
+            amplitudes = np.linalg.lstsq(design, y_coarse, rcond=None)[0]
+            error = np.sum((design @ amplitudes - y_coarse) ** 2)
+            band = np.searchsorted(START_POINT_RATE_BANDS, max(abs(b), abs(d)), side="left")
+            if band not in best_per_band or error < best_per_band[band][0]:
+                best_per_band[band] = (error, [amplitudes[0], b, amplitudes[1], d])
+    return [start_point for _, start_point in best_per_band.values()]
+
+
 def calculate_dff_with_biexponential_fit(
     calcium_signal: np.ndarray,
     isosbestic_signal: np.ndarray,
@@ -129,10 +175,16 @@ def calculate_dff_with_biexponential_fit(
 ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
     """Calculate dF/F using a bi-exponential fit to the isosbestic signal.
 
-    The baseline is fitted in two steps:
-    1. Fit a bi-exponential function to the isosbestic (405 nm) signal.
-    2. Scale the fitted baseline to the calcium (465 nm) signal by robust linear regression with an intercept
-       (robustfit).
+    The baseline is fitted in two steps, as in the lab's code:
+    1. Fit a bi-exponential function (biexponential) by least squares to the isosbestic (405 nm) signal, leaving
+       out the first second. Samples are numbered from 1, as in MATLAB.
+    2. Scale the fitted curve to the calcium (465 nm) signal by robust linear regression with an intercept
+       (robustfit), on all samples.
+
+    dF/F is 100 * (calcium - baseline) / baseline. The bi-exponential fit is refined from several start points
+    (get_biexponential_start_points). A fit is kept only if its scaling slope is positive and its baseline stays
+    above zero; of those, the one with the smallest squared error is used. See the module docstring for how this
+    differs from the lab's MATLAB code.
 
     Parameters
     ----------
@@ -156,42 +208,42 @@ def calculate_dff_with_biexponential_fit(
     Raises
     ------
     ValueError
-        If the two signals do not have the same length.
+        If the two signals do not have the same length, or if no bi-exponential fit gives a positive slope and a
+        baseline above zero.
     """
     if len(calcium_signal) != len(isosbestic_signal):
         raise ValueError(f"Signal length mismatch: calcium={len(calcium_signal)}, isosbestic={len(isosbestic_signal)}")
 
-    n_samples = len(isosbestic_signal)
-    time_points = np.arange(n_samples)
+    x = np.arange(1, len(isosbestic_signal) + 1, dtype=float)
+    fitted = x > np.ceil(exclude_first_seconds * sampling_rate)
 
-    exclude_indices = int(exclude_first_seconds * sampling_rate)
-    include_mask = np.ones(n_samples, dtype=bool)
-    include_mask[:exclude_indices] = False
+    best = None
+    for start_point in get_biexponential_start_points(x[fitted], isosbestic_signal[fitted]):
+        try:
+            with warnings.catch_warnings():
+                # the covariance of the parameters is not used; it cannot be estimated for a perfect fit
+                warnings.simplefilter("ignore", optimize.OptimizeWarning)
+                parameters, _ = optimize.curve_fit(
+                    biexponential, x[fitted], isosbestic_signal[fitted], p0=start_point, maxfev=10000
+                )
+        except RuntimeError:  # no convergence from this start point
+            continue
+        with np.errstate(over="ignore"):
+            isosbestic_fit = biexponential(x, *parameters)
+        if not np.all(np.isfinite(isosbestic_fit)):
+            continue
+        # as in the lab's code, the scaling uses all samples, including those left out of the bi-exponential fit
+        intercept, slope = robustfit(isosbestic_fit, calcium_signal)
+        fitted_baseline = intercept + slope * isosbestic_fit
+        if slope <= 0 or np.min(fitted_baseline) <= 0:
+            continue
+        error = np.sum((isosbestic_fit - isosbestic_signal)[fitted] ** 2)
+        if best is None or error < best[0]:
+            best = (error, isosbestic_fit, fitted_baseline, slope, intercept)
+    if best is None:
+        raise ValueError("No bi-exponential fit of the isosbestic signal gives a positive slope and baseline.")
+    _, isosbestic_fit, fitted_baseline, slope, intercept = best
 
-    def biexponential(x, a, b, c, d):
-        return a * np.exp(b * x) + c * np.exp(d * x)
-
-    p0 = [isosbestic_signal[exclude_indices], -1e-5, isosbestic_signal[exclude_indices], -1e-6]
-
-    try:
-        popt, _ = optimize.curve_fit(
-            biexponential, time_points[include_mask], isosbestic_signal[include_mask], p0=p0, maxfev=10000
-        )
-        isosbestic_fit = biexponential(time_points, *popt)
-    except (RuntimeError, ValueError) as e:
-        warnings.warn(f"Bi-exponential fit failed: {e}. Using linear fit as fallback.", RuntimeWarning)
-        fit_coeffs = np.polyfit(time_points[include_mask], isosbestic_signal[include_mask], 1)
-        isosbestic_fit = np.polyval(fit_coeffs, time_points)
-
-    # as in the lab's code, the scaling uses all samples, including those left out of the bi-exponential fit
-    intercept, slope = robustfit(isosbestic_fit, calcium_signal)
-
-    if slope < 0:
-        warnings.warn(
-            f"Negative regression coefficient ({slope:.4f}). This may indicate signal quality issues.", RuntimeWarning
-        )
-
-    fitted_baseline = slope * isosbestic_fit + intercept
     dff = 100.0 * (calcium_signal - fitted_baseline) / fitted_baseline
     fit_results = {
         "fitted_baseline": fitted_baseline,
