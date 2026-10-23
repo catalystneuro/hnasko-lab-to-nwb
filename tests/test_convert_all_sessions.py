@@ -1,4 +1,6 @@
 import pandas as pd
+from pynwb import NWBHDF5IO
+from pynwb.testing.mock.file import mock_NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025 import convert_all_sessions
 from hnasko_lab_to_nwb.hadjas_2025.convert_all_sessions import (
@@ -192,3 +194,32 @@ def test_dataset_to_nwb_skips_sessions_already_converted(tmp_path, monkeypatch):
     converted.clear()
     dataset_to_nwb(**convert_kwargs, overwrite=True)
     assert sorted(converted) == ["Varying durations", "Varying frequencies"]
+
+
+def test_dataset_to_nwb_inspects_each_converted_file_and_summarizes_the_sessions(tmp_path, monkeypatch):
+    overview_file_path = tmp_path / "overview.xlsx"
+    write_overview(overview_file_path, {"GRAB DA": [["C0001", "M", "VGlut2-cre", "PPN", "DLS", "R"]]})
+    make_blocks(tmp_path, "C0001", "GRABDA recordings", "PPN")
+
+    def session_to_nwb(output_dir_path, protocol, **kwargs):
+        if protocol == "Varying frequencies":
+            raise ValueError("broken block")
+        with NWBHDF5IO(output_dir_path / "sub-C0001_ses-varying_durations.nwb", "w") as io:
+            io.write(mock_NWBFile())  # no subject, a critical issue for DANDI
+
+    monkeypatch.setattr(convert_all_sessions, "session_to_nwb", session_to_nwb)
+    output_dir_path = tmp_path / "nwb"
+
+    dataset_to_nwb(
+        data_dir_path=tmp_path, output_dir_path=output_dir_path, subjects_metadata_file_path=overview_file_path
+    )
+
+    report = (output_dir_path / "inspector_reports" / "sub-C0001_ses-varying_durations.txt").read_text()
+    assert "check_subject_exists" in report
+    summary = pd.read_csv(output_dir_path / "conversion_summary.csv", dtype=str, keep_default_na=False)
+    assert summary[["nwbfile_name", "status", "error"]].values.tolist() == [
+        ["sub-C0001_ses-varying_durations.nwb", "converted", ""],
+        ["sub-C0001_ses-varying_frequencies.nwb", "failed", "ValueError: broken block"],
+    ]
+    assert int(summary.loc[0, "CRITICAL"]) >= 1
+    assert summary.loc[1, "CRITICAL"] == ""
