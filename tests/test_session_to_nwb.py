@@ -7,6 +7,7 @@ import pytest
 from pynwb import NWBHDF5IO
 
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import session_to_nwb
+from hnasko_lab_to_nwb.hadjas_2025.inspection import count_herd_references
 from hnasko_lab_to_nwb.hadjas_2025.utils import tdt_blocks
 
 SAMPLING_FREQUENCY = 6103.515625
@@ -150,3 +151,4 @@ def test_converted_file_carries_the_ontology_references(tmp_path, fake_tdt_block
             ("tail of the striatum (TS)", "MBA:672"),
             ("tail of the striatum (TS)", "UBERON:0005382"),
         }
+    assert count_herd_references(output_dir_path / "sub-C0001_ses-varying_durations.nwb") == len(references)
