@@ -387,7 +387,8 @@ def match_mat_segments(
 
     with h5py.File(mat_file_path, "r") as f:
         subject_group = f["Gc_raw"][target_area][mat_subject_id]
-        segment_name_to_length = {name: subject_group[name].shape[-1] for name in subject_group}
+        # segments are (1, number of samples), or (number of samples, 1) in some files
+        segment_name_to_length = {name: max(subject_group[name].shape) for name in subject_group}
     if len(folder_paths) == 1 and len(segment_name_to_length) == 1:
         return list(segment_name_to_length)
     segment_names = []

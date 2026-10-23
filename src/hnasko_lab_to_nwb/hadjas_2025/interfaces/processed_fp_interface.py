@@ -121,7 +121,11 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseDataInterface):
         end_index = int(t2 * self._sampling_frequency) if t2 != 0.0 else None
         with h5py.File(self.source_data["file_path"], "r") as f:
             dataset: h5py.Dataset = f[self._stream_name][self._target_area][self._subject_id][stimulus_channel_name]
-            return dataset[0, start_index:end_index]  # segments are stored as (1, number of samples)
+            # segments are (1, number of samples), or (number of samples, 1) as in the Gc_raw and af_raw streams of
+            # the GRAB-DA STN varying-frequencies file
+            if dataset.shape[0] == 1:
+                return dataset[0, start_index:end_index]
+            return dataset[start_index:end_index, 0]
 
     def add_to_nwbfile(
         self,
