@@ -54,7 +54,7 @@ def test_match_mat_segments_by_number_of_samples(tmp_path, write_processed_mat_f
     folder_paths = [Path("C4604-240313-140222"), Path("C4604-240313-141213"), Path("C4604-240313-142052")]
     block_sample_counts.update({"C4604-240313-140222": 7, "C4604-240313-141213": 3, "C4604-240313-142052": 5})
 
-    segment_names = match_mat_segments(file_path, "DLS", "C4604", folder_paths)
+    segment_names = match_mat_segments(file_path, "DLS", "C4604", folder_paths, epoc_names=FREQUENCY_EPOCS)
 
     assert segment_names == ["s4s", "s250ms", "s1s"]
 
@@ -70,7 +70,28 @@ def test_match_mat_segments_reads_the_length_of_segments_stored_as_columns(
     folder_paths = [Path("C3018-240213-152012"), Path("C3018-240213-153002")]
     block_sample_counts.update({"C3018-240213-152012": 5, "C3018-240213-153002": 3})
 
-    assert match_mat_segments(file_path, "DLS", "C3018", folder_paths) == ["s1s", "s250ms"]
+    assert match_mat_segments(file_path, "DLS", "C3018", folder_paths, epoc_names=FREQUENCY_EPOCS) == ["s1s", "s250ms"]
+
+
+def test_match_mat_segments_breaks_a_length_tie_with_the_recorded_train_duration(
+    tmp_path, write_processed_mat_file, block_sample_counts, monkeypatch
+):
+    # C0926 (Str DA terminal STN): the s250ms and s1s segments have the same number of samples
+    segments = {"s250ms": np.ones(5), "s1s": np.zeros(5), "s4s": np.ones(7)}
+    file_path = write_processed_mat_file(tmp_path / "processed.mat", "Gc_raw", "DLS", "C0926", segments)
+    folder_paths = [Path("C0926-221206-140912"), Path("C0926-221206-141944"), Path("C0926-221206-142938")]
+    block_sample_counts.update(dict.fromkeys(["C0926-221206-140912", "C0926-221206-141944"], 5))
+    block_sample_counts["C0926-221206-142938"] = 7
+    block_train_durations = {"C0926-221206-140912": 1.0, "C0926-221206-141944": 0.25, "C0926-221206-142938": 4.0}
+    monkeypatch.setattr(
+        convert_session,
+        "read_tdt_epocs",
+        lambda folder_path: {"H10_": trains([10], block_train_durations[folder_path.name])},
+    )
+
+    segment_names = match_mat_segments(file_path, "DLS", "C0926", folder_paths, epoc_names=FREQUENCY_EPOCS)
+
+    assert segment_names == ["s1s", "s250ms", "s4s"]
 
 
 def test_match_mat_segments_fails_without_a_segment_of_the_block_length(
@@ -82,14 +103,14 @@ def test_match_mat_segments_fails_without_a_segment_of_the_block_length(
     block_sample_counts["B8364-220426-130909"] = 4
 
     with pytest.raises(ValueError, match="with 4 samples"):
-        match_mat_segments(file_path, "SNc", "B8364", [Path("B8364-220426-130909")])
+        match_mat_segments(file_path, "SNc", "B8364", [Path("B8364-220426-130909")], epoc_names=[])
 
 
 def test_match_mat_segments_uses_the_only_segment_of_a_single_block_session(tmp_path, write_processed_mat_file):
     # e.g. C3163 varying durations: the lab trimmed the recording, so the lengths differ
     file_path = write_processed_mat_file(tmp_path / "processed.mat", "Gc_raw", "SNc", "C3163", {"LP5mW": np.ones(3)})
 
-    assert match_mat_segments(file_path, "SNc", "C3163", [Path("C3163-240227-080654")]) == ["LP5mW"]
+    assert match_mat_segments(file_path, "SNc", "C3163", [Path("C3163-240227-080654")], epoc_names=[]) == ["LP5mW"]
 
 
 def test_block_trials_span_each_block_and_carry_its_train_duration(monkeypatch, block_sample_counts):

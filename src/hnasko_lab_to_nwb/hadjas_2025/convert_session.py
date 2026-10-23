@@ -357,7 +357,7 @@ def get_block_trials(
 
 
 def match_mat_segments(
-    mat_file_path: Path, target_area: str, mat_subject_id: str, folder_paths: list[Path]
+    mat_file_path: Path, target_area: str, mat_subject_id: str, folder_paths: list[Path], *, epoc_names: list[str]
 ) -> list[str]:
     """Find the segment of the lab's .mat file that holds each TDT block, by number of samples.
 
@@ -365,7 +365,8 @@ def match_mat_segments(
     Segment names follow the lab's folder names, which are wrong for some blocks (e.g. the swapped varFreq_250ms
     and varFreq_4s folders of C4604 and C8972), so they are not used. A session with one block and one segment
     uses that segment whatever its length: the lab trimmed some single-block recordings (e.g. C3163 varying
-    durations).
+    durations). When several segments have the length of a block (e.g. s250ms and s1s of C0926), the one named
+    after the block's recorded train duration (s<label>, from get_train_duration_label) is used.
 
     Parameters
     ----------
@@ -377,6 +378,9 @@ def match_mat_segments(
         The subject group, as written in the .mat file.
     folder_paths : list[Path]
         The TDT blocks of the session.
+    epoc_names : list[str]
+        Names of the stimulation epocs of the protocol, to read the train duration of a block whose length matches
+        several segments.
 
     Returns
     -------
@@ -395,6 +399,9 @@ def match_mat_segments(
     for folder_path in folder_paths:
         number_of_samples = np.asarray(read_tdt_stream(Path(folder_path), "Fi1r").data).shape[-1]
         matches = [name for name, length in segment_name_to_length.items() if length == number_of_samples]
+        if len(matches) > 1:
+            label = get_train_duration_label(folder_path=folder_path, epoc_names=epoc_names)
+            matches = [name for name in matches if name == f"s{label}"]
         if len(matches) != 1:
             raise ValueError(
                 f"Expected one segment of {mat_subject_id} in {mat_file_path.name} with {number_of_samples} samples "
@@ -670,6 +677,7 @@ def session_to_nwb(
             target_area=target_area,
             mat_subject_id=mat_subject_id,
             folder_paths=tdt_folder_paths,
+            epoc_names=epoc_names,
         )
         stream_to_interface_name = {
             "Gc_raw": "DemodulatedFiberPhotometry_Calcium",
