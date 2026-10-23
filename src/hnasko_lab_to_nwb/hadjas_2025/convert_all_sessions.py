@@ -41,7 +41,9 @@ def dataset_to_nwb(
     """Convert the entire dataset to NWB.
 
     Sessions are converted one by one; a session that fails is logged with its traceback and the conversion moves on.
-    The log is written to convert_all_sessions.log in the output folder.
+    Sessions whose NWB file is already in the output folder are skipped, unless overwrite is True, so that new
+    sessions can be added to the data folder and converted without converting the others again. The log is appended
+    to convert_all_sessions.log in the output folder.
 
     Parameters
     ----------
@@ -52,7 +54,7 @@ def dataset_to_nwb(
     subjects_metadata_file_path : Union[str, Path]
         The path to the overview Excel file with subject metadata.
     overwrite : bool, optional
-        Whether to overwrite existing NWB files, by default False
+        Whether to convert again the sessions whose NWB file exists, overwriting it, by default False
     verbose : bool, optional
         Whether to print verbose output, by default True
 
@@ -77,13 +79,17 @@ def dataset_to_nwb(
         session_to_nwb_kwargs_per_session = get_session_to_nwb_kwargs_per_session(
             data_dir_path=data_dir_path, subjects_metadata_file_path=subjects_metadata_file_path
         )
-        logger.info(f"Found {len(session_to_nwb_kwargs_per_session)} sessions to convert")
+        logger.info(f"Found {len(session_to_nwb_kwargs_per_session)} sessions")
         failed_sessions = []
         for session_to_nwb_kwargs in tqdm(session_to_nwb_kwargs_per_session, desc="Converting sessions"):
             subject_id = session_to_nwb_kwargs["subject_metadata"]["Animal ID"]
             session_name = (
                 f"{subject_id} {session_to_nwb_kwargs['protocol']} ({session_to_nwb_kwargs['protocol_folder_path']})"
             )
+            nwbfile_name = get_session_nwbfile_name(session_to_nwb_kwargs)
+            if not overwrite and (output_dir_path / nwbfile_name).exists():
+                logger.info(f"Skipped {session_name}: {nwbfile_name} exists")
+                continue
             try:
                 session_to_nwb(
                     output_dir_path=output_dir_path, overwrite=overwrite, verbose=verbose, **session_to_nwb_kwargs
@@ -181,6 +187,27 @@ def get_session_to_nwb_kwargs_per_session(
     return session_to_nwb_kwargs_per_session
 
 
+def get_session_id_of_session(session_to_nwb_kwargs: dict) -> str:
+    """Get the session ID that session_to_nwb gives a session, from its session_to_nwb kwargs."""
+    recording_site = get_recording_site(
+        recording_type=session_to_nwb_kwargs["recording_type"],
+        protocol_folder_path=session_to_nwb_kwargs["protocol_folder_path"],
+    )
+    return get_session_id(
+        protocol=session_to_nwb_kwargs["protocol"],
+        recording_type=session_to_nwb_kwargs["recording_type"],
+        recording_site=recording_site,
+    )
+
+
+def get_session_nwbfile_name(session_to_nwb_kwargs: dict) -> str:
+    """Get the name of the NWB file that session_to_nwb writes for a session, from its session_to_nwb kwargs."""
+    return get_nwbfile_name(
+        subject_id=session_to_nwb_kwargs["subject_metadata"]["Animal ID"],
+        session_id=get_session_id_of_session(session_to_nwb_kwargs),
+    )
+
+
 def get_session_inventory(
     *,
     data_dir_path: Union[str, Path],
@@ -207,14 +234,7 @@ def get_session_inventory(
     ):
         subject_id = session_to_nwb_kwargs["subject_metadata"]["Animal ID"]
         protocol_folder_path = session_to_nwb_kwargs["protocol_folder_path"]
-        recording_site = get_recording_site(
-            recording_type=session_to_nwb_kwargs["recording_type"], protocol_folder_path=protocol_folder_path
-        )
-        session_id = get_session_id(
-            protocol=session_to_nwb_kwargs["protocol"],
-            recording_type=session_to_nwb_kwargs["recording_type"],
-            recording_site=recording_site,
-        )
+        session_id = get_session_id_of_session(session_to_nwb_kwargs)
         tdt_folder_paths = find_tdt_folder_paths(protocol_folder_path=protocol_folder_path, subject_id=subject_id)
         rows.append(
             dict(

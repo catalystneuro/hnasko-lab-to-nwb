@@ -165,3 +165,30 @@ def test_dataset_to_nwb_logs_a_failed_session_and_converts_the_others(tmp_path, 
     assert "Failed C0001 Varying durations" in log
     assert "ValueError: broken block" in log
     assert "1 of 4 sessions failed" in log
+
+
+def test_dataset_to_nwb_skips_sessions_already_converted(tmp_path, monkeypatch):
+    overview_file_path = tmp_path / "overview.xlsx"
+    write_overview(overview_file_path, {"GRAB DA": [["C0001", "M", "VGlut2-cre", "PPN", "DLS", "R"]]})
+    make_blocks(tmp_path, "C0001", "GRABDA recordings", "PPN")
+    output_dir_path = tmp_path / "nwb"
+    output_dir_path.mkdir()
+    (output_dir_path / "sub-C0001_ses-varying_durations.nwb").touch()
+    converted = []
+
+    def session_to_nwb(subject_metadata, protocol, **kwargs):
+        converted.append(protocol)
+
+    monkeypatch.setattr(convert_all_sessions, "session_to_nwb", session_to_nwb)
+    convert_kwargs = dict(
+        data_dir_path=tmp_path, output_dir_path=output_dir_path, subjects_metadata_file_path=overview_file_path
+    )
+
+    dataset_to_nwb(**convert_kwargs)
+    assert converted == ["Varying frequencies"]
+    log = (output_dir_path / "convert_all_sessions.log").read_text(encoding="utf-8")
+    assert "Skipped C0001 Varying durations" in log
+
+    converted.clear()
+    dataset_to_nwb(**convert_kwargs, overwrite=True)
+    assert sorted(converted) == ["Varying durations", "Varying frequencies"]
