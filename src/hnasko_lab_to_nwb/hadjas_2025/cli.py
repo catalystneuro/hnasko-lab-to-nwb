@@ -13,7 +13,8 @@ inspects every NWB file again. organize copies the NWB files into <dandiset fold
 writes draft_asset_report.csv next to it; upload validates and uploads that folder to the draft.
 
 compare-processing recomputes the processed signals of each session from its raw signal (hadjas_2025.processing)
-and writes their comparison with the lab's .mat files to processing_comparison.csv in the output folder.
+and writes their comparison with the lab's .mat files to processing_comparison.csv in the output folder; with
+--plot-dir-path it also plots the isosbestic fits and dF/F of each session.
 """
 
 import argparse
@@ -63,6 +64,7 @@ def compare_processing(args: argparse.Namespace) -> int:
         data_dir_path=args.data_dir_path,
         subjects_metadata_file_path=args.overview_file_path or args.data_dir_path / OVERVIEW_FILE_NAME,
         subject_ids=args.subject_ids,
+        plot_dir_path=args.plot_dir_path,
     )
     comparison.to_csv(args.output_dir_path / "processing_comparison.csv", index=False)
     compared = comparison[comparison["error"].isna()]
@@ -141,6 +143,11 @@ def get_parser() -> argparse.ArgumentParser:
 
     subparsers.choices["compare-processing"].add_argument(
         "--subject-ids", nargs="+", help="compare only the sessions of these subjects (default: all)"
+    )
+    subparsers.choices["compare-processing"].add_argument(
+        "--plot-dir-path",
+        type=Path,
+        help="write one plot per session (isosbestic fits and dF/F) to this folder; needs matplotlib",
     )
 
     subparser = subparsers.add_parser("inspect", help=inspect.__doc__)

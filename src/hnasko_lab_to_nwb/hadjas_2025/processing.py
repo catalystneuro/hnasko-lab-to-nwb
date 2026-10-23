@@ -297,7 +297,8 @@ def process_raw_signal(
     -------
     dict[str, np.ndarray]
         The signals by stream name of the lab's .mat files: "Gc_raw" and "af_raw" at the rate of the raw signal,
-        "Gc", "af" and "dF" at 100 Hz.
+        "Gc", "af" and "dF" at 100 Hz, and, as FP.af_fit and FP.lin_fit of the lab's files, the bi-exponential fit
+        of the isosbestic signal ("af_fit") and the baseline of dF/F ("lin_fit") at 100 Hz.
     """
     processed = dict(
         Gc_raw=demodulate(raw_signal, sampling_frequency, calcium_signal_in_hz),
@@ -305,5 +306,7 @@ def process_raw_signal(
     )
     processed["Gc"] = resample(processed["Gc_raw"], sampling_frequency)
     processed["af"] = resample(processed["af_raw"], sampling_frequency)
-    processed["dF"], _ = calculate_dff_with_biexponential_fit(processed["Gc"], processed["af"])
+    processed["dF"], fit_results = calculate_dff_with_biexponential_fit(processed["Gc"], processed["af"])
+    processed["af_fit"] = fit_results["isosbestic_fit"]
+    processed["lin_fit"] = fit_results["fitted_baseline"]
     return processed
