@@ -20,20 +20,57 @@ def _read_block(folder_path: Path, **kwargs):
 
 @lru_cache(maxsize=4)
 def read_tdt_stream(folder_path: Path, store: str):
-    """Read one stream store of a TDT block (e.g. "Fi1r"), with its data, sampling rate and start time."""
+    """Read one stream store of a TDT block (e.g. "Fi1r"), with its data, sampling rate and start time.
+
+    Parameters
+    ----------
+    folder_path : Path
+        Path to the TDT block folder.
+    store : str
+        Name of the stream store.
+
+    Returns
+    -------
+    tdt.StructType
+        The stream, with "data" as (channels, samples) or (samples,), "fs" in Hz and "start_time" in seconds.
+    """
     return _read_block(folder_path, evtype=["streams"], store=store).streams[store]
 
 
 @lru_cache(maxsize=8)
 def read_tdt_epocs(folder_path: Path) -> dict:
-    """Read the epocs of a TDT block as {name: {"onset", "offset", "data"}} arrays, in seconds from block start."""
+    """Read the epocs of a TDT block, with times in seconds from the block start.
+
+    Parameters
+    ----------
+    folder_path : Path
+        Path to the TDT block folder.
+
+    Returns
+    -------
+    dict
+        {epoc name: {"onset": array, "offset": array, "data": array}}. An onset without an offset (the recording
+        stopped first) has an offset of inf.
+    """
     epocs = _read_block(folder_path, evtype=["epocs"]).epocs
     return {name: dict(onset=epoc.onset, offset=epoc.offset, data=epoc.data) for name, epoc in epocs.items()}
 
 
 @lru_cache(maxsize=8)
 def read_tdt_start_timestamp(folder_path: Path) -> float:
-    """Read the POSIX timestamp of the start of a TDT block."""
+    """Read the POSIX timestamp of the start of a TDT block.
+
+    Parameters
+    ----------
+    folder_path : Path
+        Path to the TDT block folder.
+
+    Returns
+    -------
+    float
+        The block start, in seconds since the epoch. It does not depend on the time zone of the computer reading
+        the block, unlike the start_date of tdt.read_block.
+    """
     return _read_block(folder_path, evtype=["scalars"]).info.start_date.timestamp()
 
 
