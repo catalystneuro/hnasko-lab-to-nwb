@@ -44,7 +44,6 @@ hadjas-2025 = "hnasko_lab_to_nwb.hadjas_2025.cli:main"
 analysis = [
   "ipykernel",
   "matplotlib",
-  "statsmodels",
 ]
 
 [dependency-groups]

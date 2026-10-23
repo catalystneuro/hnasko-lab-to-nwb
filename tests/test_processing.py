@@ -6,6 +6,7 @@ from hnasko_lab_to_nwb.hadjas_2025.processing import (
     demodulate,
     process_raw_signal,
     resample,
+    robustfit,
 )
 
 SAMPLING_FREQUENCY = 6103.515625  # Fi1r rate of the RZ10x rigs
@@ -80,6 +81,33 @@ def test_calculate_dff_gives_the_fraction_above_the_scaled_isosbestic_baseline()
 
     np.testing.assert_allclose(fit_results["isosbestic_fit"], isosbestic, rtol=1e-6)
     np.testing.assert_allclose(dff, 100 * response, atol=0.5)
+
+
+def test_robustfit_ignores_outliers():
+    rng = np.random.default_rng(0)
+    x = np.linspace(0, 10, 1000)
+    y = 1.0 + 2.0 * x + rng.normal(scale=0.01, size=len(x))
+    y[::20] += 50.0  # 5 % outliers
+
+    intercept, slope = robustfit(x, y)
+
+    assert intercept == pytest.approx(1.0, abs=0.01)
+    assert slope == pytest.approx(2.0, abs=0.01)
+
+
+def test_calculate_dff_scales_the_baseline_with_an_intercept():
+    # the lab's robustfit keeps the intercept; a fit through the origin would put the offset into dF/F
+    x = np.arange(60 * 100)
+    isosbestic = 1.0 + 0.5 * np.exp(-x / 3000)
+    response = np.zeros(len(x))
+    response[3000:3050] = 0.1
+    baseline = 0.5 + 2.0 * isosbestic
+    calcium = baseline * (1 + response)
+
+    dff, fit_results = calculate_dff_with_biexponential_fit(calcium, isosbestic)
+
+    np.testing.assert_allclose(fit_results["linear_coefficients"], [2.0, 0.5], rtol=1e-6)
+    np.testing.assert_allclose(dff, 100 * response, atol=1e-6)
 
 
 def test_process_raw_signal_returns_the_streams_of_the_lab_files():

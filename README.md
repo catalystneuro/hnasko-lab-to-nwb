@@ -58,7 +58,7 @@ pip install --editable .
 
 Note: both of the methods above install the repository in [editable mode](https://pip.pypa.io/en/stable/cli/pip_install/#editable-installs). The dependencies for this environment are stored in the dependencies section of the `pyproject.toml` file.
 
-The tutorial and analysis notebooks need a few more packages (Jupyter kernel, matplotlib, scipy, statsmodels). The conda environment includes them. With pip, install the `analysis` extra:
+The tutorial and analysis notebooks need a few more packages (Jupyter kernel and matplotlib). The conda environment includes them. With pip, install the `analysis` extra:
 
 ```bash
 pip install --editable ".[analysis]"
