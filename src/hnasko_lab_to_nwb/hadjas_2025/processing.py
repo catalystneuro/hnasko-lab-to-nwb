@@ -4,6 +4,27 @@ The lab processes each TDT block separately: the raw Fi1r photodetector signal i
 frequency of each LED ("Gc_raw" for the 465 nm calcium signal, "af_raw" for the 405 nm isosbestic control),
 resampled to 100 Hz ("Gc" and "af"), and dF/F ("dF", in percent) is computed against a baseline fitted to the
 isosbestic control. process_raw_signal runs these steps on the raw signal of one block.
+
+Differences from the lab's MATLAB code
+--------------------------------------
+Checked against the lab's .mat files with hadjas-2025 compare-processing, which also plots each session.
+
+- Demodulation (demodulate) and resampling to 100 Hz (resample) give the lab's signals to floating point
+  precision (differences below 1e-12).
+- The scaling of the isosbestic fit to the calcium signal (robustfit) and the dF/F formula give the lab's values to
+  floating point precision when given the lab's isosbestic fit.
+- The bi-exponential fit of the isosbestic signal differs. MATLAB's fit refines one start point that it computes
+  itself, and stops at the first fit it cannot improve, which is not always the best fit. Its start point is not
+  available outside MATLAB. calculate_dff_with_biexponential_fit refines several start points and keeps the fit
+  closest to the data among those with a positive scaling slope and a baseline above zero. Where MATLAB stopped at
+  the same fit, dF/F is the lab's; where it stopped at another one, the baseline differs by a slowly varying amount,
+  most often where the closest fit follows a fast decay right after the first second and MATLAB's does not.
+- The lab's code only warns when the scaling slope is negative; here such fits are not used, and a ValueError is
+  raised if no fit has a positive slope and a baseline above zero.
+- The lab adjusted the fit by hand for seven blocks, which are not reproduced here (LAB_ADJUSTED_FITS in
+  processing_comparison): it left out other lead-in times (1.2 s, 20 s, or 0.08 s instead of 1 s), fitted from the
+  start of the recording, left out the end of a recording where the fiber was unplugged, or joined separate fits
+  of two or three parts of a recording with a jump in the signal.
 """
 
 import warnings

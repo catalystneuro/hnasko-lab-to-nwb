@@ -31,6 +31,29 @@ from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import (
 )
 
 PROCESSED_STREAM_NAMES = ("Gc_raw", "af_raw", "Gc", "af", "dF")
+# Blocks whose isosbestic fit the lab adjusted by hand, by .mat file name, subject and segment, with what was
+# changed. Their dF/F is not expected to match.
+LAB_ADJUSTED_FITS = {
+    ("STN_Vglut2_SNc_ConFonGCaMP_DAsubtypes_VG2xDA_varFreqs_DurBlocks_5mW_Demod.mat", "C2454", "s1s"): (
+        "three parts of the recording fitted and scaled separately"
+    ),
+    ("STN_2_SN_StrSites_GRAB_varFreqs_DurBlocks_5mW_Demod.mat", "C3021", "s250ms"): (
+        "fitted from the start of the recording"
+    ),
+    ("PPN_Vglut2_SNr_GABA_GCaMP_varFreqs_DurBlocks_ALL_5mW_Demod.mat", "C4560", "AllDurs"): (
+        "last 15 s left out of the fit (fiber unplugged)"
+    ),
+    ("PPN_2_SN_StrSites_GRAB_varFreqs_DurBlocks_5mW_Demod.mat", "C4615", "s4s"): "first 1.2 s left out of the fit",
+    ("STN_Vglut2-phiC_SNc_Anxa1_DLSterms_varFreqs_DurBlocks_5mW_Demod.mat", "C6900", "s250ms"): (
+        "first 0.08 s left out of the fit"
+    ),
+    ("PPN_Vglut2-phiC_SNc_Anxa1_DLSterms_varFreqs_DurBlocks_5mW_Demod.mat", "C7248", "s4s"): (
+        "first 20 s left out of the fit"
+    ),
+    ("STN_2_SN_varFreq_250ms_1s_Demod.mat", "B7532", "s250ms5mW"): (
+        "two parts of the recording fitted separately and joined"
+    ),
+}
 PROCESSING_COMPARISON_COLUMNS = [
     "subject_id",
     "protocol",
@@ -44,6 +67,7 @@ PROCESSING_COMPARISON_COLUMNS = [
     "mean_difference",
     "max_absolute_difference",
     "lab_standard_deviation",
+    "lab_adjusted_fit",
     "error",
 ]
 
@@ -150,7 +174,9 @@ def compare_session_processing(
     Returns
     -------
     list[dict]
-        One comparison (compare_signals) per block and stream, with keys "block", "segment" and "stream".
+        One comparison (compare_signals) per block and stream, with keys "block", "segment", "stream" and
+        "lab_adjusted_fit" (what the lab adjusted by hand in the isosbestic fit of the block, LAB_ADJUSTED_FITS, or
+        None).
     """
     session_config = load_session_config()
     cohort_config = session_config["cohorts"][recording_type]
@@ -182,7 +208,15 @@ def compare_session_processing(
         for stream_name in PROCESSED_STREAM_NAMES:
             lab = read_lab_segment(mat_file_path, stream_name, target_area, mat_subject_id, segment)
             comparison = compare_signals(recomputed=processed[stream_name], lab=lab)
-            rows.append(dict(block=folder_path.name, segment=segment, stream=stream_name, **comparison))
+            rows.append(
+                dict(
+                    block=folder_path.name,
+                    segment=segment,
+                    stream=stream_name,
+                    lab_adjusted_fit=LAB_ADJUSTED_FITS.get((mat_file_path.name, mat_subject_id, segment)),
+                    **comparison,
+                )
+            )
     return rows
 
 
