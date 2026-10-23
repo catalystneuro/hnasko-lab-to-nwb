@@ -8,7 +8,8 @@ from pynwb.file import NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.fiber_photometry_table import add_fiber_photometry_table_region
 from neuroconv.basedatainterface import BaseDataInterface
-from neuroconv.datainterfaces import TDTFiberPhotometryInterface
+from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import read_tdt_start_timestamp, read_tdt_stream
+from neuroconv.utils.checks import calculate_regular_series_rate
 
 
 class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
@@ -59,15 +60,10 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
         self.stream_name = stream_name
         self.metadata_key = metadata_key
         self.stream_indices = stream_indices
-        self._tdt_interfaces = []
-        session_start_datetimes = []
-        for folder_path in folder_paths:
-            tdt_interface = TDTFiberPhotometryInterface(folder_path=folder_path, stream_names=[stream_name])
-            tdt_photometry = tdt_interface.load(evtype=["scalars"])
-            start_timestamp = tdt_photometry.info.start_date.timestamp()
-            session_start_datetime = datetime.fromtimestamp(start_timestamp, tz=pytz.utc)
-            session_start_datetimes.append(session_start_datetime)
-            self._tdt_interfaces.append(tdt_interface)
+        self._folder_paths = folder_paths
+        session_start_datetimes = [
+            datetime.fromtimestamp(read_tdt_start_timestamp(folder_path), tz=pytz.utc) for folder_path in folder_paths
+        ]
         # check that the session start times are in chronological order
         assert session_start_datetimes == sorted(session_start_datetimes), (
             "Session start times are not in chronological order. Please provide folder paths in chronological order."
@@ -84,7 +80,6 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
         nwbfile: NWBFile,
         metadata: dict,
         *,
-        fill_gaps: bool = False,
         stub_test: bool = False,
         t1: float = 0.0,
         t2: float = 0.0,
@@ -98,8 +93,6 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
             The in-memory object to add the data to.
         metadata : dict
             Metadata dictionary with information used to create the NWBFile.
-        fill_gaps : bool, optional
-            If True, fill the gaps between segments with NaNs, default = False.
         stub_test : bool, optional
             If True, only add a subset of the data (1s) to the NWBFile for testing purposes, default = False.
         t1 : float, optional
@@ -121,46 +114,34 @@ class ConcatenatedTDTFiberPhotometryInterface(BaseDataInterface):
                 f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
             )
             t2 = t1 + 1.0
-        for i, tdt_interface in enumerate(self._tdt_interfaces):
-            tdt_photometry = tdt_interface.load(t1=t1, t2=t2, evtype=["streams"], store=self.stream_name)
-            stream = tdt_photometry.streams[self.stream_name]
+        for i, folder_path in enumerate(self._folder_paths):
+            stream = read_tdt_stream(folder_path, self.stream_name)
 
-            # TDT stores are (channels, samples); keep the selected channels as a 1D series
-            data = np.asarray(stream.data)
+            # TDT stores are (channels, samples); keep the selected channel as a 1D series
+            start_index = int(t1 * stream.fs)
+            end_index = int(t2 * stream.fs) if t2 != 0.0 else None
+            data = np.asarray(stream.data)[..., start_index:end_index]
             if data.ndim == 2:
                 data = data.T
                 if self.stream_indices is not None:
                     data = data[:, self.stream_indices]
-                data = data.flatten()
-            timestamps = self.segment_starting_times[i] + np.arange(len(data)) / stream.fs
+                if data.shape[1] != 1:
+                    raise ValueError(
+                        f"{self.stream_name} of {folder_path} has {data.shape[1]} channels; set stream_indices to the "
+                        "one channel that holds the signal."
+                    )
+                data = data[:, 0]
+            timestamps = self.segment_starting_times[i] + t1 + np.arange(len(data)) / stream.fs
 
             data_segments.append(data)
             timestamps_segments.append(timestamps)
 
-            # Add trials for each segment
-            if len(self._tdt_interfaces) > 1:
-                tag = tdt_interface.source_data["folder_path"].parts[-2].replace("varFreq_", "")
-                nwbfile.add_trial(start_time=timestamps[0], stop_time=timestamps[-1], tags=tag)
-
         concatenated_data = np.concatenate(data_segments)
         concatenated_timestamps = np.concatenate(timestamps_segments)
 
-        # Fill gaps with NaNs
-        if fill_gaps:
-            from hnasko_lab_to_nwb.hadjas_2025.utils import fill_gaps_w_nans
-
-            concatenated_data, concatenated_timestamps = fill_gaps_w_nans(
-                data=concatenated_data,
-                timestamps=concatenated_timestamps,
-                sampling_rate=stream.fs,
-            )
-            from neuroconv.utils.checks import calculate_regular_series_rate
-
-            calculated_rate = calculate_regular_series_rate(concatenated_timestamps)
-            if calculated_rate is not None:
-                timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=calculated_rate)
-            else:
-                timing_kwargs = dict(timestamps=concatenated_timestamps)
+        # One block is written with a rate; several blocks keep each block's own times as timestamps
+        if calculate_regular_series_rate(concatenated_timestamps) is not None:
+            timing_kwargs = dict(starting_time=concatenated_timestamps[0], rate=float(stream.fs))
         else:
             timing_kwargs = dict(timestamps=concatenated_timestamps)
 
