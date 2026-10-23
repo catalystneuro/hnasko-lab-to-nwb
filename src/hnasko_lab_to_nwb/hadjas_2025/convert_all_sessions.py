@@ -16,8 +16,8 @@ from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     session_to_nwb,
 )
 from hnasko_lab_to_nwb.hadjas_2025.inspection import (
-    IMPORTANCE_LEVELS,
-    inspect_nwbfile_and_save_report,
+    NWBFILE_SUMMARY_COLUMNS,
+    summarize_nwbfile,
     update_conversion_summary,
 )
 
@@ -48,8 +48,9 @@ def dataset_to_nwb(
     Sessions are converted one by one; a session that fails is logged with its traceback and the conversion moves on.
     Sessions whose NWB file is already in the output folder are skipped, unless overwrite is True, so that new
     sessions can be added to the data folder and converted without converting the others again. The log is appended
-    to convert_all_sessions.log in the output folder. Each converted file is inspected with NWB Inspector, and each
-    converted or failed session updates the conversion summary (see the inspection module).
+    to convert_all_sessions.log in the output folder. Each converted file is inspected with NWB Inspector and its HERD
+    references are counted; each converted or failed session updates the conversion summary (see the inspection
+    module).
 
     Parameters
     ----------
@@ -101,7 +102,7 @@ def dataset_to_nwb(
                 subject_id=subject_id,
                 protocol=session_to_nwb_kwargs["protocol"],
                 protocol_folder_path=str(session_to_nwb_kwargs["protocol_folder_path"]),
-                **dict.fromkeys(IMPORTANCE_LEVELS, ""),
+                **dict.fromkeys(NWBFILE_SUMMARY_COLUMNS, ""),
             )
             try:
                 session_to_nwb(
@@ -115,7 +116,7 @@ def dataset_to_nwb(
                 summary_row.update(status="failed", error=f"{type(error).__name__}: {error}")
             if summary_row["status"] == "converted":
                 try:
-                    summary_row.update(inspect_nwbfile_and_save_report(output_dir_path / nwbfile_name))
+                    summary_row.update(summarize_nwbfile(output_dir_path / nwbfile_name))
                 except Exception:
                     logger.exception(f"NWB Inspector failed on {nwbfile_name}")
             update_conversion_summary(output_dir_path=output_dir_path, rows=[summary_row])
