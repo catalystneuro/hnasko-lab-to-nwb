@@ -110,6 +110,28 @@ def test_calculate_dff_scales_the_baseline_with_an_intercept():
     np.testing.assert_allclose(dff, 100 * response, atol=1e-6)
 
 
+def test_calculate_dff_fits_a_slow_and_a_fast_exponential():
+    # photobleaching with a 2 min and a 20 min component; samples numbered from 1 as in MATLAB
+    x = np.arange(1, 10 * 60 * 100 + 1)
+    isosbestic = 0.02 * np.exp(-x / 12_000) + 0.05 * np.exp(-x / 120_000)
+    calcium = 0.001 + 1.5 * isosbestic
+
+    dff, fit_results = calculate_dff_with_biexponential_fit(calcium, isosbestic)
+
+    np.testing.assert_allclose(fit_results["isosbestic_fit"], isosbestic, rtol=1e-6)
+    np.testing.assert_allclose(dff, 0.0, atol=1e-4)
+
+
+def test_calculate_dff_raises_without_a_positive_scaling():
+    # a calcium signal that falls as the isosbestic signal rises cannot be scaled with a positive slope
+    x = np.arange(1, 60 * 100 + 1)
+    isosbestic = 1.0 + 0.5 * np.exp(-x / 3000)
+    calcium = 3.0 - isosbestic
+
+    with pytest.raises(ValueError, match="No bi-exponential fit"):
+        calculate_dff_with_biexponential_fit(calcium, isosbestic)
+
+
 def test_process_raw_signal_returns_the_streams_of_the_lab_files():
     raw_signal = get_modulated_signal(duration=20.0, calcium_amplitude=4.0, isosbestic_amplitude=1.0)
 
