@@ -58,14 +58,15 @@ def test_demodulate_pads_the_filter_as_matlab_filtfilt():
     np.testing.assert_allclose(demodulate(raw_signal, SAMPLING_FREQUENCY, 330.0), expected, rtol=1e-9)
 
 
-def test_resample_interpolates_to_100_hz():
-    number_of_samples = int(10 * SAMPLING_FREQUENCY)
-    ramp = np.arange(number_of_samples) / SAMPLING_FREQUENCY
+def test_resample_uses_the_grids_of_matlab_griddedinterpolant():
+    # sample i (from 1) of the demodulated signal is at i / fs; the resampled signal is at k / 100 (k from 1)
+    number_of_samples = int(10.5 * SAMPLING_FREQUENCY)
+    ramp = np.arange(1, number_of_samples + 1) / SAMPLING_FREQUENCY
 
     resampled = resample(ramp, SAMPLING_FREQUENCY)
 
-    assert len(resampled) == pytest.approx(10 * 100, abs=1)
-    np.testing.assert_allclose(resampled, np.arange(len(resampled)) / 100.0, atol=1e-9)
+    assert len(resampled) == int(np.floor(number_of_samples / SAMPLING_FREQUENCY * 100))
+    np.testing.assert_allclose(resampled, np.arange(1, len(resampled) + 1) / 100.0, atol=1e-12)
 
 
 def test_calculate_dff_gives_the_fraction_above_the_scaled_isosbestic_baseline():

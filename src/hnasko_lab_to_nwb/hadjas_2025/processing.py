@@ -47,7 +47,10 @@ def demodulate(raw_signal: np.ndarray, sampling_frequency: float, carrier_freque
 
 
 def resample(demodulated_signal: np.ndarray, sampling_frequency: float, rate: float = PROCESSED_RATE) -> np.ndarray:
-    """Resample a demodulated signal to a lower rate by linear interpolation.
+    """Resample a demodulated signal to a lower rate by linear interpolation, as MATLAB's griddedInterpolant.
+
+    As in the lab's code, sample i (from 1) of the demodulated signal is at time i / sampling_frequency, and the
+    resampled signal has a sample at each time k / rate (k from 1) up to the time of the last sample.
 
     Parameters
     ----------
@@ -63,8 +66,9 @@ def resample(demodulated_signal: np.ndarray, sampling_frequency: float, rate: fl
     np.ndarray
         Resampled signal.
     """
-    t_raw = np.arange(len(demodulated_signal)) / sampling_frequency
-    t_resampled = np.arange(0, t_raw[-1], 1 / rate)
+    number_of_samples = len(demodulated_signal)
+    t_raw = np.arange(1, number_of_samples + 1) / sampling_frequency
+    t_resampled = np.arange(1, int(np.floor(t_raw[-1] * rate)) + 1) / rate
     return np.interp(t_resampled, t_raw, demodulated_signal)
 
 
