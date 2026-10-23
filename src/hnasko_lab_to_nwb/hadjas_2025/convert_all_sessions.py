@@ -271,17 +271,3 @@ def get_session_inventory(
             )
         )
     return pd.DataFrame(rows, columns=INVENTORY_COLUMNS)
-
-
-if __name__ == "__main__":
-    # Parameters for conversion
-    data_dir_path = Path("D:/Hnasko-CN-data-share/")
-    output_dir_path = Path("D:/hnasko_lab_conversion_nwb")
-    subjects_metadata_file_path = data_dir_path / "ASAP FP Overview.xlsx"
-    dataset_to_nwb(
-        data_dir_path=data_dir_path,
-        output_dir_path=output_dir_path,
-        subjects_metadata_file_path=subjects_metadata_file_path,
-        verbose=False,
-        overwrite=False,
-    )
