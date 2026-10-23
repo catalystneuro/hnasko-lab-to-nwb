@@ -499,6 +499,11 @@ def get_session_id(protocol: str, recording_type: str, recording_site: str | Non
     return session_id
 
 
+def get_nwbfile_name(subject_id: str, session_id: str) -> str:
+    """Get the name of the NWB file of a session, sub-<subject ID>_ses-<session ID>.nwb."""
+    return f"sub-{subject_id}_ses-{session_id}.nwb"
+
+
 def get_session_description(protocol: str, epoc_names: list[str], number_of_blocks: int) -> str:
     """Get the session description of a protocol, which differs for 2022 blocks and for sessions of one block.
 
@@ -668,7 +673,7 @@ def session_to_nwb(
 ):
     """Convert one session (one protocol of one subject) to NWB.
 
-    The file is written to output_dir_path / f"sub-{subject_id}_ses-{session_id}.nwb", or to the nwb_stub
+    The file is written to output_dir_path / get_nwbfile_name(subject_id, session_id), or to the nwb_stub
     subfolder for a stub test. The session ID is from get_session_id.
 
     Parameters
@@ -725,7 +730,7 @@ def session_to_nwb(
     if stub_test:
         output_dir_path = output_dir_path / "nwb_stub"
     output_dir_path.mkdir(parents=True, exist_ok=True)
-    nwbfile_path = output_dir_path / f"sub-{subject_id}_ses-{session_id}.nwb"
+    nwbfile_path = output_dir_path / get_nwbfile_name(subject_id=subject_id, session_id=session_id)
 
     editable_metadata = load_cohort_metadata(recording_type)
     if normalize_hemisphere(subject_metadata["Hemisphere"]) == "Left":
