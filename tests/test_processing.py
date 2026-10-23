@@ -139,9 +139,9 @@ def test_process_raw_signal_returns_the_streams_of_the_lab_files():
         raw_signal, SAMPLING_FREQUENCY, calcium_signal_in_hz=330.0, isosbestic_control_in_hz=210.0
     )
 
-    assert list(processed) == ["Gc_raw", "af_raw", "Gc", "af", "dF"]
+    assert list(processed) == ["Gc_raw", "af_raw", "Gc", "af", "dF", "af_fit", "lin_fit"]
     assert len(processed["Gc_raw"]) == len(processed["af_raw"]) == len(raw_signal)
-    assert len(processed["Gc"]) == len(processed["af"]) == len(processed["dF"])
+    assert len(processed["Gc"]) == len(processed["af"]) == len(processed["dF"]) == len(processed["af_fit"])
     middle = slice(200, 1800)
     np.testing.assert_allclose(processed["Gc"][middle], 2.0, rtol=1e-3)
     np.testing.assert_allclose(processed["af"][middle], 0.5, rtol=1e-3)

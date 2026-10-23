@@ -1,8 +1,9 @@
 """Compare the processed signals recomputed by hadjas_2025.processing with those of the lab's .mat files.
 
 compare_session_processing recomputes the processed signals of each TDT block of a session from its raw Fi1r
-stream and compares them with the segment of the lab's .mat file that holds the block (match_mat_segments).
-compare_dataset_processing does this for every session.
+stream and compares them with the segment of the lab's .mat file that holds the block (match_mat_segments), and can
+plot the isosbestic fits and dF/F of each block (plot_session_comparison). compare_dataset_processing does this for
+every session.
 """
 
 from pathlib import Path
@@ -12,7 +13,10 @@ import h5py
 import numpy as np
 import pandas as pd
 
-from hnasko_lab_to_nwb.hadjas_2025.convert_all_sessions import get_session_to_nwb_kwargs_per_session
+from hnasko_lab_to_nwb.hadjas_2025.convert_all_sessions import (
+    get_session_nwbfile_name,
+    get_session_to_nwb_kwargs_per_session,
+)
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     find_mat_file_path,
     find_tdt_folder_paths,
@@ -147,16 +151,76 @@ def compare_signals(recomputed: np.ndarray, lab: np.ndarray) -> dict:
     )
 
 
+def plot_session_comparison(blocks: list[dict], title: str, file_path: Path) -> None:
+    """Plot, for each block of a session, the lab's and the recomputed isosbestic fits and dF/F.
+
+    Needs matplotlib (the "analysis" extra).
+
+    Parameters
+    ----------
+    blocks : list[dict]
+        One dict per block with "block", "segment", "lab_adjusted_fit" (or None), and the 100 Hz signals "af" (the
+        isosbestic signal), "lab_af_fit" and "af_fit" (the lab's and the recomputed bi-exponential fits), "lab_dF"
+        and "dF".
+    title : str
+        Title of the figure.
+    file_path : Path
+        The image file to write.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    figure, axes = plt.subplots(len(blocks), 2, figsize=(15, 3.6 * len(blocks) + 0.6), squeeze=False)
+    for row, block in enumerate(blocks):
+        minutes = np.arange(1, len(block["af"]) + 1) / 100.0 / 60
+        number_of_samples = min(len(block["dF"]), len(block["lab_dF"]))
+        difference = np.max(np.abs(block["dF"][:number_of_samples] - block["lab_dF"][:number_of_samples]))
+        label = f"{block['block']} ({block['segment']})"
+        if block["lab_adjusted_fit"]:
+            label += f", lab fit adjusted by hand: {block['lab_adjusted_fit']}"
+
+        ax = axes[row, 0]
+        ax.plot(minutes, 1000 * block["af"], color="0.75", lw=0.5, label="405 nm signal")
+        ax.plot(
+            minutes[: len(block["lab_af_fit"])],
+            1000 * block["lab_af_fit"],
+            color="tab:blue",
+            lw=2,
+            label="lab fit (MATLAB)",
+        )
+        ax.plot(minutes, 1000 * block["af_fit"], color="tab:orange", lw=1.5, ls="--", label="recomputed fit (Python)")
+        low, high = np.percentile(1000 * block["af"], [0.5, 99.5])
+        ax.set_ylim(low - 0.2 * (high - low), high + 0.2 * (high - low))
+        ax.set(title=f"{label}\nbi-exponential fit of the 405 nm signal", xlabel="time (min)", ylabel="405 nm (mV)")
+        ax.legend(fontsize=8, loc="upper right")
+
+        ax = axes[row, 1]
+        ax.plot(minutes[: len(block["lab_dF"])], block["lab_dF"], color="tab:blue", lw=0.8, label="lab dF/F")
+        ax.plot(minutes, block["dF"], color="tab:orange", lw=0.8, alpha=0.8, label="recomputed dF/F")
+        low, high = np.percentile(block["lab_dF"], [0.5, 99.5])
+        ax.set_ylim(low - 0.5 * (high - low), high + 0.5 * (high - low))
+        ax.set(title=f"dF/F, largest difference {difference:.3g} %", xlabel="time (min)", ylabel="dF/F (%)")
+        ax.legend(fontsize=8, loc="upper right")
+    figure.suptitle(title)
+    figure.tight_layout()
+    Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(file_path, dpi=80)
+    plt.close(figure)
+
+
 def compare_session_processing(
     subject_metadata: dict,
     protocol_folder_path: Union[str, Path],
     recording_type: str,
     stimulus_location: str,
     protocol: str,
+    plot_file_path: Path | None = None,
 ) -> list[dict]:
     """Recompute the processed signals of each block of a session and compare them with the lab's .mat file.
 
-    The parameters are those of session_to_nwb.
+    The parameters are those of session_to_nwb, and the image file of the plot.
 
     Parameters
     ----------
@@ -170,6 +234,8 @@ def compare_session_processing(
         Location of the stimulus (e.g., "PPN", "STN").
     protocol : str
         Protocol key of the session config.
+    plot_file_path : Path, optional
+        If given, plot the isosbestic fits and dF/F of each block to this image file (plot_session_comparison).
 
     Returns
     -------
@@ -202,21 +268,42 @@ def compare_session_processing(
     led_modulation = get_led_modulation(get_session_start_time(read_tdt_start_timestamp(tdt_folder_paths[0])))
 
     rows = []
+    plotted_blocks = []
     for folder_path, segment in zip(tdt_folder_paths, segments):
         raw_signal, sampling_frequency = read_raw_signal(folder_path)
         processed = process_raw_signal(raw_signal, sampling_frequency, **led_modulation)
+        lab_adjusted_fit = LAB_ADJUSTED_FITS.get((mat_file_path.name, mat_subject_id, segment))
+        lab = {
+            stream_name: read_lab_segment(mat_file_path, stream_name, target_area, mat_subject_id, segment)
+            for stream_name in PROCESSED_STREAM_NAMES
+        }
         for stream_name in PROCESSED_STREAM_NAMES:
-            lab = read_lab_segment(mat_file_path, stream_name, target_area, mat_subject_id, segment)
-            comparison = compare_signals(recomputed=processed[stream_name], lab=lab)
+            comparison = compare_signals(recomputed=processed[stream_name], lab=lab[stream_name])
             rows.append(
                 dict(
                     block=folder_path.name,
                     segment=segment,
                     stream=stream_name,
-                    lab_adjusted_fit=LAB_ADJUSTED_FITS.get((mat_file_path.name, mat_subject_id, segment)),
+                    lab_adjusted_fit=lab_adjusted_fit,
                     **comparison,
                 )
             )
+        if plot_file_path is not None:
+            plotted_blocks.append(
+                dict(
+                    block=folder_path.name,
+                    segment=segment,
+                    lab_adjusted_fit=lab_adjusted_fit,
+                    af=processed["af"],
+                    af_fit=processed["af_fit"],
+                    lab_af_fit=read_lab_segment(mat_file_path, "FP/af_fit", target_area, mat_subject_id, segment),
+                    dF=processed["dF"],
+                    lab_dF=lab["dF"],
+                )
+            )
+    if plot_file_path is not None:
+        title = f"{subject_id}, {recording_type}, {stimulus_location}, {protocol}: lab (MATLAB) and recomputed (Python)"
+        plot_session_comparison(blocks=plotted_blocks, title=title, file_path=plot_file_path)
     return rows
 
 
@@ -225,6 +312,7 @@ def compare_dataset_processing(
     data_dir_path: Union[str, Path],
     subjects_metadata_file_path: Union[str, Path],
     subject_ids: list[str] | None = None,
+    plot_dir_path: Union[str, Path, None] = None,
 ) -> pd.DataFrame:
     """Compare the recomputed and lab processed signals of every session.
 
@@ -238,6 +326,9 @@ def compare_dataset_processing(
         The path to the overview Excel file with subject metadata.
     subject_ids : list[str], optional
         Compare only the sessions of these subjects (default is None, which compares all sessions).
+    plot_dir_path : Union[str, Path, None], optional
+        If given, write one plot per session to this folder, named as the session's NWB file with a .png suffix
+        (default is None, no plots).
 
     Returns
     -------
@@ -256,8 +347,12 @@ def compare_dataset_processing(
             protocol=session_to_nwb_kwargs["protocol"],
             protocol_folder_path=str(session_to_nwb_kwargs["protocol_folder_path"]),
         )
+        plot_file_path = None
+        if plot_dir_path is not None:
+            plot_file_name = get_session_nwbfile_name(session_to_nwb_kwargs).replace(".nwb", ".png")
+            plot_file_path = Path(plot_dir_path) / plot_file_name
         try:
-            for comparison in compare_session_processing(**session_to_nwb_kwargs):
+            for comparison in compare_session_processing(**session_to_nwb_kwargs, plot_file_path=plot_file_path):
                 rows.append(dict(session, **comparison))
         except Exception as error:
             rows.append(dict(session, error=str(error)))

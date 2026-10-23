@@ -53,3 +53,20 @@ def test_compare_processing_reports_sessions_without_a_lab_file(tmp_path, block_
     comparison = pd.read_csv(output_dir_path / "processing_comparison.csv")
     assert list(comparison["protocol"]) == ["Varying durations", "Varying frequencies"]
     assert comparison["error"].str.contains(".mat").all()
+
+
+def test_plot_session_comparison_writes_one_image(tmp_path):
+    pytest.importorskip("matplotlib")
+    from hnasko_lab_to_nwb.hadjas_2025.processing_comparison import plot_session_comparison
+
+    af = 0.05 + 0.001 * np.exp(-np.arange(6000) / 3000)
+    blocks = [
+        dict(block=f"C0001-240101-00000{i}", segment=segment, lab_adjusted_fit=None, af=af, af_fit=af, lab_af_fit=af)
+        | dict(dF=np.sin(np.arange(6000) / 100), lab_dF=np.sin(np.arange(6000) / 100))
+        for i, segment in enumerate(["s4s", "s1s"])
+    ]
+    file_path = tmp_path / "plots" / "sub-C0001_ses-varying-frequencies.png"
+
+    plot_session_comparison(blocks=blocks, title="C0001", file_path=file_path)
+
+    assert file_path.stat().st_size > 0
