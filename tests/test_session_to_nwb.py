@@ -152,3 +152,95 @@ def test_converted_file_carries_the_ontology_references(tmp_path, fake_tdt_block
             ("tail of the striatum (TS)", "UBERON:0005382"),
         }
     assert count_herd_references(output_dir_path / "sub-C0001_ses-varying_durations.nwb") == len(references)
+
+
+@pytest.fixture
+def fake_modulated_tdt_block(monkeypatch):
+    """Serve every TDT block as a 10 s RZ10x block whose raw signal carries both LEDs, as from 2024 on."""
+    t = np.arange(NUMBER_OF_SAMPLES) / SAMPLING_FREQUENCY
+    bleaching = 1 + 0.2 * np.exp(-t / 3)
+    raw_signal = 0.5 + 0.04 * bleaching * np.sin(2 * np.pi * 330 * t) + 0.02 * bleaching * np.sin(2 * np.pi * 210 * t)
+    epocs = {
+        name: SimpleNamespace(onset=np.array([onset]), offset=np.array([offset]), data=np.array([1.0]))
+        for name, onset, offset in (("sms_", 1.0, 1.25), ("s1s_", 2.0, 3.0), ("s4s_", 4.0, 8.0))
+    }
+    block = SimpleNamespace(
+        streams=dict(Fi1r=SimpleNamespace(data=raw_signal.astype("float32"), fs=SAMPLING_FREQUENCY)),
+        epocs=epocs,
+        info=SimpleNamespace(start_date=BLOCK_START_TIME),
+    )
+    monkeypatch.setattr(tdt_blocks, "_read_block", lambda folder_path, **kwargs: block)
+    tdt_blocks.clear_tdt_block_cache()
+    yield
+    tdt_blocks.clear_tdt_block_cache()
+
+
+def test_recomputed_conversion_writes_processed_series_without_the_lab_mat(tmp_path, fake_modulated_tdt_block):
+    protocol_folder_path = tmp_path / "SN pan GABA recordings" / "PPN" / "Fiber photometry_TDT" / "Varying durations"
+    (protocol_folder_path / "C0001-240117-101500").mkdir(parents=True)
+    output_dir_path = tmp_path / "nwb"
+
+    session_to_nwb(
+        output_dir_path=output_dir_path,
+        subject_metadata=dict(SUBJECT_METADATA, **{"Recording Site": "SNr"}),
+        protocol_folder_path=protocol_folder_path,
+        recording_type="SN pan GABA recordings",
+        stimulus_location="PPN",
+        protocol="Varying durations",
+        data_streams=dict(processed="recomputed"),
+    )
+
+    with NWBHDF5IO(output_dir_path / "sub-C0001_ses-varying_durations.nwb", "r") as io:
+        ophys = io.read().processing["ophys"]
+        assert sorted(ophys.data_interfaces) == [
+            "deltaF_over_F_SNr",
+            "demodulated_calcium_signal_SNr",
+            "demodulated_isosbestic_control_SNr",
+            "downsampled_calcium_signal_SNr",
+            "downsampled_isosbestic_control_SNr",
+        ]
+        assert ophys["demodulated_calcium_signal_SNr"].data.shape == (NUMBER_OF_SAMPLES,)
+        assert ophys["deltaF_over_F_SNr"].rate == 100.0
+        assert "recomputed from the raw signal" in ophys["deltaF_over_F_SNr"].description
+
+
+@pytest.mark.parametrize(
+    "data_streams, stub_test, match",
+    [
+        (dict(raw=False, processed="recomputed"), False, "set raw to true"),
+        (dict(processed="recomputed"), True, "stub_test"),
+        (dict(processed=True), False, "processed must be"),
+    ],
+)
+def test_recomputed_conversion_needs_whole_raw_blocks(
+    tmp_path, fake_modulated_tdt_block, data_streams, stub_test, match
+):
+    protocol_folder_path = tmp_path / "SN pan GABA recordings" / "PPN" / "Fiber photometry_TDT" / "Varying durations"
+    (protocol_folder_path / "C0001-240117-101500").mkdir(parents=True)
+
+    with pytest.raises(ValueError, match=match):
+        session_to_nwb(
+            output_dir_path=tmp_path / "nwb",
+            subject_metadata=dict(SUBJECT_METADATA, **{"Recording Site": "SNr"}),
+            protocol_folder_path=protocol_folder_path,
+            recording_type="SN pan GABA recordings",
+            stimulus_location="PPN",
+            protocol="Varying durations",
+            data_streams=data_streams,
+            stub_test=stub_test,
+        )
+
+
+@pytest.mark.parametrize(
+    "processed, cohort_config, expected",
+    [
+        ("lab", {}, "lab"),
+        ("lab", dict(processed="recomputed"), "recomputed"),
+        ("recomputed", {}, "recomputed"),
+        (False, dict(processed="recomputed"), False),
+    ],
+)
+def test_get_processed_source_lets_a_cohort_choose_unless_processed_is_off(processed, cohort_config, expected):
+    from hnasko_lab_to_nwb.hadjas_2025.convert_session import get_processed_source
+
+    assert get_processed_source(dict(raw=True, processed=processed), cohort_config) == expected

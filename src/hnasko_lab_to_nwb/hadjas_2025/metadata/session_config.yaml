@@ -1,9 +1,13 @@
 # Settings that differ between cohorts, protocols and subjects of the Hadjas 2025 dataset.
 # Data streams written to every session; set one to false to skip it. A raw-only conversion (processed: false)
 # needs only the TDT blocks, not the lab's .mat file. Optogenetic epochs are always written.
+# processed: lab writes the demodulated, downsampled and dF/F signals of the lab's .mat file; recomputed computes
+# them from the raw signal with hadjas_2025.processing (needs raw: true; see its module docstring for how they
+# differ from the lab's). A cohort can set its own processed value (e.g. recomputed for a cohort without a lab .mat
+# file); it applies unless processed is false.
 data_streams:
   raw: true  # Fi1r photodetector signal of the TDT blocks
-  processed: true  # demodulated, downsampled and dF/F signals of the lab's .mat file
+  processed: lab  # lab, recomputed or false
   behavioral_video: false  # AnyMaze videos of the cohorts' behavioral_video_inputs, not part of the Hadjas 2025 paper
 # Each cohort key is the recording type of its metadata file (<recording type>_metadata.yaml). inputs lists the
 # stimulated inputs converted (Input column of the sheet, and the input folder under data_folder).
