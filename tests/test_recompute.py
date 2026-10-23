@@ -93,3 +93,35 @@ def test_add_recomputed_processed_series_writes_each_block_as_the_lab_path(nwbfi
             list(metadata["FiberPhotometry"]["FiberPhotometryTable"]["rows"]).index(row)
             for row in series_metadata["fiber_photometry_table_region"]
         ]
+
+
+def test_add_recomputed_processed_series_to_a_file_read_from_disk(tmp_path, nwbfile_with_raw_series, metadata):
+    # in a new Python process, importing recompute before reading the file is enough to add the series in append mode
+    import subprocess
+    import sys
+
+    from pynwb import NWBHDF5IO
+
+    nwbfile, _ = nwbfile_with_raw_series
+    nwbfile_path = tmp_path / "raw_only.nwb"
+    with NWBHDF5IO(nwbfile_path, "w") as io:
+        io.write(nwbfile)
+    script = f"""
+from pynwb import NWBHDF5IO
+from hnasko_lab_to_nwb.hadjas_2025.convert_session import load_cohort_metadata
+from hnasko_lab_to_nwb.hadjas_2025.recompute import add_recomputed_processed_series
+
+with NWBHDF5IO(r"{nwbfile_path}", "a") as io:
+    nwbfile = io.read()
+    add_recomputed_processed_series(
+        nwbfile=nwbfile,
+        metadata=load_cohort_metadata("SN pan GABA recordings"),
+        raw_metadata_key="Fi1r_SNr",
+        led_modulation={LED_MODULATION},
+    )
+    io.write(nwbfile)
+"""
+    subprocess.run([sys.executable, "-c", script], check=True)
+
+    with NWBHDF5IO(nwbfile_path, "r") as io:
+        assert "deltaF_over_F_SNr" in io.read().processing["ophys"].data_interfaces

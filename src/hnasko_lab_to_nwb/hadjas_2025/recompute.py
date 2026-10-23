@@ -13,6 +13,10 @@ raw series, opened in append mode.
 from importlib.metadata import version
 
 import numpy as np
+
+# Imported before any NWB file is read, so that its fiber photometry objects get the extension's classes (and their
+# methods, e.g. FiberPhotometryTable.create_fiber_photometry_table_region) and not classes generated from the file
+from ndx_fiber_photometry import FiberPhotometryResponseSeries
 from pynwb.file import NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.fiber_photometry_table import add_fiber_photometry_table_region
@@ -99,8 +103,6 @@ def add_recomputed_processed_series(
     ValueError
         If the processed signals of a block cannot be computed (calculate_dff_with_biexponential_fit).
     """
-    from ndx_fiber_photometry import FiberPhotometryResponseSeries
-
     site = raw_metadata_key.removeprefix("Fi1r_")
     raw_series = nwbfile.acquisition[metadata["FiberPhotometry"][raw_metadata_key]["name"]]
     if raw_series.rate is not None:
