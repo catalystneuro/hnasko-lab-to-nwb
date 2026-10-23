@@ -9,6 +9,7 @@ from hnasko_lab_to_nwb.hadjas_2025.interfaces import (
     Hadjas2025ProcessedFiberPhotometryInterface,
     Hadjas2025TDTOptogeneticStimulusInterface,
 )
+from hnasko_lab_to_nwb.hadjas_2025.recompute import add_recomputed_processed_series
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import ExternalVideoInterface
 
@@ -25,7 +26,8 @@ class Hadjas2025NWBConverter(NWBConverter):
     - "Video": ExternalVideoInterface (behavioral videos as external files in acquisition).
 
     The converter also writes the trials table: one trial per TDT block of a session of several blocks, or per
-    train duration of a varying-frequencies session recorded in one block.
+    train duration of a varying-frequencies session recorded in one block, and, if asked, the processed series
+    recomputed from the raw series (add_recomputed_processed_series).
     """
 
     def __init__(
@@ -34,6 +36,7 @@ class Hadjas2025NWBConverter(NWBConverter):
         verbose: bool = True,
         video_time_alignment_dict: Optional[dict] = None,
         block_trials: Optional[list[dict]] = None,
+        recomputed_processed_series_kwargs: Optional[dict] = None,
     ):
         """Initialize the NWBConverter with source data, video alignment and block trials.
 
@@ -49,6 +52,9 @@ class Hadjas2025NWBConverter(NWBConverter):
         block_trials : Optional[list[dict]], optional
             One trial per TDT block of a session of several blocks, or per train duration of a varying-frequencies
             session of one block, as add_trial arguments (start_time, stop_time, tags), by default None.
+        recomputed_processed_series_kwargs : Optional[dict], optional
+            If given, "raw_metadata_key" and "led_modulation" of add_recomputed_processed_series, which then writes
+            the processed series recomputed from the raw series, by default None.
         """
         data_interface_name_mapping = {
             "Video": ExternalVideoInterface,
@@ -66,6 +72,7 @@ class Hadjas2025NWBConverter(NWBConverter):
         super().__init__(source_data=source_data, verbose=verbose)
         self.video_time_alignment_dict = video_time_alignment_dict or {}
         self.block_trials = block_trials or []
+        self.recomputed_processed_series_kwargs = recomputed_processed_series_kwargs
 
     def temporally_align_data_interfaces(self, metadata: dict | None = None, conversion_options: dict | None = None):
         """Shift the frame times of each video to the TDT clock by its video_starting_time.
@@ -85,7 +92,7 @@ class Hadjas2025NWBConverter(NWBConverter):
                 temporal_alignment[key].set_times(frame_times + video_info["video_starting_time"])
 
     def add_to_nwbfile(self, nwbfile: NWBFile, metadata, conversion_options: Optional[dict] = None) -> None:
-        """Add the data of every interface, then the block trials, to an NWBFile.
+        """Add the data of every interface, then the block trials and recomputed processed series, to an NWBFile.
 
         Parameters
         ----------
@@ -100,3 +107,8 @@ class Hadjas2025NWBConverter(NWBConverter):
 
         for trial in self.block_trials:
             nwbfile.add_trial(**trial)
+
+        if self.recomputed_processed_series_kwargs is not None:
+            add_recomputed_processed_series(
+                nwbfile=nwbfile, metadata=metadata, **self.recomputed_processed_series_kwargs
+            )

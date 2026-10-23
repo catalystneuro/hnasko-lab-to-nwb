@@ -41,6 +41,7 @@ def dataset_to_nwb(
     output_dir_path: Union[str, Path],
     subjects_metadata_file_path: Union[str, Path],
     overwrite: bool = False,
+    data_streams: dict | None = None,
     verbose: bool = True,
 ) -> list[dict]:
     """Convert the entire dataset to NWB.
@@ -62,6 +63,8 @@ def dataset_to_nwb(
         The path to the overview Excel file with subject metadata.
     overwrite : bool, optional
         Whether to convert again the sessions whose NWB file exists, overwriting it, by default False
+    data_streams : dict, optional
+        Data streams to write, passed to session_to_nwb (default is None, which uses the session config).
     verbose : bool, optional
         Whether to print verbose output, by default True
 
@@ -106,7 +109,11 @@ def dataset_to_nwb(
             )
             try:
                 session_to_nwb(
-                    output_dir_path=output_dir_path, overwrite=overwrite, verbose=verbose, **session_to_nwb_kwargs
+                    output_dir_path=output_dir_path,
+                    overwrite=overwrite,
+                    data_streams=data_streams,
+                    verbose=verbose,
+                    **session_to_nwb_kwargs,
                 )
                 logger.info(f"Converted {session_name}")
                 summary_row.update(status="converted", error="")
