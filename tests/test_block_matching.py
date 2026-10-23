@@ -59,6 +59,20 @@ def test_match_mat_segments_by_number_of_samples(tmp_path, write_processed_mat_f
     assert segment_names == ["s4s", "s250ms", "s1s"]
 
 
+def test_match_mat_segments_reads_the_length_of_segments_stored_as_columns(
+    tmp_path, write_processed_mat_file, block_sample_counts
+):
+    # The Gc_raw segments of the GRAB-DA STN varying-frequencies file are (number of samples, 1)
+    segments = {"s250ms": np.ones(3), "s1s": np.ones(5)}
+    file_path = write_processed_mat_file(
+        tmp_path / "processed.mat", "Gc_raw", "DLS", "C3018", segments, as_columns=True
+    )
+    folder_paths = [Path("C3018-240213-152012"), Path("C3018-240213-153002")]
+    block_sample_counts.update({"C3018-240213-152012": 5, "C3018-240213-153002": 3})
+
+    assert match_mat_segments(file_path, "DLS", "C3018", folder_paths) == ["s1s", "s250ms"]
+
+
 def test_match_mat_segments_fails_without_a_segment_of_the_block_length(
     tmp_path, write_processed_mat_file, block_sample_counts
 ):

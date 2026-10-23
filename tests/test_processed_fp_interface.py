@@ -42,3 +42,16 @@ def test_concatenated_interface_reads_anxa1_site_from_folder_name(tmp_path, anxa
     )
 
     assert "deltaF_over_F_DLS" in nwbfile.processing["ophys"].data_interfaces
+
+
+def test_segments_stored_as_columns_are_read_whole(tmp_path, write_processed_mat_file):
+    # The Gc_raw segments of the GRAB-DA STN varying-frequencies file are (number of samples, 1)
+    file_path = write_processed_mat_file(
+        tmp_path / "processed.mat", "Gc_raw", "DLS", "C3018", {"s1s": np.arange(5.0)}, as_columns=True
+    )
+    interface = Hadjas2025ProcessedFiberPhotometryInterface(
+        file_path=file_path, stream_name="Gc_raw", subject_id="C3018", target_area="DLS", sampling_frequency=100.0
+    )
+
+    np.testing.assert_array_equal(interface._extract_signal("s1s"), np.arange(5.0))
+    np.testing.assert_array_equal(interface._extract_signal("s1s", t1=0.02, t2=0.04), [2.0, 3.0])

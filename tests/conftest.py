@@ -21,14 +21,21 @@ def anxa1_metadata() -> dict:
 
 @pytest.fixture
 def write_processed_mat_file():
-    """Return a function that writes a .mat (HDF5) file with the layout of the lab's processed files."""
+    """Return a function that writes a .mat (HDF5) file with the layout of the lab's processed files.
 
-    def write(file_path: Path, stream_name: str, target_area: str, subject_id: str, segments: dict) -> Path:
+    Segments are written as (1, number of samples), or as (number of samples, 1) with as_columns=True, as in the
+    Gc_raw and af_raw streams of the GRAB-DA STN varying-frequencies file.
+    """
+
+    def write(
+        file_path: Path, stream_name: str, target_area: str, subject_id: str, segments: dict, as_columns: bool = False
+    ) -> Path:
         file_path.parent.mkdir(parents=True, exist_ok=True)
         with h5py.File(file_path, "w") as file:
             subject_group = file.create_group(f"{stream_name}/{target_area}/{subject_id}")
             for segment_name, data in segments.items():
-                subject_group.create_dataset(segment_name, data=np.asarray(data)[np.newaxis, :])
+                data = np.asarray(data)[:, np.newaxis] if as_columns else np.asarray(data)[np.newaxis, :]
+                subject_group.create_dataset(segment_name, data=data)
         return file_path
 
     return write
