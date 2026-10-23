@@ -19,8 +19,8 @@ def demodulate(raw_signal: np.ndarray, sampling_frequency: float, carrier_freque
     """Demodulate the raw photodetector signal at the modulation frequency of one LED.
 
     The signal is multiplied by a sine and a cosine at the carrier frequency, both products are lowpass filtered
-    (2nd-order Butterworth, 6 Hz, forward and backward) and the amplitude is the square root of the sum of their
-    squares.
+    (2nd-order Butterworth, 6 Hz, forward and backward with the end padding of MATLAB's filtfilt) and the amplitude
+    is the square root of the sum of their squares.
 
     Parameters
     ----------
@@ -38,9 +38,11 @@ def demodulate(raw_signal: np.ndarray, sampling_frequency: float, carrier_freque
     """
     raw_signal = np.asarray(raw_signal, dtype=float)
     b, a = signal.butter(2, LOWPASS_CUTOFF / (sampling_frequency / 2), "low")
+    # MATLAB's filtfilt pads each end with 3 * (filter order) samples; scipy's default pads with one more per order
+    padlen = 3 * (max(len(a), len(b)) - 1)
     t = np.arange(len(raw_signal)) / sampling_frequency
-    filtered_sin = signal.filtfilt(b, a, raw_signal * np.sin(2 * np.pi * carrier_frequency * t))
-    filtered_cos = signal.filtfilt(b, a, raw_signal * np.cos(2 * np.pi * carrier_frequency * t))
+    filtered_sin = signal.filtfilt(b, a, raw_signal * np.sin(2 * np.pi * carrier_frequency * t), padlen=padlen)
+    filtered_cos = signal.filtfilt(b, a, raw_signal * np.cos(2 * np.pi * carrier_frequency * t), padlen=padlen)
     return np.sqrt(filtered_sin**2 + filtered_cos**2)
 
 

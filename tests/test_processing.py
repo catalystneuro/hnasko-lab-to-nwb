@@ -32,6 +32,32 @@ def test_demodulate_gives_half_the_amplitude_of_the_carrier(carrier_frequency, e
     np.testing.assert_allclose(demodulated[middle], expected_amplitude, rtol=1e-3)
 
 
+def matlab_filtfilt(b: np.ndarray, a: np.ndarray, x: np.ndarray) -> np.ndarray:
+    """Filter forward and backward as MATLAB's filtfilt: odd reflection of 3 * (filter order) samples at each end."""
+    from scipy import signal
+
+    edge = 3 * (len(a) - 1)
+    padded = np.concatenate([2 * x[0] - x[edge:0:-1], x, 2 * x[-1] - x[-2 : -edge - 2 : -1]])
+    zi = signal.lfilter_zi(b, a)
+    forward, _ = signal.lfilter(b, a, padded, zi=zi * padded[0])
+    backward, _ = signal.lfilter(b, a, forward[::-1], zi=zi * forward[-1])
+    return backward[::-1][edge:-edge]
+
+
+def test_demodulate_pads_the_filter_as_matlab_filtfilt():
+    from scipy import signal
+
+    raw_signal = get_modulated_signal(duration=2.0, calcium_amplitude=4.0, isosbestic_amplitude=1.0)
+    b, a = signal.butter(2, 6.0 / (SAMPLING_FREQUENCY / 2), "low")
+    t = np.arange(len(raw_signal)) / SAMPLING_FREQUENCY
+    expected = np.sqrt(
+        matlab_filtfilt(b, a, raw_signal * np.sin(2 * np.pi * 330.0 * t)) ** 2
+        + matlab_filtfilt(b, a, raw_signal * np.cos(2 * np.pi * 330.0 * t)) ** 2
+    )
+
+    np.testing.assert_allclose(demodulate(raw_signal, SAMPLING_FREQUENCY, 330.0), expected, rtol=1e-9)
+
+
 def test_resample_interpolates_to_100_hz():
     number_of_samples = int(10 * SAMPLING_FREQUENCY)
     ramp = np.arange(number_of_samples) / SAMPLING_FREQUENCY
