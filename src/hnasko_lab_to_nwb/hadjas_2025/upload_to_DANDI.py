@@ -7,11 +7,17 @@ Uploading takes two steps, so that the organized files can be checked before any
 2. upload_organized_files validates the organized files and the dandiset metadata, and uploads the folder to the
    draft of the dandiset if they are valid.
 
+Before uploading, report_draft_assets lists the draft assets that the upload replaces and those it leaves next to
+a new file of the same session (superseded) or does not touch (not reconverted).
+
 Both take the DANDI instance: "dandi" for the archive, "dandi-sandbox" for the sandbox.
 """
 
+import re
 from pathlib import Path
 from typing import Union
+
+import pandas as pd
 
 DANDI_INSTANCES = ("dandi", "dandi-sandbox")
 
@@ -111,6 +117,84 @@ def validate_organized_files(dandiset_path: Union[str, Path]) -> list[str]:
             if result.severity is not None and result.severity.value >= Severity.ERROR.value:
                 errors.append(f"{dandi_file.filepath}: {result.message}")
     return errors
+
+
+def get_draft_asset_paths(*, dandiset_id: str, dandi_instance: str) -> list[str]:
+    """List the paths of the assets of the draft of a dandiset."""
+    from dandi.dandiapi import DandiAPIClient
+
+    check_dandi_instance(dandi_instance)
+    with DandiAPIClient.for_dandi_instance(dandi_instance) as client:
+        return [asset.path for asset in client.get_dandiset(dandiset_id, "draft").get_assets()]
+
+
+def get_subject_and_session(asset_path: str) -> tuple[str, str]:
+    """Get the subject and session of an asset path, in lower case.
+
+    For example "sub-c4708/sub-c4708_ses-varying-durations.nwb" and the external video
+    "sub-C4550/sub-C4550_ses-varying-durations_image/<uuid>_external_file_0.mp4" give ("c4708", "varying-durations")
+    and ("c4550", "varying-durations").
+    """
+    subject = asset_path.split("/")[0].removeprefix("sub-")
+    match = re.search(r"_ses-([^_/.]+)", asset_path)
+    return subject.lower(), match.group(1).lower() if match else ""
+
+
+def report_draft_assets(*, dandiset_path: Union[str, Path], dandiset_id: str, dandi_instance: str) -> pd.DataFrame:
+    """Compare an organized dandiset folder with the draft, before uploading it.
+
+    Nothing is removed from the draft. Each draft asset gets a status:
+
+    - "replaced": the organized folder has a file at the same path, which the upload replaces.
+    - "superseded": the organized folder has a file of the same subject and session (compared in lower case) at
+      another path, e.g. a subject ID that was lower case or an NWB file that linked videos. The upload adds the new
+      file and the asset stays on the draft next to it until it is removed.
+    - "not reconverted": the organized folder has no file of its subject and session.
+
+    Each organized file that is not on the draft gets the status "new".
+
+    Parameters
+    ----------
+    dandiset_path : Union[str, Path]
+        The dandiset folder from organize_nwbfiles.
+    dandiset_id : str
+        The dandiset, e.g. "001528".
+    dandi_instance : str
+        "dandi" or "dandi-sandbox".
+
+    Returns
+    -------
+    pd.DataFrame
+        One row per asset, with columns "path", "status" and "replaced_by" (the organized NWB files of the same
+        subject and session, for superseded assets).
+    """
+    dandiset_path = Path(dandiset_path)
+    local_paths = sorted(
+        file_path.relative_to(dandiset_path).as_posix()
+        for file_path in dandiset_path.rglob("*")
+        if file_path.is_file() and file_path.name != "dandiset.yaml"
+    )
+    subject_and_session_to_local_nwbfile_paths = dict()
+    for local_path in local_paths:
+        if local_path.endswith(".nwb"):
+            subject_and_session_to_local_nwbfile_paths.setdefault(get_subject_and_session(local_path), []).append(
+                local_path
+            )
+    draft_paths = get_draft_asset_paths(dandiset_id=dandiset_id, dandi_instance=dandi_instance)
+    rows = []
+    for draft_path in sorted(draft_paths):
+        replaced_by = subject_and_session_to_local_nwbfile_paths.get(get_subject_and_session(draft_path), [])
+        if draft_path in local_paths:
+            rows.append(dict(path=draft_path, status="replaced", replaced_by=""))
+        elif replaced_by:
+            rows.append(dict(path=draft_path, status="superseded", replaced_by="; ".join(replaced_by)))
+        else:
+            rows.append(dict(path=draft_path, status="not reconverted", replaced_by=""))
+    rows += [
+        dict(path=local_path, status="new", replaced_by="")
+        for local_path in sorted(set(local_paths) - set(draft_paths))
+    ]
+    return pd.DataFrame(rows, columns=["path", "status", "replaced_by"])
 
 
 def upload_organized_files(*, dandiset_path: Union[str, Path], dandi_instance: str) -> None:

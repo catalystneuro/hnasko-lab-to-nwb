@@ -74,6 +74,55 @@ def test_unknown_dandi_instance_raises(tmp_path, fake_dandi):
         upload_organized_files(dandiset_path=tmp_path, dandi_instance="sandbox")
 
 
+def test_report_draft_assets_lists_replaced_superseded_and_not_reconverted_assets(tmp_path, monkeypatch):
+    draft_paths = [
+        "sub-B7514/sub-B7514_ses-varying-durations.nwb",
+        "sub-c4708/sub-c4708_ses-varying-durations.nwb",  # lower-case subject ID (issue #21)
+        "sub-C4550/sub-C4550_ses-varying-durations_image.nwb",  # linked the behavioral video
+        "sub-C4550/sub-C4550_ses-varying-durations_image/e397e5aa_external_file_0.mp4",
+        "sub-C5903/sub-C5903_ses-varying-durations.nwb",  # Anxa1 SNc recording without a block in the data share
+    ]
+    monkeypatch.setattr(upload_to_DANDI, "get_draft_asset_paths", lambda dandiset_id, dandi_instance: draft_paths)
+    dandiset_path = tmp_path / "001528"
+    local_paths = [
+        "sub-B7514/sub-B7514_ses-varying-durations.nwb",
+        "sub-C4708/sub-C4708_ses-varying-durations.nwb",
+        "sub-C4550/sub-C4550_ses-varying-durations.nwb",
+        "sub-C5903/sub-C5903_ses-varying-durations-DLS.nwb",
+    ]
+    for local_path in local_paths:
+        (dandiset_path / local_path).parent.mkdir(parents=True, exist_ok=True)
+        (dandiset_path / local_path).touch()
+    (dandiset_path / "dandiset.yaml").touch()
+
+    report = upload_to_DANDI.report_draft_assets(
+        dandiset_path=dandiset_path, dandiset_id="001528", dandi_instance="dandi"
+    )
+
+    assert report.values.tolist() == [
+        ["sub-B7514/sub-B7514_ses-varying-durations.nwb", "replaced", ""],
+        [
+            "sub-C4550/sub-C4550_ses-varying-durations_image.nwb",
+            "superseded",
+            "sub-C4550/sub-C4550_ses-varying-durations.nwb",
+        ],
+        [
+            "sub-C4550/sub-C4550_ses-varying-durations_image/e397e5aa_external_file_0.mp4",
+            "superseded",
+            "sub-C4550/sub-C4550_ses-varying-durations.nwb",
+        ],
+        ["sub-C5903/sub-C5903_ses-varying-durations.nwb", "not reconverted", ""],
+        [
+            "sub-c4708/sub-c4708_ses-varying-durations.nwb",
+            "superseded",
+            "sub-C4708/sub-C4708_ses-varying-durations.nwb",
+        ],
+        ["sub-C4550/sub-C4550_ses-varying-durations.nwb", "new", ""],
+        ["sub-C4708/sub-C4708_ses-varying-durations.nwb", "new", ""],
+        ["sub-C5903/sub-C5903_ses-varying-durations-DLS.nwb", "new", ""],
+    ]
+
+
 def test_nothing_is_uploaded_if_a_file_or_the_dandiset_metadata_is_invalid(tmp_path, fake_dandi):
     dandiset_path = tmp_path / "001528"
     (dandiset_path / "sub-C0001").mkdir(parents=True)
