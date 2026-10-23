@@ -74,6 +74,35 @@ def get_raw_stream_settings(folder_path: Path) -> dict:
     return dict(sampling_frequency=sampling_frequency, **get_rig_settings(sampling_frequency))
 
 
+def get_processed_source(data_streams: dict, cohort_config: dict) -> str | bool:
+    """Get where the processed signals of a session come from.
+
+    Parameters
+    ----------
+    data_streams : dict
+        The data streams of the conversion, with "processed" set to "lab", "recomputed" or False.
+    cohort_config : dict
+        The cohort's entry of the session config, which can set its own "processed" value.
+
+    Returns
+    -------
+    str | bool
+        "lab" (the lab's .mat file), "recomputed" (computed from the raw signal by hadjas_2025.recompute) or False.
+        The cohort's value applies unless data_streams["processed"] is False.
+
+    Raises
+    ------
+    ValueError
+        If the value is not "lab", "recomputed" or False, or if "recomputed" is asked without the raw stream.
+    """
+    processed = data_streams["processed"] and cohort_config.get("processed", data_streams["processed"])
+    if processed not in ("lab", "recomputed", False):
+        raise ValueError(f"processed must be 'lab', 'recomputed' or false, not {processed!r}.")
+    if processed == "recomputed" and not data_streams["raw"]:
+        raise ValueError("Recomputed processed signals are computed from the raw stream; set raw to true.")
+    return processed
+
+
 def load_cohort_metadata(recording_type: str) -> dict:
     """Load the metadata shared by all cohorts, updated with the metadata file of one cohort.
 
@@ -691,8 +720,9 @@ def session_to_nwb(
     protocol : str
         Protocol key of the session config: "Varying durations" or "Varying frequencies".
     data_streams : dict, optional
-        Data streams to write ("raw", "processed", "behavioral_video": True or False), updating the data_streams
-        of the session config (default is None, which uses the session config).
+        Data streams to write, updating the data_streams of the session config (default is None, which uses the
+        session config): "raw" and "behavioral_video" (True or False), and "processed" ("lab", "recomputed" or
+        False; get_processed_source).
     stub_test : bool, optional
         If True, convert only the first second of each block (default is False).
     overwrite : bool, optional
@@ -723,6 +753,9 @@ def session_to_nwb(
     unknown_data_streams = set(data_streams) - set(session_config["data_streams"])
     if unknown_data_streams:
         raise ValueError(f"Unknown data streams {sorted(unknown_data_streams)}.")
+    processed_source = get_processed_source(data_streams=data_streams, cohort_config=cohort_config)
+    if processed_source == "recomputed" and stub_test:
+        raise ValueError("Recomputed processed signals need whole blocks; they cannot be written with stub_test.")
     protocol_folder_path = Path(protocol_folder_path)
     recording_site = get_recording_site(recording_type=recording_type, protocol_folder_path=protocol_folder_path)
     session_id = get_session_id(protocol=protocol, recording_type=recording_type, recording_site=recording_site)
@@ -766,7 +799,7 @@ def session_to_nwb(
         conversion_options.update(RawFiberPhotometry=dict(stub_test=stub_test))
 
     # Processed fiber photometry from the lab's .mat file
-    if data_streams["processed"]:
+    if processed_source == "lab":
         mat_file_path = find_mat_file_path(
             protocol_folder_path=protocol_folder_path,
             cohort_data_folder=cohort_config["data_folder"],
@@ -836,11 +869,19 @@ def session_to_nwb(
         OptogeneticStimulus=dict(tdt_stimulus_channel_to_frequency=protocol_config["epoc_name_to_frequency_in_hz"])
     )
 
+    # Processed fiber photometry recomputed from the raw series, after the interfaces have written it
+    recomputed_processed_series_kwargs = None
+    if processed_source == "recomputed":
+        recomputed_processed_series_kwargs = dict(
+            raw_metadata_key=raw_source_data["metadata_key"], led_modulation=get_led_modulation(session_start_time)
+        )
+
     converter = Hadjas2025NWBConverter(
         source_data=source_data,
         verbose=verbose,
         video_time_alignment_dict=video_time_alignment_dict,
         block_trials=block_trials,
+        recomputed_processed_series_kwargs=recomputed_processed_series_kwargs,
     )
 
     # Update default metadata with the editable in the corresponding yaml file

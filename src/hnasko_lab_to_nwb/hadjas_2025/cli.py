@@ -24,6 +24,13 @@ OVERVIEW_FILE_NAME = "ASAP FP Overview.xlsx"
 DANDISET_ID = "001528"
 
 
+def get_data_streams(args: argparse.Namespace) -> dict | None:
+    """Return the data streams set on the command line ("processed" from --processed), or None for the config."""
+    if args.processed is None:
+        return None
+    return dict(processed=False if args.processed == "none" else args.processed)
+
+
 def check(args: argparse.Namespace) -> int:
     """Write the session inventory and the data check to the output folder; return 1 if the check has errors."""
     from hnasko_lab_to_nwb.hadjas_2025.convert_all_sessions import get_session_inventory
@@ -33,7 +40,11 @@ def check(args: argparse.Namespace) -> int:
     overview_file_path = args.overview_file_path or args.data_dir_path / OVERVIEW_FILE_NAME
     inventory = get_session_inventory(data_dir_path=args.data_dir_path, subjects_metadata_file_path=overview_file_path)
     inventory.to_csv(args.output_dir_path / "session_inventory.csv", index=False)
-    data_check = check_dataset(data_dir_path=args.data_dir_path, subjects_metadata_file_path=overview_file_path)
+    data_check = check_dataset(
+        data_dir_path=args.data_dir_path,
+        subjects_metadata_file_path=overview_file_path,
+        data_streams=get_data_streams(args),
+    )
     data_check.to_csv(args.output_dir_path / "data_check.csv", index=False)
     print(f"{len(inventory)} sessions; data check findings by severity and check:")
     print(data_check.groupby(["severity", "check"]).size().to_string() if len(data_check) else "none")
@@ -49,6 +60,7 @@ def convert(args: argparse.Namespace) -> int:
         output_dir_path=args.output_dir_path,
         subjects_metadata_file_path=args.overview_file_path or args.data_dir_path / OVERVIEW_FILE_NAME,
         overwrite=args.overwrite,
+        data_streams=get_data_streams(args),
         verbose=False,
     )
     print(f"{len(failed_sessions)} sessions failed; see convert_all_sessions.log in {args.output_dir_path}")
@@ -138,6 +150,13 @@ def get_parser() -> argparse.ArgumentParser:
             "--overview-file-path", type=Path, help=f"overview sheet (default: <data folder>/{OVERVIEW_FILE_NAME})"
         )
         subparser.set_defaults(function=function)
+    for command in ("check", "convert"):
+        subparsers.choices[command].add_argument(
+            "--processed",
+            choices=["lab", "recomputed", "none"],
+            help="processed signals from the lab's .mat files, recomputed from the raw signal, or none (default: "
+            "data_streams.processed of the session config)",
+        )
     subparsers.choices["convert"].add_argument(
         "--overwrite", action="store_true", help="convert again the sessions whose NWB file exists"
     )

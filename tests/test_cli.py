@@ -35,3 +35,15 @@ def test_organize_and_upload_need_the_dandi_instance(tmp_path, command):
         main([command, *folder_paths])
 
     assert exit_info.value.code == 2
+
+
+@pytest.mark.parametrize("processed, exit_code", [("lab", 1), ("recomputed", 0), ("none", 0)])
+def test_check_needs_the_lab_mat_only_for_lab_processed_signals(tmp_path, block_train_durations, processed, exit_code):  # noqa: F811
+    data_dir_path = tmp_path / "data"
+    data_dir_path.mkdir()
+    write_overview(
+        data_dir_path / "ASAP FP Overview.xlsx", {"GRAB DA": [["C0001", "M", "VGlut2-cre", "PPN", "DLS", "R"]]}
+    )
+    make_blocks(data_dir_path, "C0001", "GRABDA recordings", "PPN")
+
+    assert main(["check", str(data_dir_path), str(tmp_path / "nwb"), "--processed", processed]) == exit_code
