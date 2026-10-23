@@ -1,7 +1,11 @@
 import pandas as pd
 
 from hnasko_lab_to_nwb.hadjas_2025 import convert_all_sessions
-from hnasko_lab_to_nwb.hadjas_2025.convert_all_sessions import dataset_to_nwb, get_session_to_nwb_kwargs_per_session
+from hnasko_lab_to_nwb.hadjas_2025.convert_all_sessions import (
+    dataset_to_nwb,
+    get_session_inventory,
+    get_session_to_nwb_kwargs_per_session,
+)
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import METADATA_FOLDER_PATH, load_session_config
 
 SHEET_COLUMNS = ["Animal ID", "Sex", "Genotype", "Input", "Recording Site", "Hemisphere"]
@@ -89,6 +93,31 @@ def test_anxa1_sessions_follow_the_block_folders_not_the_sheet_site(tmp_path):
         (anxa1, "C0005", "Varying durations", "Anxa1 SNc"),
         (anxa1, "C0005", "Varying frequencies", "Anxa1 DLS"),
         (anxa1, "C0005", "Varying frequencies", "Anxa1 SNc"),
+    ]
+
+
+def test_session_inventory_lists_the_blocks_and_nwb_file_of_each_session(tmp_path):
+    sheets = {"DA subtypes": [["C0005", "M", "Vglut2-phiC X Anxa1-cre", "STN", "DLS and SNc", "R"]]}
+    overview_file_path = tmp_path / "overview.xlsx"
+    write_overview(overview_file_path, sheets)
+    make_blocks(tmp_path, "C0005", "Cell_type recordings", "STN", "Anxa1 DLS")
+    frequencies_folder_path = (
+        tmp_path / "Cell_type recordings" / "STN" / "Fiber photometry_TDT" / "Varying frequencies" / "Anxa1 DLS"
+    )
+    (frequencies_folder_path / "C0005-240101-120000").rmdir()
+    for duration, time in (("4s", "130000"), ("250ms", "110000")):
+        (frequencies_folder_path / f"varFreq_{duration}" / f"C0005-240101-{time}").mkdir(parents=True)
+
+    inventory = get_session_inventory(data_dir_path=tmp_path, subjects_metadata_file_path=overview_file_path)
+
+    assert inventory[["subject_id", "session_id", "nwbfile_name", "tdt_blocks"]].values.tolist() == [
+        ["C0005", "varying_durations_DLS", "sub-C0005_ses-varying_durations_DLS.nwb", "C0005-240101-120000"],
+        [
+            "C0005",
+            "varying_frequencies_DLS",
+            "sub-C0005_ses-varying_frequencies_DLS.nwb",
+            "C0005-240101-110000; C0005-240101-130000",
+        ],
     ]
 
 

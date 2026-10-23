@@ -9,11 +9,25 @@ from tqdm import tqdm
 
 from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     find_tdt_folder_paths,
+    get_nwbfile_name,
+    get_recording_site,
+    get_session_id,
     load_session_config,
     session_to_nwb,
 )
 
 logger = logging.getLogger(__name__)
+
+INVENTORY_COLUMNS = [
+    "recording_type",
+    "subject_id",
+    "stimulus_location",
+    "protocol",
+    "session_id",
+    "nwbfile_name",
+    "protocol_folder_path",
+    "tdt_blocks",
+]
 
 
 def dataset_to_nwb(
@@ -165,6 +179,56 @@ def get_session_to_nwb_kwargs_per_session(
                     )
 
     return session_to_nwb_kwargs_per_session
+
+
+def get_session_inventory(
+    *,
+    data_dir_path: Union[str, Path],
+    subjects_metadata_file_path: Union[str, Path],
+) -> pd.DataFrame:
+    """List the sessions of the dataset with their TDT blocks and the name of their NWB file.
+
+    Parameters
+    ----------
+    data_dir_path : Union[str, Path]
+        The path to the directory containing the raw data.
+    subjects_metadata_file_path : Union[str, Path]
+        The path to the overview Excel file with subject metadata.
+
+    Returns
+    -------
+    pd.DataFrame
+        One row per session of get_session_to_nwb_kwargs_per_session, with the columns of INVENTORY_COLUMNS.
+        tdt_blocks lists the block folder names in recording order, separated by "; ".
+    """
+    rows = []
+    for session_to_nwb_kwargs in get_session_to_nwb_kwargs_per_session(
+        data_dir_path=data_dir_path, subjects_metadata_file_path=subjects_metadata_file_path
+    ):
+        subject_id = session_to_nwb_kwargs["subject_metadata"]["Animal ID"]
+        protocol_folder_path = session_to_nwb_kwargs["protocol_folder_path"]
+        recording_site = get_recording_site(
+            recording_type=session_to_nwb_kwargs["recording_type"], protocol_folder_path=protocol_folder_path
+        )
+        session_id = get_session_id(
+            protocol=session_to_nwb_kwargs["protocol"],
+            recording_type=session_to_nwb_kwargs["recording_type"],
+            recording_site=recording_site,
+        )
+        tdt_folder_paths = find_tdt_folder_paths(protocol_folder_path=protocol_folder_path, subject_id=subject_id)
+        rows.append(
+            dict(
+                recording_type=session_to_nwb_kwargs["recording_type"],
+                subject_id=subject_id,
+                stimulus_location=session_to_nwb_kwargs["stimulus_location"],
+                protocol=session_to_nwb_kwargs["protocol"],
+                session_id=session_id,
+                nwbfile_name=get_nwbfile_name(subject_id=subject_id, session_id=session_id),
+                protocol_folder_path=str(protocol_folder_path),
+                tdt_blocks="; ".join(folder_path.name for folder_path in tdt_folder_paths),
+            )
+        )
+    return pd.DataFrame(rows, columns=INVENTORY_COLUMNS)
 
 
 if __name__ == "__main__":
