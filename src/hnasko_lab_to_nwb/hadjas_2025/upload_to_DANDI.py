@@ -4,7 +4,8 @@ Uploading takes two steps, so that the organized files can be checked before any
 
 1. organize_nwbfiles copies the NWB files into a local dandiset folder, named and placed as DANDI expects
    (sub-<subject>/sub-<subject>_ses-<session>.nwb). The NWB files in the output folder are not changed.
-2. upload_organized_files uploads the organized folder to the draft of the dandiset.
+2. upload_organized_files validates the organized files and the dandiset metadata, and uploads the folder to the
+   draft of the dandiset if they are valid.
 
 Both take the DANDI instance: "dandi" for the archive, "dandi-sandbox" for the sandbox.
 """
@@ -81,8 +82,41 @@ def organize_nwbfiles(
     return dandiset_path
 
 
+def validate_organized_files(dandiset_path: Union[str, Path]) -> list[str]:
+    """Validate the files of an organized dandiset folder and its dandiset metadata, as dandi upload does.
+
+    The NWB files are checked against the NWB schema and the DANDI requirements (including the critical NWB
+    Inspector checks), and dandiset.yaml against the DANDI metadata schema of the installed dandi client.
+
+    Parameters
+    ----------
+    dandiset_path : Union[str, Path]
+        The dandiset folder from organize_nwbfiles.
+
+    Returns
+    -------
+    list[str]
+        One line per validation error, "<file>: <message>"; empty if every file is valid.
+    """
+    from dandi.files import DandisetMetadataFile, find_dandi_files
+    from dandi.validate import Severity
+    from dandischema.models import get_schema_version
+
+    errors = []
+    for dandi_file in find_dandi_files(dandiset_path, dandiset_path=dandiset_path, include_metadata=True):
+        # The draft's dandiset.yaml can state an older schema version, which dandi refuses to validate. NWB files
+        # keep the default, as in dandi upload: with a schema version, dandi skips their NWB Inspector checks.
+        schema_version = get_schema_version() if isinstance(dandi_file, DandisetMetadataFile) else None
+        for result in dandi_file.get_validation_errors(schema_version=schema_version):
+            if result.severity is not None and result.severity.value >= Severity.ERROR.value:
+                errors.append(f"{dandi_file.filepath}: {result.message}")
+    return errors
+
+
 def upload_organized_files(*, dandiset_path: Union[str, Path], dandi_instance: str) -> None:
-    """Upload an organized dandiset folder to the draft of its dandiset.
+    """Validate an organized dandiset folder and upload it to the draft of its dandiset.
+
+    Nothing is uploaded if a file or the dandiset metadata is invalid (validate_organized_files).
 
     Parameters
     ----------
@@ -90,8 +124,16 @@ def upload_organized_files(*, dandiset_path: Union[str, Path], dandi_instance: s
         The dandiset folder from organize_nwbfiles.
     dandi_instance : str
         "dandi" or "dandi-sandbox", as for organize_nwbfiles.
+
+    Raises
+    ------
+    ValueError
+        If validation finds errors; the message lists them.
     """
     from dandi.upload import upload
 
     check_dandi_instance(dandi_instance)
+    errors = validate_organized_files(dandiset_path)
+    if errors:
+        raise ValueError(f"{len(errors)} validation errors in {dandiset_path}, nothing uploaded:\n" + "\n".join(errors))
     upload(paths=[str(dandiset_path)], dandi_instance=dandi_instance)
