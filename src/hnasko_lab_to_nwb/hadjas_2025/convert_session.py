@@ -363,10 +363,11 @@ def match_mat_segments(
 
     Each segment of the demodulated raw-rate signal (Gc_raw) has as many samples as the Fi1r stream of its block.
     Segment names follow the lab's folder names, which are wrong for some blocks (e.g. the swapped varFreq_250ms
-    and varFreq_4s folders of C4604 and C8972), so they are not used. A session with one block and one segment
-    uses that segment whatever its length: the lab trimmed some single-block recordings (e.g. C3163 varying
-    durations). When several segments have the length of a block (e.g. s250ms and s1s of C0926), the one named
-    after the block's recorded train duration (s<label>, from get_train_duration_label) is used.
+    and varFreq_4s folders of C4604 and C8972), so they are not used. A segment whose length differs from that of
+    every block is from another recording (e.g. the SN pan DA PPN varying-durations segments, computed from blocks of
+    2024-03-05 that are not in the data share), so it is never used. When several segments have the length of a
+    block (e.g. s250ms and s1s of C0926), the one named after the block's recorded train duration (s<label>, from
+    get_train_duration_label) is used.
 
     Parameters
     ----------
@@ -393,8 +394,6 @@ def match_mat_segments(
         subject_group = f["Gc_raw"][target_area][mat_subject_id]
         # segments are (1, number of samples), or (number of samples, 1) in some files
         segment_name_to_length = {name: max(subject_group[name].shape) for name in subject_group}
-    if len(folder_paths) == 1 and len(segment_name_to_length) == 1:
-        return list(segment_name_to_length)
     segment_names = []
     for folder_path in folder_paths:
         number_of_samples = np.asarray(read_tdt_stream(Path(folder_path), "Fi1r").data).shape[-1]
