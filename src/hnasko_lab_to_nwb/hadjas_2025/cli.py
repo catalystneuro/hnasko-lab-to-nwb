@@ -1,4 +1,4 @@
-"""Command line of the Hadjas 2025 conversion: check, convert, inspect, organize and upload.
+"""Command line of the Hadjas 2025 conversion: check, convert, inspect, organize, upload and compare-processing.
 
 Run "hadjas-2025 <command> --help" for the arguments of each command. A typical run, as sessions are added:
 
@@ -11,6 +11,9 @@ check writes session_inventory.csv and data_check.csv to the output folder. conv
 no NWB file yet, inspects each new file and updates conversion_summary.csv (see the inspection module). inspect
 inspects every NWB file again. organize copies the NWB files into <dandiset folder>/<dandiset ID>, validates them and
 writes draft_asset_report.csv next to it; upload validates and uploads that folder to the draft.
+
+compare-processing recomputes the processed signals of each session from its raw signal (hadjas_2025.processing)
+and writes their comparison with the lab's .mat files to processing_comparison.csv in the output folder.
 """
 
 import argparse
@@ -49,6 +52,26 @@ def convert(args: argparse.Namespace) -> int:
     )
     print(f"{len(failed_sessions)} sessions failed; see convert_all_sessions.log in {args.output_dir_path}")
     return int(len(failed_sessions) > 0)
+
+
+def compare_processing(args: argparse.Namespace) -> int:
+    """Recompute the processed signals and compare them with the lab's .mat files; return 1 if a session failed."""
+    from hnasko_lab_to_nwb.hadjas_2025.processing_comparison import compare_dataset_processing
+
+    args.output_dir_path.mkdir(parents=True, exist_ok=True)
+    comparison = compare_dataset_processing(
+        data_dir_path=args.data_dir_path,
+        subjects_metadata_file_path=args.overview_file_path or args.data_dir_path / OVERVIEW_FILE_NAME,
+        subject_ids=args.subject_ids,
+    )
+    comparison.to_csv(args.output_dir_path / "processing_comparison.csv", index=False)
+    compared = comparison[comparison["error"].isna()]
+    print(f"{compared['protocol_folder_path'].nunique()} sessions compared; correlation by stream:")
+    print(compared.groupby("stream")["correlation"].describe()[["count", "min", "50%"]].to_string())
+    failed = comparison[comparison["error"].notna()]
+    for _, row in failed.iterrows():
+        print(f"{row['subject_id']} {row['protocol']}: {row['error']}")
+    return int(len(failed) > 0)
 
 
 def inspect(args: argparse.Namespace) -> int:
@@ -104,7 +127,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="hadjas-2025", description=__doc__.splitlines()[0])
     subparsers = parser.add_subparsers(required=True)
 
-    for command, function in (("check", check), ("convert", convert)):
+    for command, function in (("check", check), ("convert", convert), ("compare-processing", compare_processing)):
         subparser = subparsers.add_parser(command, help=function.__doc__)
         subparser.add_argument("data_dir_path", type=Path, help="data folder (the lab's data share)")
         subparser.add_argument("output_dir_path", type=Path, help="folder of the NWB files")
@@ -114,6 +137,10 @@ def get_parser() -> argparse.ArgumentParser:
         subparser.set_defaults(function=function)
     subparsers.choices["convert"].add_argument(
         "--overwrite", action="store_true", help="convert again the sessions whose NWB file exists"
+    )
+
+    subparsers.choices["compare-processing"].add_argument(
+        "--subject-ids", nargs="+", help="compare only the sessions of these subjects (default: all)"
     )
 
     subparser = subparsers.add_parser("inspect", help=inspect.__doc__)
