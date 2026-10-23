@@ -1,0 +1,26 @@
+# Devices that differ between the recording rigs, from the lab's hardware list. Keys are the rig names of the
+# session config; the entries of a session's rig update the shared devices (devices_metadata.yaml).
+RZ5P:
+  DeviceModels:
+    excitation_source_model_calcium:
+      manufacturer: Doric Lenses
+    excitation_source_model_isosbestic:
+      manufacturer: Doric Lenses
+    photodetector_model:
+      description: Photodiode photoreceiver, read by the TDT RZ5P processor.
+      manufacturer: Newport
+      model_number: '2151'
+      wavelength_range_in_nm: [320.0, 1050.0]
+RZ10x:
+  DeviceModels:
+    excitation_source_model_calcium:
+      manufacturer: Tucker-Davis Technologies
+      model_number: RZ10x
+    excitation_source_model_isosbestic:
+      manufacturer: Tucker-Davis Technologies
+      model_number: RZ10x
+    photodetector_model:
+      description: Photodiode integrated in the TDT RZ10x processor.
+      manufacturer: Tucker-Davis Technologies
+      model_number: RZ10x
+      wavelength_range_in_nm: [320.0, 1120.0]

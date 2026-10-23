@@ -1,59 +1,53 @@
-# Devices shared by all Hadjas 2025 cohorts. Cohort files add to or override these values.
+# Devices shared by all Hadjas 2025 cohorts. Cohort files add to or override these values, and the devices that
+# differ between recording rigs are in rig_devices_metadata.yaml.
 DeviceModels:
   excitation_source_model_calcium:
     type: ExcitationSourceModel
     name: excitation_source_model_calcium
-    manufacturer: Tucker-Davis Technologies
-    model_number: RZ5P or RZ10x
     source_type: LED
     excitation_mode: one-photon
     wavelength_range_in_nm: [460.0, 490.0]
   excitation_source_model_isosbestic:
     type: ExcitationSourceModel
     name: excitation_source_model_isosbestic
-    manufacturer: Tucker-Davis Technologies
-    model_number: RZ5P or RZ10x
     source_type: LED
     excitation_mode: one-photon
   photodetector_model:
     type: PhotodetectorModel
     name: photodetector_model
-    description: <description of the photodetector model>
-    manufacturer: <manufacturer of the photodetector>
-    model_number: <model of the photodetector>
-    wavelength_range_in_nm: [500.0, 540.0]
-    gain: 0.38
-    gain_unit: A/W
+    detector_type: photodiode
   emission_filter_model:
     type: BandOpticalFilterModel
     name: emission_filter_model
-    manufacturer: <manufacturer of the emission filter>
-    model_number: <model of the emission filter>
+    description: Part of the 5-port fluorescence mini cube (Doric Lenses) that filters and combines the excitation light and separates
+      the emitted fluorescence.
+    manufacturer: Doric Lenses
     filter_type: Bandpass
     center_wavelength_in_nm: 520.0
     bandwidth_in_nm: 40.0
   excitation_filter_model:
     type: BandOpticalFilterModel
     name: excitation_filter_model
-    manufacturer: <manufacturer of the excitation filter>
-    model_number: <model of the excitation filter>
+    description: Part of the 5-port fluorescence mini cube (Doric Lenses) that filters and combines the excitation light and separates
+      the emitted fluorescence.
+    manufacturer: Doric Lenses
     filter_type: Bandpass
     center_wavelength_in_nm: 445.0
     bandwidth_in_nm: 90.0
   dichroic_mirror_model:
     type: DichroicMirrorModel
     name: dichroic_mirror_model
-    manufacturer: <manufacturer of the dichroic mirror>
-    model_number: <model of the dichroic mirror>
+    description: Part of the 5-port fluorescence mini cube (Doric Lenses) that filters and combines the excitation light and separates
+      the emitted fluorescence.
+    manufacturer: Doric Lenses
   optogenetic_excitation_source_model:
     type: ExcitationSourceModel
     name: optogenetic_excitation_source_model
-    description: Red LED device used for optogenetic stimulation.
-    manufacturer: Shanghai laser
-    model_number: <model of the LED device>
-    source_type: LED
+    description: 635 nm red laser used for optogenetic stimulation.
+    manufacturer: Shanghai Laser
+    model_number: RLM635TA-150FC
+    source_type: laser
     excitation_mode: one-photon
-    wavelength_range_in_nm: [580.0, 680.0]
 Devices:
   excitation_source_calcium_signal:
     type: ExcitationSource
@@ -66,24 +60,25 @@ Devices:
   photodetector:
     type: Photodetector
     name: photodetector
-    description: <description of the photodetector>
-    serial_number: <serial number of the photodetector>
+    description: Photodetector that records the fluorescence collected by the fiber (raw Fi1r signal).
     device_model_metadata_key: photodetector_model
   emission_filter:
     type: BandOpticalFilter
     name: emission_filter
+    description: Emission filter of the fluorescence mini cube.
     device_model_metadata_key: emission_filter_model
   excitation_filter:
     type: BandOpticalFilter
     name: excitation_filter
+    description: Excitation filter of the fluorescence mini cube.
     device_model_metadata_key: excitation_filter_model
   dichroic_mirror:
     type: DichroicMirror
     name: dichroic_mirror
-    serial_number: <serial number of the dichroic mirror>
+    description: Dichroic mirror of the fluorescence mini cube.
     device_model_metadata_key: dichroic_mirror_model
   optogenetic_excitation_source:
     type: ExcitationSource
     name: optogenetic_excitation_source
-    description: Red LED device used for optogenetic stimulation.
+    description: Red laser that delivered the optogenetic stimulation trains.
     device_model_metadata_key: optogenetic_excitation_source_model

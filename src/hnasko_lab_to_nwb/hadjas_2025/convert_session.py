@@ -1,6 +1,6 @@
 """Primary script to run to convert an entire session for of data using the NWBConverter."""
 
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Union
 from zoneinfo import ZoneInfo
@@ -17,11 +17,13 @@ from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import (
     read_tdt_start_timestamp,
     read_tdt_stream,
 )
+from hnasko_lab_to_nwb.hadjas_2025.utils.train_durations import label_train_duration
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 METADATA_FOLDER_PATH = Path(__file__).parent / "metadata"
 SHARED_METADATA_FILE_NAMES = ("general_metadata.yaml", "subject_metadata.yaml", "devices_metadata.yaml")
 SESSION_CONFIG_FILE_PATH = METADATA_FOLDER_PATH / "session_config.yaml"
+RIG_DEVICES_METADATA_FILE_PATH = METADATA_FOLDER_PATH / "rig_devices_metadata.yaml"
 
 
 def load_session_config() -> dict:
@@ -84,6 +86,22 @@ def load_cohort_metadata(recording_type: str) -> dict:
         metadata = dict_deep_update(metadata, load_dict_from_file(METADATA_FOLDER_PATH / file_name))
     cohort_file_path = METADATA_FOLDER_PATH / f"{recording_type.replace(' ', '_')}_metadata.yaml"
     return dict_deep_update(metadata, load_dict_from_file(cohort_file_path))
+
+
+def load_rig_devices_metadata(rig_name: str) -> dict:
+    """Load the devices of one recording rig (metadata/rig_devices_metadata.yaml), which update the shared devices.
+
+    Parameters
+    ----------
+    rig_name : str
+        Rig name from get_rig_settings (e.g. "RZ5P", "RZ10x").
+
+    Returns
+    -------
+    dict
+        The rig's "DeviceModels" (and "Devices") entries.
+    """
+    return load_dict_from_file(RIG_DEVICES_METADATA_FILE_PATH)[rig_name]
 
 
 def get_target_area_for_subject(file_path: Path, subject_id: str) -> tuple[str, str]:
@@ -218,17 +236,6 @@ def update_coordinates_for_left_hemisphere(metadata: dict) -> dict:
     # Update the metadata in place
     update_value(updated_metadata)
     return updated_metadata
-
-
-TRAIN_DURATION_IN_S_TO_LABEL = {0.25: "250ms", 1.0: "1s", 4.0: "4s", 16.0: "16s"}
-
-
-def label_train_duration(duration: float) -> str | None:
-    """Label a train duration in seconds (e.g. 0.26 gives "250ms"); None if it is not one of the protocol's."""
-    train_duration = min(TRAIN_DURATION_IN_S_TO_LABEL, key=lambda protocol_duration: abs(protocol_duration - duration))
-    if abs(train_duration - duration) > 0.1 * train_duration:
-        return None
-    return TRAIN_DURATION_IN_S_TO_LABEL[train_duration]
 
 
 def read_trains(folder_path: Path, epoc_names: list[str]) -> tuple[np.ndarray, np.ndarray]:
@@ -473,8 +480,8 @@ def get_session_id(protocol: str, recording_type: str, recording_site: str | Non
     return session_id
 
 
-def get_session_description(protocol: str, epoc_names: list[str]) -> str:
-    """Get the session description of a protocol, which differs for blocks with the 2022 16 s trains (S6s_).
+def get_session_description(protocol: str, epoc_names: list[str], number_of_blocks: int) -> str:
+    """Get the session description of a protocol, which differs for 2022 blocks and for sessions of one block.
 
     Parameters
     ----------
@@ -482,16 +489,22 @@ def get_session_description(protocol: str, epoc_names: list[str]) -> str:
         Protocol key of the session config.
     epoc_names : list[str]
         Epoc names of the session's first block.
+    number_of_blocks : int
+        Number of TDT blocks of the session.
 
     Returns
     -------
     str
-        The session description.
+        The session_description_by_epoc of the first epoc in epoc_names that has one (blocks with the 2022 16 s
+        trains, S6s_), else the session_description_single_block for a session of one block, else the
+        session_description of the protocol.
     """
     protocol_config = load_session_config()["protocols"][protocol]
     for epoc_name, session_description in protocol_config.get("session_description_by_epoc", {}).items():
         if epoc_name in epoc_names:
             return session_description
+    if number_of_blocks == 1 and "session_description_single_block" in protocol_config:
+        return protocol_config["session_description_single_block"]
     return protocol_config["session_description"]
 
 
@@ -522,6 +535,61 @@ def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_
     if len(mat_file_paths) != 1:
         raise FileNotFoundError(f"Expected one .mat file in {mat_folder_path}, found {len(mat_file_paths)}.")
     return mat_file_paths[0]
+
+
+def get_led_modulation(session_start_time: datetime) -> dict:
+    """Get the modulation frequencies of the excitation LEDs of a session from its recording date.
+
+    Parameters
+    ----------
+    session_start_time : datetime
+        Start time of the session's first block, in the lab's time zone.
+
+    Returns
+    -------
+    dict
+        "calcium_signal_in_hz" (465 nm LED) and "isosbestic_control_in_hz", from the last led_modulation entry of
+        the session config whose first_recording_date is on or before the recording date.
+    """
+    recording_date = session_start_time.date()
+    entries = [
+        entry
+        for entry in load_session_config()["led_modulation"]
+        if date.fromisoformat(str(entry["first_recording_date"])) <= recording_date
+    ]
+    if len(entries) == 0:
+        raise ValueError(f"No LED modulation in the session config for a recording on {recording_date}.")
+    entry = max(entries, key=lambda entry: date.fromisoformat(str(entry["first_recording_date"])))
+    return dict(
+        calcium_signal_in_hz=entry["calcium_signal_in_hz"], isosbestic_control_in_hz=entry["isosbestic_control_in_hz"]
+    )
+
+
+def add_led_modulation_to_metadata(metadata: dict, led_modulation: dict) -> None:
+    """State the LED modulation frequencies in the excitation sources and the demodulated series, in place.
+
+    Parameters
+    ----------
+    metadata : dict
+        The session metadata.
+    led_modulation : dict
+        The modulation frequencies from get_led_modulation.
+    """
+    signal_to_frequency = dict(
+        calcium_signal=led_modulation["calcium_signal_in_hz"],
+        isosbestic_control=led_modulation["isosbestic_control_in_hz"],
+    )
+    for signal, frequency in signal_to_frequency.items():
+        excitation_source = metadata["Devices"][f"excitation_source_{signal}"]
+        excitation_source["description"] = f"{excitation_source['description']} Modulated at {frequency:g} Hz."
+    demodulated_series_prefix_to_signal = dict(Gc_raw_="calcium_signal", af_raw_="isosbestic_control")
+    for key, series_metadata in metadata["FiberPhotometry"].items():
+        for prefix, signal in demodulated_series_prefix_to_signal.items():
+            if key.startswith(prefix):
+                series_metadata["description"] = (
+                    f"{series_metadata['description']} Demodulated at {signal_to_frequency[signal]:g} Hz, the "
+                    "modulation frequency of its LED."
+                )
 
 
 def get_session_start_time(start_timestamp: float) -> datetime:
@@ -638,6 +706,7 @@ def session_to_nwb(
     tdt_folder_paths = find_tdt_folder_paths(protocol_folder_path=protocol_folder_path, subject_id=subject_id)
 
     raw_stream_settings = get_raw_stream_settings(tdt_folder_paths[0])
+    editable_metadata = dict_deep_update(editable_metadata, load_rig_devices_metadata(raw_stream_settings["rig_name"]))
     raw_source_data = dict(
         folder_paths=tdt_folder_paths,
         stream_name="Fi1r",
@@ -749,9 +818,14 @@ def session_to_nwb(
     metadata["Subject"]["sex"] = subject_metadata["Sex"]
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = get_session_description(
-        protocol=protocol, epoc_names=list(read_tdt_epocs(tdt_folder_paths[0]))
+        protocol=protocol, epoc_names=list(read_tdt_epocs(tdt_folder_paths[0])), number_of_blocks=len(tdt_folder_paths)
     )
+    if cohort_config.get("site_in_session_id", False):
+        # Anxa1 mice have one session per recording site
+        site_location = metadata["FiberPhotometry"]["FiberPhotometryTable"]["rows"][f"{recording_site}_465"]["location"]
+        metadata["NWBFile"]["session_description"] += f" Fluorescence was recorded through the {site_location} fiber."
     metadata["NWBFile"]["session_start_time"] = session_start_time
+    add_led_modulation_to_metadata(metadata=metadata, led_modulation=get_led_modulation(session_start_time))
 
     # Remove entries for other stimulus sites from metadata
     filter_optogenetics_metadata(metadata=metadata, stimulus_location=stimulus_location)

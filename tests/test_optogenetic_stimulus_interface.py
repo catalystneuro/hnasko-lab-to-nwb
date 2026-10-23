@@ -10,7 +10,12 @@ from hnasko_lab_to_nwb.hadjas_2025.interfaces.tdt_optogenetic_stimulus_interface
 
 
 def make_interface(tmp_path, events: dict) -> Hadjas2025TDTOptogeneticStimulusInterface:
+    """Make an interface whose events all come from one TDT block, named after tmp_path."""
     interface = Hadjas2025TDTOptogeneticStimulusInterface(folder_paths=[tmp_path])
+    events = {
+        name: dict(block_name=[tmp_path.name] * len(name_events["onset"]), **name_events)
+        for name, name_events in events.items()
+    }
     interface.get_events = lambda: events
     return interface
 
@@ -107,3 +112,46 @@ def test_optogenetic_experiment_metadata_is_added_once(stn_metadata):
 
     assert second is first
     assert list(nwbfile.lab_meta_data) == [first.name]
+
+
+def test_pulse_length_is_nan_as_pulses_were_not_recorded(tmp_path, stn_metadata):
+    events = {"H10_": dict(onset=np.array([10.0]), offset=np.array([11.0]))}
+    nwbfile = mock_NWBFile()
+
+    make_interface(tmp_path, events).add_to_nwbfile(
+        nwbfile=nwbfile, metadata=stn_metadata, tdt_stimulus_channel_to_frequency={"H10_": 10.0}
+    )
+
+    epochs_table = nwbfile.intervals["optogenetic_epochs_table"]
+    assert np.isnan(epochs_table.to_dataframe()["pulse_length_in_ms"]).all()
+    assert "pulse width was not recorded" in epochs_table.description
+
+
+def test_epochs_have_the_train_duration_and_tdt_block_of_each_train(tmp_path, stn_metadata):
+    events = {
+        "sms_": dict(onset=np.array([10.0]), offset=np.array([10.26])),
+        "s4s_": dict(onset=np.array([20.0]), offset=np.array([24.01])),
+    }
+    nwbfile = mock_NWBFile()
+
+    make_interface(tmp_path, events).add_to_nwbfile(
+        nwbfile=nwbfile, metadata=stn_metadata, tdt_stimulus_channel_to_frequency={"sms_": 40.0, "s4s_": 40.0}
+    )
+
+    epochs = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe()
+    assert list(epochs["train_duration"]) == ["250ms", "4s"]
+    assert list(epochs["tdt_block"]) == [tmp_path.name, tmp_path.name]
+
+
+def test_trains_of_a_duration_outside_the_protocol_are_dropped_and_logged(tmp_path, stn_metadata, caplog):
+    # e.g. C2659 varying frequencies: a 0.54 s artifact in every H*_ store before the first 4 s train
+    events = {"H10_": dict(onset=np.array([9.69, 71.19]), offset=np.array([10.23, 75.19]))}
+    nwbfile = mock_NWBFile()
+
+    make_interface(tmp_path, events).add_to_nwbfile(
+        nwbfile=nwbfile, metadata=stn_metadata, tdt_stimulus_channel_to_frequency={"H10_": 10.0}
+    )
+
+    epochs = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe()
+    assert list(epochs["start_time"]) == [71.19]
+    assert "Dropped 1 of 2 H10_ trains" in caplog.text

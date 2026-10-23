@@ -53,8 +53,18 @@ def test_raw_only_conversion_runs_without_the_lab_mat(tmp_path, fake_tdt_block):
         assert list(nwbfile.acquisition) == ["raw_signal_DLS"]
         assert nwbfile.acquisition["raw_signal_DLS"].data.shape == (NUMBER_OF_SAMPLES,)
         assert "ophys" not in nwbfile.processing
+        assert nwbfile.subject.age == "P6W/"
         epochs = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe()
         assert list(epochs["start_time"]) == [1.0, 2.0, 4.0]
+        assert list(epochs["train_duration"]) == ["250ms", "1s", "4s"]
+        assert list(epochs["tdt_block"]) == ["C0001-240117-101500"] * 3
+        # a 2024 block: 465 nm LED at 330 Hz
+        assert nwbfile.devices["excitation_source_calcium_signal"].description.endswith("Modulated at 330 Hz.")
+        # a 6 kHz block: RZ10x devices
+        assert nwbfile.devices["photodetector"].model.manufacturer == "Tucker-Davis Technologies"
+        # GRAB-DA mice are stimulated through a separate fiber over SNc
+        optogenetic_sites = nwbfile.lab_meta_data["optogenetic_experiment_metadata"].optogenetic_sites_table
+        assert optogenetic_sites["optical_fiber"][0].name == "optical_fiber_SNc"
 
 
 def test_sn_pan_gaba_ppn_sessions_convert_without_behavioral_videos(tmp_path, fake_tdt_block):
@@ -88,3 +98,26 @@ def test_unknown_data_streams_raise(tmp_path, fake_tdt_block):
             protocol="Varying durations",
             data_streams=dict(processd=False),
         )
+
+
+def test_anxa1_session_description_states_the_recording_site(tmp_path, fake_tdt_block):
+    # Anxa1 mice have a session per recording site (issue #21, finding 15)
+    protocol_folder_path = (
+        tmp_path / "Cell_type recordings" / "PPN" / "Fiber photometry_TDT" / "Varying durations" / "Anxa1 DLS"
+    )
+    (protocol_folder_path / "C0001-240117-101500").mkdir(parents=True)
+    output_dir_path = tmp_path / "nwb"
+
+    session_to_nwb(
+        output_dir_path=output_dir_path,
+        subject_metadata=dict(SUBJECT_METADATA, **{"Recording Site": "SNc"}),
+        protocol_folder_path=protocol_folder_path,
+        recording_type="Cell_type recordings_Anxa1",
+        stimulus_location="PPN",
+        protocol="Varying durations",
+        data_streams=dict(processed=False),
+    )
+
+    with NWBHDF5IO(output_dir_path / "sub-C0001_ses-varying_durations_DLS.nwb", "r") as io:
+        session_description = io.read().session_description
+        assert session_description.endswith("recorded through the dorsolateral striatum (DLS) fiber.")
