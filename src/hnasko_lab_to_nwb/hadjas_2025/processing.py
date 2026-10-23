@@ -72,6 +72,55 @@ def resample(demodulated_signal: np.ndarray, sampling_frequency: float, rate: fl
     return np.interp(t_resampled, t_raw, demodulated_signal)
 
 
+def robustfit(x: np.ndarray, y: np.ndarray, tune: float = 4.685, max_iterations: int = 50) -> np.ndarray:
+    """Fit y = intercept + slope * x by robust regression with bisquare weights, as MATLAB's robustfit.
+
+    Iteratively reweighted least squares starting from the ordinary least squares fit. The residuals are adjusted
+    by their leverage, scaled by their median absolute value (leaving out the smallest, as MATLAB's madsigma) and
+    weighted by the bisquare function with tuning constant 4.685.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Predictor, shape (number of samples,).
+    y : np.ndarray
+        Response, shape (number of samples,).
+    tune : float, optional
+        Tuning constant of the bisquare weights (default is 4.685, as in MATLAB).
+    max_iterations : int, optional
+        Maximum number of reweighting iterations (default is 50, as in MATLAB).
+
+    Returns
+    -------
+    np.ndarray
+        The intercept and the slope.
+    """
+    X = np.column_stack([np.ones(len(x)), x])
+    number_of_coefficients = X.shape[1]
+    Q, R = np.linalg.qr(X)
+    coefficients = np.linalg.solve(R, Q.T @ y)
+    leverage = np.minimum(0.9999, np.sum(Q**2, axis=1))
+    adjustment = 1 / np.sqrt(1 - leverage)
+    tiny_scale = 1e-6 * np.std(y, ddof=1) or 1.0
+    tolerance = np.sqrt(np.finfo(float).eps)
+
+    previous_coefficients = np.zeros(number_of_coefficients)
+    for iteration in range(max_iterations):
+        if iteration > 0 and not np.any(
+            np.abs(coefficients - previous_coefficients)
+            > tolerance * np.maximum(np.abs(coefficients), np.abs(previous_coefficients))
+        ):
+            break
+        adjusted_residuals = (y - X @ coefficients) * adjustment
+        scale = np.median(np.sort(np.abs(adjusted_residuals))[number_of_coefficients - 1 :]) / 0.6745
+        u = adjusted_residuals / (max(scale, tiny_scale) * tune)
+        weights = (np.abs(u) < 1) * (1 - u**2) ** 2
+        previous_coefficients = coefficients
+        sqrt_weights = np.sqrt(weights)
+        coefficients = np.linalg.lstsq(X * sqrt_weights[:, np.newaxis], y * sqrt_weights, rcond=None)[0]
+    return coefficients
+
+
 def calculate_dff_with_biexponential_fit(
     calcium_signal: np.ndarray,
     isosbestic_signal: np.ndarray,
@@ -82,7 +131,8 @@ def calculate_dff_with_biexponential_fit(
 
     The baseline is fitted in two steps:
     1. Fit a bi-exponential function to the isosbestic (405 nm) signal.
-    2. Scale the fitted baseline to the calcium (465 nm) signal by robust linear regression.
+    2. Scale the fitted baseline to the calcium (465 nm) signal by robust linear regression with an intercept
+       (robustfit).
 
     Parameters
     ----------
@@ -93,7 +143,7 @@ def calculate_dff_with_biexponential_fit(
     sampling_rate : float, optional
         Sampling rate of both signals, in Hz (default is 100).
     exclude_first_seconds : float, optional
-        Seconds at the start of the recording left out of the fits (default is 1).
+        Seconds at the start of the recording left out of the bi-exponential fit (default is 1).
 
     Returns
     -------
@@ -133,15 +183,8 @@ def calculate_dff_with_biexponential_fit(
         fit_coeffs = np.polyfit(time_points[include_mask], isosbestic_signal[include_mask], 1)
         isosbestic_fit = np.polyval(fit_coeffs, time_points)
 
-    try:
-        from statsmodels.robust.robust_linear_model import RLM
-
-        rlm_results = RLM(calcium_signal[include_mask], isosbestic_fit[include_mask].reshape(-1, 1)).fit()
-        slope = rlm_results.params[0]
-        intercept = 0.0
-    except ImportError:
-        warnings.warn("Statsmodels not available. Using standard linear regression.", RuntimeWarning)
-        slope, intercept = np.polyfit(isosbestic_fit[include_mask], calcium_signal[include_mask], 1)
+    # as in the lab's code, the scaling uses all samples, including those left out of the bi-exponential fit
+    intercept, slope = robustfit(isosbestic_fit, calcium_signal)
 
     if slope < 0:
         warnings.warn(
