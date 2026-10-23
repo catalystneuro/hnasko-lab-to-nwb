@@ -1,109 +1,223 @@
-"""Upload converted NWB files to a dandiset on the DANDI archive."""
+"""Upload converted NWB files to the draft of a dandiset on DANDI.
 
+Uploading takes two steps, so that the organized files can be checked before anything is sent:
+
+1. organize_nwbfiles copies the NWB files into a local dandiset folder, named and placed as DANDI expects
+   (sub-<subject>/sub-<subject>_ses-<session>.nwb). The NWB files in the output folder are not changed.
+2. upload_organized_files validates the organized files and the dandiset metadata, and uploads the folder to the
+   draft of the dandiset if they are valid.
+
+Before uploading, report_draft_assets lists the draft assets that the upload replaces and those it leaves next to
+a new file of the same session (superseded) or does not touch (not reconverted).
+
+Both take the DANDI instance: "dandi" for the archive, "dandi-sandbox" for the sandbox.
+"""
+
+import re
 from pathlib import Path
-from shutil import rmtree
+from typing import Union
 
-from pydantic import DirectoryPath
+import pandas as pd
+
+DANDI_INSTANCES = ("dandi", "dandi-sandbox")
 
 
-def dandi_upload(
-    nwb_folder_path: DirectoryPath,
-    dandiset_folder_path: DirectoryPath,
+def check_dandi_instance(dandi_instance: str) -> None:
+    """Raise if dandi_instance is not one of DANDI_INSTANCES."""
+    if dandi_instance not in DANDI_INSTANCES:
+        raise ValueError(f"Unknown DANDI instance {dandi_instance!r}; use one of {DANDI_INSTANCES}.")
+
+
+def organize_nwbfiles(
+    *,
+    nwb_folder_path: Union[str, Path],
+    dandiset_folder_path: Union[str, Path],
     dandiset_id: str,
-    version: str = "draft",
-    files_mode: str = "copy",
-    media_files_mode: str = "copy",
-    cleanup: bool = True,
-):
-    """
-    Upload NWB files to a Dandiset on the DANDI archive (https://dandiarchive.org/).
+    dandi_instance: str,
+) -> Path:
+    """Copy the NWB files of a folder into a local dandiset folder, organized as DANDI expects.
 
-    This function automates the process of uploading NWB files to a DANDI archive. It performs the following steps:
-    1. Downloads the specified Dandiset from the DANDI archive (metadata only, not assets).
-    2. Organizes the provided NWB files into the downloaded Dandiset folder structure using DANDI's organize utility.
-    3. Uploads the organized NWB files to the DANDI instance.
-    4. Cleans up any temporary folders created during the process.
+    The dandiset metadata (dandiset.yaml, no assets) of the draft is downloaded to
+    dandiset_folder_path / dandiset_id, then dandi organize copies the NWB files there. External video files are
+    copied next to the NWB files that link them. File names always have the session
+    (sub-<subject>_ses-<session>.nwb), also for a subject with one file in the folder.
 
     Parameters
     ----------
-    nwb_folder_path : DirectoryPath
-        Path to the folder containing the NWB files to be uploaded.
-    dandiset_folder_path : DirectoryPath
-        Path to a folder where the Dandiset will be downloaded and organized. This folder will be created if it does not exist and will be deleted after upload.
+    nwb_folder_path : Union[str, Path]
+        Folder of the NWB files to upload. It is not changed.
+    dandiset_folder_path : Union[str, Path]
+        Folder in which the dandiset folder is created.
     dandiset_id : str
-        The identifier for the Dandiset to which the NWB files will be uploaded (e.g., "000199").
-    version : str, optional
-        The version of the Dandiset to download from the archive (default is "draft").
-    files_mode : str, optional
-        The file operation mode for organizing files: 'copy' or 'move' (default is 'copy').
-    media_files_mode : str, optional
-        The file operation mode for media files: 'copy' or 'move' (default is 'copy').
-    cleanup : bool, optional
-        Whether to clean up the temporary Dandiset folder and NWB folder after upload (default is True).
+        The dandiset, e.g. "001528".
+    dandi_instance : str
+        "dandi" or "dandi-sandbox".
+
+    Returns
+    -------
+    Path
+        The dandiset folder, dandiset_folder_path / dandiset_id.
 
     Raises
     ------
-    AssertionError
-        If the Dandiset download or organization fails.
-    Exception
-        If the upload process encounters an error, it will be logged and the function will proceed to clean up temporary files.
-
-    Notes
-    -----
-    - This function will delete both the dandiset_folder_path and nwb_folder_path after upload, so ensure these are temporary or backed up if needed.
-    - Uses DANDI's Python API for download, organize, and upload operations.
-    - Designed for use with the DANDI archive (https://dandiarchive.org/).
+    FileExistsError
+        If the dandiset folder already holds NWB files, from an earlier organize. Remove it first.
     """
-    from dandi.download import download as dandi_download
-    from dandi.organize import CopyMode, FileOperationMode
-    from dandi.organize import organize as dandi_organize
-    from dandi.upload import upload as dandi_upload
+    from dandi.consts import known_instances
+    from dandi.download import download
+    from dandi.organize import CopyMode, FileOperationMode, organize
 
-    # Map string to enum
-    files_mode_enum = FileOperationMode.COPY if files_mode.lower() == "copy" else FileOperationMode.MOVE
-    media_files_mode_enum = CopyMode.COPY if media_files_mode.lower() == "copy" else CopyMode.MOVE
-
+    check_dandi_instance(dandi_instance)
     dandiset_folder_path = Path(dandiset_folder_path)
-    dandiset_folder_path.mkdir(parents=True, exist_ok=True)
-
     dandiset_path = dandiset_folder_path / dandiset_id
-    dandiset_url = f"https://dandiarchive.org/dandiset/{dandiset_id}/{version}"
-    dandi_download(urls=dandiset_url, output_dir=str(dandiset_folder_path), get_metadata=True, get_assets=False)
-    assert dandiset_path.exists(), "DANDI download failed!"
-
-    dandi_organize(
-        paths=str(nwb_folder_path),
+    if any(dandiset_path.rglob("*.nwb")):
+        raise FileExistsError(f"{dandiset_path} already holds organized NWB files. Remove it before organizing again.")
+    dandiset_folder_path.mkdir(parents=True, exist_ok=True)
+    dandiset_url = f"{known_instances[dandi_instance].gui}/dandiset/{dandiset_id}/draft"
+    download(urls=dandiset_url, output_dir=str(dandiset_folder_path), get_metadata=True, get_assets=False)
+    if not (dandiset_path / "dandiset.yaml").exists():
+        raise FileNotFoundError(f"Downloading the metadata of {dandiset_url} did not create {dandiset_path}.")
+    organize(
+        paths=[str(nwb_folder_path)],
         dandiset_path=str(dandiset_path),
-        devel_debug=True,
         update_external_file_paths=True,
-        files_mode=files_mode_enum,
-        media_files_mode=media_files_mode_enum,
+        files_mode=FileOperationMode.COPY,
+        media_files_mode=CopyMode.COPY,
+        required_fields=["session_id"],  # dandi organize leaves out the session of a subject's only file otherwise
     )
-    assert len(list(dandiset_path.iterdir())) > 1, "DANDI organize failed!"
-
-    try:
-        organized_nwbfiles = [str(x) for x in dandiset_path.rglob("*.nwb")]
-        dandi_upload(
-            paths=organized_nwbfiles,
-            dandi_instance="dandi",
-        )
-    except Exception as e:
-        print(f"Error during DANDI upload: {e}")
-
-    finally:
-        # Clean up the temporary DANDI folder
-        if cleanup:
-            rmtree(path=dandiset_folder_path)
-            rmtree(path=nwb_folder_path)
+    return dandiset_path
 
 
-if __name__ == "__main__":
-    dandi_upload(
-        nwb_folder_path=Path(r"D:\hnasko_lab_conversion_nwb"),  # Replace with actual path
-        dandiset_folder_path=Path(r"D:\hnasko_lab_conversion_nwb"),  # Replace with actual path
-        dandiset_id="001528",  # Replace with actual Dandiset ID
-        version="draft",  # Replace with actual version if needed
-        files_mode="move",  # or "copy"
-        media_files_mode="copy",  # or "move"
-        cleanup=False,  # Set to True if you want to clean up after upload
+def validate_organized_files(dandiset_path: Union[str, Path]) -> list[str]:
+    """Validate the files of an organized dandiset folder and its dandiset metadata, as dandi upload does.
+
+    The NWB files are checked against the NWB schema and the DANDI requirements (including the critical NWB
+    Inspector checks), and dandiset.yaml against the DANDI metadata schema of the installed dandi client.
+
+    Parameters
+    ----------
+    dandiset_path : Union[str, Path]
+        The dandiset folder from organize_nwbfiles.
+
+    Returns
+    -------
+    list[str]
+        One line per validation error, "<file>: <message>"; empty if every file is valid.
+    """
+    from dandi.files import DandisetMetadataFile, find_dandi_files
+    from dandi.validate import Severity
+    from dandischema.models import get_schema_version
+
+    errors = []
+    for dandi_file in find_dandi_files(dandiset_path, dandiset_path=dandiset_path, include_metadata=True):
+        # The draft's dandiset.yaml can state an older schema version, which dandi refuses to validate. NWB files
+        # keep the default, as in dandi upload: with a schema version, dandi skips their NWB Inspector checks.
+        schema_version = get_schema_version() if isinstance(dandi_file, DandisetMetadataFile) else None
+        for result in dandi_file.get_validation_errors(schema_version=schema_version):
+            if result.severity is not None and result.severity.value >= Severity.ERROR.value:
+                errors.append(f"{dandi_file.filepath}: {result.message}")
+    return errors
+
+
+def get_draft_asset_paths(*, dandiset_id: str, dandi_instance: str) -> list[str]:
+    """List the paths of the assets of the draft of a dandiset."""
+    from dandi.dandiapi import DandiAPIClient
+
+    check_dandi_instance(dandi_instance)
+    with DandiAPIClient.for_dandi_instance(dandi_instance) as client:
+        return [asset.path for asset in client.get_dandiset(dandiset_id, "draft").get_assets()]
+
+
+def get_subject_and_session(asset_path: str) -> tuple[str, str]:
+    """Get the subject and session of an asset path, in lower case.
+
+    For example "sub-c4708/sub-c4708_ses-varying-durations.nwb" and the external video
+    "sub-C4550/sub-C4550_ses-varying-durations_image/<uuid>_external_file_0.mp4" give ("c4708", "varying-durations")
+    and ("c4550", "varying-durations").
+    """
+    subject = asset_path.split("/")[0].removeprefix("sub-")
+    match = re.search(r"_ses-([^_/.]+)", asset_path)
+    return subject.lower(), match.group(1).lower() if match else ""
+
+
+def report_draft_assets(*, dandiset_path: Union[str, Path], dandiset_id: str, dandi_instance: str) -> pd.DataFrame:
+    """Compare an organized dandiset folder with the draft, before uploading it.
+
+    Nothing is removed from the draft. Each draft asset gets a status:
+
+    - "replaced": the organized folder has a file at the same path, which the upload replaces.
+    - "superseded": the organized folder has a file of the same subject and session (compared in lower case) at
+      another path, e.g. a subject ID that was lower case or an NWB file that linked videos. The upload adds the new
+      file and the asset stays on the draft next to it until it is removed.
+    - "not reconverted": the organized folder has no file of its subject and session.
+
+    Each organized file that is not on the draft gets the status "new".
+
+    Parameters
+    ----------
+    dandiset_path : Union[str, Path]
+        The dandiset folder from organize_nwbfiles.
+    dandiset_id : str
+        The dandiset, e.g. "001528".
+    dandi_instance : str
+        "dandi" or "dandi-sandbox".
+
+    Returns
+    -------
+    pd.DataFrame
+        One row per asset, with columns "path", "status" and "replaced_by" (the organized NWB files of the same
+        subject and session, for superseded assets).
+    """
+    dandiset_path = Path(dandiset_path)
+    local_paths = sorted(
+        file_path.relative_to(dandiset_path).as_posix()
+        for file_path in dandiset_path.rglob("*")
+        if file_path.is_file() and file_path.name != "dandiset.yaml"
     )
+    subject_and_session_to_local_nwbfile_paths = dict()
+    for local_path in local_paths:
+        if local_path.endswith(".nwb"):
+            subject_and_session_to_local_nwbfile_paths.setdefault(get_subject_and_session(local_path), []).append(
+                local_path
+            )
+    draft_paths = get_draft_asset_paths(dandiset_id=dandiset_id, dandi_instance=dandi_instance)
+    rows = []
+    for draft_path in sorted(draft_paths):
+        replaced_by = subject_and_session_to_local_nwbfile_paths.get(get_subject_and_session(draft_path), [])
+        if draft_path in local_paths:
+            rows.append(dict(path=draft_path, status="replaced", replaced_by=""))
+        elif replaced_by:
+            rows.append(dict(path=draft_path, status="superseded", replaced_by="; ".join(replaced_by)))
+        else:
+            rows.append(dict(path=draft_path, status="not reconverted", replaced_by=""))
+    rows += [
+        dict(path=local_path, status="new", replaced_by="")
+        for local_path in sorted(set(local_paths) - set(draft_paths))
+    ]
+    return pd.DataFrame(rows, columns=["path", "status", "replaced_by"])
+
+
+def upload_organized_files(*, dandiset_path: Union[str, Path], dandi_instance: str) -> None:
+    """Validate an organized dandiset folder and upload it to the draft of its dandiset.
+
+    Nothing is uploaded if a file or the dandiset metadata is invalid (validate_organized_files).
+
+    Parameters
+    ----------
+    dandiset_path : Union[str, Path]
+        The dandiset folder from organize_nwbfiles.
+    dandi_instance : str
+        "dandi" or "dandi-sandbox", as for organize_nwbfiles.
+
+    Raises
+    ------
+    ValueError
+        If validation finds errors; the message lists them.
+    """
+    from dandi.upload import upload
+
+    check_dandi_instance(dandi_instance)
+    errors = validate_organized_files(dandiset_path)
+    if errors:
+        raise ValueError(f"{len(errors)} validation errors in {dandiset_path}, nothing uploaded:\n" + "\n".join(errors))
+    upload(paths=[str(dandiset_path)], dandi_instance=dandi_instance)
