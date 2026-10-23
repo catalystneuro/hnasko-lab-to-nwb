@@ -68,7 +68,8 @@ def compare_processing(args: argparse.Namespace) -> int:
     )
     comparison.to_csv(args.output_dir_path / "processing_comparison.csv", index=False)
     compared = comparison[comparison["error"].isna()]
-    print(f"{compared['protocol_folder_path'].nunique()} sessions compared; correlation by stream:")
+    number_of_sessions = compared.groupby(["subject_id", "protocol_folder_path"]).ngroups
+    print(f"{number_of_sessions} sessions compared; correlation by stream:")
     print(compared.groupby("stream")["correlation"].describe()[["count", "min", "50%"]].to_string())
     failed = comparison[comparison["error"].notna()]
     for _, row in failed.iterrows():
