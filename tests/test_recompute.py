@@ -80,8 +80,9 @@ def test_add_recomputed_processed_series_writes_each_block_as_the_lab_path(nwbfi
         series = nwbfile.processing["ophys"][series_metadata["name"]]
         rate = SAMPLING_FREQUENCY if stream_name.endswith("_raw") else 100.0
         # the sampling frequency is read back from the timestamps, which changes the last digits, and the
-        # bi-exponential fit of dF/F amplifies that change (to below 0.001 % of dF/F)
-        tolerance = dict(rtol=0, atol=1e-3) if stream_name == "dF" else dict(rtol=1e-9)
+        # bi-exponential fit of dF/F amplifies that change, most at the start of each block where the filter's start
+        # makes dF/F large
+        tolerance = dict(rtol=1e-5, atol=1e-3) if stream_name == "dF" else dict(rtol=1e-9)
         np.testing.assert_allclose(series.data, np.concatenate([e[stream_name] for e in expected]), **tolerance)
         number_of_samples = len(expected[0][stream_name])
         assert series.timestamps[0] == BLOCK_STARTING_TIMES[0]
