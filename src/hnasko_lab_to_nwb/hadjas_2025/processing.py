@@ -16,11 +16,12 @@ Checked against the lab's .mat files with hadjas-2025 compare-processing, which 
 - The bi-exponential fit of the isosbestic signal differs. MATLAB's fit refines one start point that it computes
   itself, and stops at the first fit it cannot improve, which is not always the best fit. Its start point is not
   available outside MATLAB. calculate_dff_with_biexponential_fit refines several start points and keeps the fit
-  closest to the data among those with a positive scaling slope and a baseline above zero. Where MATLAB stopped at
-  the same fit, dF/F is the lab's; where it stopped at another one, the baseline differs by a slowly varying amount,
-  most often where the closest fit follows a fast decay right after the first second and MATLAB's does not.
-- The lab's code only warns when the scaling slope is negative; here such fits are not used, and a ValueError is
-  raised if no fit has a positive slope and a baseline above zero.
+  closest to the data among those whose baseline stays above zero. Where MATLAB stopped at the same fit, dF/F is
+  the lab's; where it stopped at another one, the baseline differs by a slowly varying amount, most often where the
+  closest fit follows a fast decay right after the first second and MATLAB's does not.
+- A fit whose baseline reaches zero would make dF/F blow up; none of the lab's fits does. Such fits are not used,
+  and a ValueError is raised if no fit has a baseline above zero. As in the lab's code, a negative scaling slope
+  gives a warning and the fit is kept (56 of the lab's 560 blocks, nearly all GRAB-DA).
 - The lab adjusted the fit by hand for seven blocks, which are not reproduced here (LAB_ADJUSTED_FITS in
   processing_comparison): it left out other lead-in times (1.2 s, 20 s, or 0.08 s instead of 1 s), fitted from the
   start of the recording, left out the end of a recording where the fiber was unplugged, or joined separate fits
@@ -203,9 +204,9 @@ def calculate_dff_with_biexponential_fit(
        (robustfit), on all samples.
 
     dF/F is 100 * (calcium - baseline) / baseline. The bi-exponential fit is refined from several start points
-    (get_biexponential_start_points). A fit is kept only if its scaling slope is positive and its baseline stays
-    above zero; of those, the one with the smallest squared error is used. See the module docstring for how this
-    differs from the lab's MATLAB code.
+    (get_biexponential_start_points). A fit is kept only if its baseline stays above zero; of those, the one with
+    the smallest squared error is used. A negative scaling slope gives a warning, as in the lab's code. See the
+    module docstring for how this differs from the lab's MATLAB code.
 
     Parameters
     ----------
@@ -229,8 +230,7 @@ def calculate_dff_with_biexponential_fit(
     Raises
     ------
     ValueError
-        If the two signals do not have the same length, or if no bi-exponential fit gives a positive slope and a
-        baseline above zero.
+        If the two signals do not have the same length, or if no bi-exponential fit gives a baseline above zero.
     """
     if len(calcium_signal) != len(isosbestic_signal):
         raise ValueError(f"Signal length mismatch: calcium={len(calcium_signal)}, isosbestic={len(isosbestic_signal)}")
@@ -256,14 +256,16 @@ def calculate_dff_with_biexponential_fit(
         # as in the lab's code, the scaling uses all samples, including those left out of the bi-exponential fit
         intercept, slope = robustfit(isosbestic_fit, calcium_signal)
         fitted_baseline = intercept + slope * isosbestic_fit
-        if slope <= 0 or np.min(fitted_baseline) <= 0:
+        if np.min(fitted_baseline) <= 0:
             continue
         error = np.sum((isosbestic_fit - isosbestic_signal)[fitted] ** 2)
         if best is None or error < best[0]:
             best = (error, isosbestic_fit, fitted_baseline, slope, intercept)
     if best is None:
-        raise ValueError("No bi-exponential fit of the isosbestic signal gives a positive slope and baseline.")
+        raise ValueError("No bi-exponential fit of the isosbestic signal gives a baseline above zero.")
     _, isosbestic_fit, fitted_baseline, slope, intercept = best
+    if slope < 0:
+        warnings.warn(f"Negative slope ({slope:.4g}) scaling the isosbestic fit to the calcium signal.", RuntimeWarning)
 
     dff = 100.0 * (calcium_signal - fitted_baseline) / fitted_baseline
     fit_results = {

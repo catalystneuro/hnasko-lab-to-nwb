@@ -122,11 +122,24 @@ def test_calculate_dff_fits_a_slow_and_a_fast_exponential():
     np.testing.assert_allclose(dff, 0.0, atol=1e-4)
 
 
-def test_calculate_dff_raises_without_a_positive_scaling():
-    # a calcium signal that falls as the isosbestic signal rises cannot be scaled with a positive slope
+def test_calculate_dff_keeps_a_negative_scaling_with_a_warning():
+    # as in the lab's code (e.g. some GRAB-DA blocks), a calcium signal that rises as the isosbestic signal falls is
+    # scaled with a negative slope
     x = np.arange(1, 60 * 100 + 1)
     isosbestic = 1.0 + 0.5 * np.exp(-x / 3000)
     calcium = 3.0 - isosbestic
+
+    with pytest.warns(RuntimeWarning, match="Negative slope"):
+        dff, fit_results = calculate_dff_with_biexponential_fit(calcium, isosbestic)
+
+    np.testing.assert_allclose(fit_results["linear_coefficients"], [-1.0, 3.0], rtol=1e-6)
+    np.testing.assert_allclose(dff, 0.0, atol=1e-6)
+
+
+def test_calculate_dff_raises_without_a_baseline_above_zero():
+    x = np.arange(1, 60 * 100 + 1)
+    isosbestic = 1.0 + 0.5 * np.exp(-x / 3000)
+    calcium = -1.0 - isosbestic
 
     with pytest.raises(ValueError, match="No bi-exponential fit"):
         calculate_dff_with_biexponential_fit(calcium, isosbestic)
