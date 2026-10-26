@@ -41,6 +41,14 @@ folder and inspects it with NWB Inspector. See [Converting sessions](src/hnasko_
 
 ## Documentation
 
+The conversion pipeline in general, in [docs/](docs/):
+
+- [The conversion pipeline](docs/conversion_pipeline.md): NWB, NeuroConv, the parts of a conversion and the steps from
+  recordings to DANDI.
+- [Building a new conversion pipeline](docs/new_conversion_pipeline.md): converting another experiment to NWB.
+
+The Hadjas 2025 conversion, in [hadjas_2025/docs/](src/hnasko_lab_to_nwb/hadjas_2025/docs/):
+
 - [Data organization](src/hnasko_lab_to_nwb/hadjas_2025/docs/data_organization.md): the data share layout, cohorts, protocols and lab files.
 - [Converting sessions](src/hnasko_lab_to_nwb/hadjas_2025/docs/converting_sessions.md): checking the data, converting sessions, and the output files.
 - [Data streams](src/hnasko_lab_to_nwb/hadjas_2025/docs/data_streams.md): raw and processed signals, raw-only conversion, recomputed signals.
@@ -49,7 +57,6 @@ folder and inspects it with NWB Inspector. See [Converting sessions](src/hnasko_
 - [Processing](src/hnasko_lab_to_nwb/hadjas_2025/docs/processing.md): the Python port of the lab's processing and how it compares with the lab's.
 - [DANDI staging](src/hnasko_lab_to_nwb/hadjas_2025/docs/dandi_staging.md): organizing, validating and uploading the files.
 - [Troubleshooting](src/hnasko_lab_to_nwb/hadjas_2025/docs/troubleshooting.md): data check findings and conversion errors.
-- [Building a new conversion pipeline](docs/new_conversion_pipeline.md): converting another experiment to NWB.
 
 Notebooks in `src/hnasko_lab_to_nwb/hadjas_2025/tutorials/` show how to read the files and how to add processed
 signals to a raw-only file.
@@ -69,6 +76,7 @@ src/hnasko_lab_to_nwb/hadjas_2025/
 ├── inspection.py             NWB Inspector reports and conversion summary
 ├── upload_to_DANDI.py        organizing and uploading to DANDI
 ├── metadata/                 metadata files and session config
+├── docs/                     documentation of this conversion
 └── tutorials/                notebooks
 ```
 
