@@ -572,8 +572,10 @@ def get_session_description(protocol: str, epoc_names: list[str], number_of_bloc
     return protocol_config["session_description"]
 
 
-def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_cohort_folder: str) -> Path:
-    """Find the lab's processed .mat file of a protocol folder, possibly in another cohort's folder.
+def find_mat_file_path(
+    protocol_folder_path: Path, cohort_data_folder: str, mat_cohort_folder: str, mat_input_folder: str | None = None
+) -> Path:
+    """Find the lab's processed .mat file of a protocol folder, possibly in another cohort's or input's folder.
 
     Parameters
     ----------
@@ -584,6 +586,9 @@ def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_
         Data folder of the session's cohort.
     mat_cohort_folder : str
         Data folder of the cohort whose protocol folder holds the .mat file (the session's own by default).
+    mat_input_folder : str, optional
+        Input folder whose protocol folder holds the .mat file (default is None, the session's own). The GRAB-DA
+        mCherry controls (STN_mCherry) are in the .mat file of the STN input.
 
     Returns
     -------
@@ -593,8 +598,9 @@ def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_
     parts = protocol_folder_path.parts
     cohort_index = len(parts) - 1 - parts[::-1].index(cohort_data_folder)
     data_dir_path = Path(*parts[:cohort_index])
-    relative_protocol_folder_path = Path(*parts[cohort_index + 1 :])
-    mat_folder_path = data_dir_path / mat_cohort_folder / relative_protocol_folder_path
+    input_folder = mat_input_folder if mat_input_folder is not None else parts[cohort_index + 1]
+    relative_protocol_folder_path = Path(*parts[cohort_index + 2 :])
+    mat_folder_path = data_dir_path / mat_cohort_folder / input_folder / relative_protocol_folder_path
     mat_file_paths = list(mat_folder_path.glob("*.mat"))
     if len(mat_file_paths) != 1:
         raise FileNotFoundError(f"Expected one .mat file in {mat_folder_path}, found {len(mat_file_paths)}.")
@@ -823,6 +829,7 @@ def session_to_nwb(
             protocol_folder_path=protocol_folder_path,
             cohort_data_folder=cohort_config["data_folder"],
             mat_cohort_folder=mat_cohort_folder,
+            mat_input_folder=cohort_config.get("mat_input_folder"),
         )
         target_area, mat_subject_id = get_target_area_for_subject(mat_file_path, subject_id)
         mat_segment_names = match_mat_segments(

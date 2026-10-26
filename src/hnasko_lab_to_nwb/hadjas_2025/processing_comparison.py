@@ -256,6 +256,7 @@ def compare_session_processing(
         protocol_folder_path=protocol_folder_path,
         cohort_data_folder=cohort_config["data_folder"],
         mat_cohort_folder=subject_config.get("mat_cohort_folder", cohort_config["data_folder"]),
+        mat_input_folder=cohort_config.get("mat_input_folder"),
     )
     target_area, mat_subject_id = get_target_area_for_subject(mat_file_path, subject_id)
     segments = match_mat_segments(
