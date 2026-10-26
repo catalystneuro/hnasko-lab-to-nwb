@@ -73,8 +73,8 @@ select = ["E4", "E7", "E9", "F", "D"]
 convention = "numpy"
 
 [tool.ruff.lint.per-file-ignores]
-# Docstring rules apply to the hadjas_2025 modules only, not to its notebooks
-"!src/hnasko_lab_to_nwb/hadjas_2025/**" = ["D"]
+# Docstring rules apply to the hadjas_2025 and shock_sessions modules only, not to their notebooks
+"!src/hnasko_lab_to_nwb/{hadjas_2025,shock_sessions}/**" = ["D"]
 "*.ipynb" = ["D"]
 
 [project.urls]
