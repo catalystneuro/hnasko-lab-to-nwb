@@ -2,7 +2,11 @@ import numpy as np
 import pytest
 from pynwb.testing.mock.file import mock_NWBFile
 
-from hnasko_lab_to_nwb.shock_sessions.convert_session import load_session_config, load_shock_session_metadata
+from hnasko_lab_to_nwb.shock_sessions.convert_session import (
+    load_session_config,
+    load_shock_session_metadata,
+    session_to_nwb,
+)
 from hnasko_lab_to_nwb.shock_sessions.interfaces import AuditoryCueIntervalsInterface, auditory_cue_intervals_interface
 from hnasko_lab_to_nwb.shock_sessions.nwbconverter import ShockSessionsNWBConverter
 
@@ -57,3 +61,10 @@ def test_shock_sessions_converter_has_the_cue_interface(tmp_path):
     converter = ShockSessionsNWBConverter(source_data=source_data, verbose=False)
 
     assert isinstance(converter.data_interface_objects["AuditoryCueIntervals"], AuditoryCueIntervalsInterface)
+
+
+def test_shock_session_to_nwb_refuses_a_stub_with_recomputed_signals(tmp_path):
+    subject_metadata = {"Animal ID": "C0001", "Sex": "M", "Recording Site": "SNr", "Hemisphere": "Right"}
+
+    with pytest.raises(ValueError, match="whole block"):
+        session_to_nwb(tmp_path, subject_metadata, tmp_path, processed=True, stub_test=True)
