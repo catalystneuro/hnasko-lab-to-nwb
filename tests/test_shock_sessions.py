@@ -95,3 +95,17 @@ def test_shock_sessions_are_found_for_the_subjects_of_the_sheet_with_a_block(tmp
 
     assert [kwargs["subject_metadata"]["Animal ID"] for kwargs in kwargs_per_session] == ["C0001"]
     assert kwargs_per_session[0]["tdt_folder_path"] == shocks_folder_path / "C0001-240123-140606"
+
+
+def test_shock_sessions_command_converts_without_processed_signals(tmp_path, monkeypatch):
+    from hnasko_lab_to_nwb.shock_sessions import convert_all_sessions
+    from hnasko_lab_to_nwb.shock_sessions.cli import main
+
+    calls = []
+    monkeypatch.setattr(convert_all_sessions, "dataset_to_nwb", lambda **kwargs: calls.append(kwargs) or [])
+
+    exit_code = main(["convert", str(tmp_path), str(tmp_path / "nwb"), "--no-processed"])
+
+    assert exit_code == 0
+    assert calls[0]["processed"] is False
+    assert calls[0]["subjects_metadata_file_path"] == tmp_path / "ASAP FP Overview.xlsx"

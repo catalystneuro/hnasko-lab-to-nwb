@@ -39,6 +39,7 @@ dependencies = [
 
 [project.scripts]
 hadjas-2025 = "hnasko_lab_to_nwb.hadjas_2025.cli:main"
+shock-sessions = "hnasko_lab_to_nwb.shock_sessions.cli:main"
 
 [project.optional-dependencies]
 analysis = [
