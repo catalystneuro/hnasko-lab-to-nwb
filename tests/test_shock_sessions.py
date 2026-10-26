@@ -68,3 +68,30 @@ def test_shock_session_to_nwb_refuses_a_stub_with_recomputed_signals(tmp_path):
 
     with pytest.raises(ValueError, match="whole block"):
         session_to_nwb(tmp_path, subject_metadata, tmp_path, processed=True, stub_test=True)
+
+
+def test_shock_sessions_are_found_for_the_subjects_of_the_sheet_with_a_block(tmp_path):
+    import pandas as pd
+
+    from hnasko_lab_to_nwb.shock_sessions.convert_all_sessions import get_session_to_nwb_kwargs_per_session
+
+    rows = [
+        ["C0001", "M", "VGlut2-cre x VGAT-flp", "PPN", "SNr", "R"],
+        ["C0002", "F", "VGlut2-cre x VGAT-flp", "PPN", "SNr", "L"],  # no shock block
+        ["C0003", "F", "VGlut2-cre x VGAT-flp", "STN", "SNr", "L"],  # input without shock sessions
+    ]
+    columns = ["Animal ID", "Sex", "Genotype", "Input", "Recording Site", "Hemisphere"]
+    overview_file_path = tmp_path / "overview.xlsx"
+    pd.DataFrame(rows, columns=columns).to_excel(overview_file_path, sheet_name="SNr GABA", index=False)
+    shocks_folder_path = tmp_path / "SN pan GABA recordings" / "PPN" / "Fiber photometry_TDT" / "Shocks"
+    (shocks_folder_path / "C0001-240123-140606").mkdir(parents=True)
+    (tmp_path / "SN pan GABA recordings" / "STN" / "Fiber photometry_TDT" / "Shocks" / "C0003-240123-1").mkdir(
+        parents=True
+    )
+
+    kwargs_per_session = get_session_to_nwb_kwargs_per_session(
+        data_dir_path=tmp_path, subjects_metadata_file_path=overview_file_path
+    )
+
+    assert [kwargs["subject_metadata"]["Animal ID"] for kwargs in kwargs_per_session] == ["C0001"]
+    assert kwargs_per_session[0]["tdt_folder_path"] == shocks_folder_path / "C0001-240123-140606"
