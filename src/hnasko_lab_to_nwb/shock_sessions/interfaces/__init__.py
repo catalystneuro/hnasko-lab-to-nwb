@@ -1,3 +1,5 @@
-from .demodulated_tdt_interface import TDTDemodulatedFiberPhotometryInterface
+"""Data interfaces of the shock session conversion."""
 
-__all__ = ["TDTDemodulatedFiberPhotometryInterface"]
+from .auditory_cue_intervals_interface import AuditoryCueIntervalsInterface
+
+__all__ = ["AuditoryCueIntervalsInterface"]
