@@ -26,7 +26,13 @@ cohorts:
   GRABDA recordings:
     sheet_name: GRAB DA
     data_folder: GRABDA recordings
-    inputs: [PPN, STN]  # SNr and STN_mCherry inputs are added with their metadata
+    inputs: [PPN, STN]
+  GRABDA recordings_STN_mCherry:
+    sheet_name: GRAB DA
+    data_folder: GRABDA recordings
+    base_cohort: GRABDA recordings
+    mat_input_folder: STN  # the STN .mat files hold the controls as sites DLS_ctrl and TS_ctrl
+    inputs: [STN_mCherry]
   Str_DA_terminal recordings:
     sheet_name: Striatal DA terminals
     data_folder: Str_DA_terminal recordings
