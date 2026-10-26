@@ -50,6 +50,27 @@ def test_load_cohort_metadata_merges_shared_files_with_cohort_overrides():
     assert isosbestic_model["wavelength_range_in_nm"] == [410.0, 420.0]
 
 
+def test_load_cohort_metadata_updates_the_base_cohort_metadata(tmp_path, monkeypatch):
+    from hnasko_lab_to_nwb.hadjas_2025 import convert_session
+
+    for file_name in ("general_metadata.yaml", "subject_metadata.yaml", "devices_metadata.yaml"):
+        (tmp_path / file_name).write_text("NWBFile:\n  lab: Hnasko\n")
+    (tmp_path / "Base_recordings_metadata.yaml").write_text(
+        "NWBFile:\n  keywords: [base keyword]\n  surgery: base surgery\nSubject:\n  genotype: base genotype\n"
+    )
+    (tmp_path / "Base_recordings_controls_metadata.yaml").write_text(
+        "NWBFile:\n  keywords: [control keyword]\n  surgery: control surgery\n"
+    )
+    session_config = dict(cohorts={"Base recordings_controls": dict(base_cohort="Base recordings")})
+    monkeypatch.setattr(convert_session, "METADATA_FOLDER_PATH", tmp_path)
+    monkeypatch.setattr(convert_session, "load_session_config", lambda: session_config)
+
+    metadata = load_cohort_metadata("Base recordings_controls")
+
+    assert metadata["NWBFile"] == dict(lab="Hnasko", keywords=["control keyword"], surgery="control surgery")
+    assert metadata["Subject"]["genotype"] == "base genotype"
+
+
 @pytest.mark.parametrize(
     "rig_name, led_manufacturer, photodetector_manufacturer, photodetector_model_number",
     [

@@ -10,7 +10,8 @@ data_streams:
   processed: lab  # lab, recomputed or false
   behavioral_video: false  # AnyMaze videos of the cohorts' behavioral_video_inputs, not part of the Hadjas 2025 paper
 # Each cohort key is the recording type of its metadata file (<recording type>_metadata.yaml). inputs lists the
-# stimulated inputs converted (Input column of the sheet, and the input folder under data_folder).
+# stimulated inputs converted (Input column of the sheet, and the input folder under data_folder). A cohort with a
+# base_cohort has a metadata file that only gives what differs from the base cohort's file.
 cohorts:
   SN pan GABA recordings:
     sheet_name: SNr GABA  # sheet of ASAP FP Overview.xlsx
