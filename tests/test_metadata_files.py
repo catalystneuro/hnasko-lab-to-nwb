@@ -128,6 +128,20 @@ def test_striatal_cohorts_have_4_mm_recording_fibers_and_a_200_um_snc_stimulatio
     assert device_models[stimulation_fiber["device_model_metadata_key"]]["core_diameter_in_um"] == 200
 
 
+def test_mcherry_control_sessions_have_only_the_mcherry_optogenetics_entries():
+    from hnasko_lab_to_nwb.hadjas_2025.convert_session import filter_optogenetics_metadata
+
+    metadata = load_cohort_metadata("GRABDA recordings_STN_mCherry")
+    filter_optogenetics_metadata(metadata=metadata, stimulus_location="STN_mCherry")
+
+    optogenetics = metadata["Optogenetics"]
+    assert list(optogenetics["OptogeneticViruses"]) == ["viral_vector_mcherry"]
+    assert list(optogenetics["OptogeneticVirusInjections"]) == ["viral_vector_injection_STN_mCherry"]
+    assert list(optogenetics["OptogeneticEffectors"]) == ["mCherry_STN_mCherry"]
+    assert list(optogenetics["OptogeneticSitesTable"]["rows"]) == ["STN_mCherry"]
+    assert "ChrimsonR" not in metadata["NWBFile"]["surgery"]
+
+
 def test_subject_age_is_the_range_older_than_6_weeks():
     assert load_cohort_metadata("GRABDA recordings")["Subject"]["age"] == "P6W/"
 
@@ -143,7 +157,13 @@ def test_opsin_injection_volume_and_titer_are_the_upper_bounds_of_the_ranges(rec
     # the preprint gives 150 to 200 nl of ChrimsonR at 4 to 8.5e12 vg/ml (1e13 vg/ml for the Anxa1 cohort)
     optogenetics = load_cohort_metadata(recording_type)["Optogenetics"]
 
-    for injection in optogenetics["OptogeneticVirusInjections"].values():
+    chrimson_injections = [
+        injection
+        for injection in optogenetics["OptogeneticVirusInjections"].values()
+        if injection["viral_vector_metadata_key"] == "viral_vector_ogen"
+    ]
+    assert chrimson_injections
+    for injection in chrimson_injections:
         assert injection["volume_in_uL"] == 0.2
         assert "150 to 200 nl" in injection["description"]
     expected_titer = 1.0e13 if recording_type == "Cell_type recordings_Anxa1" else 8.5e12
