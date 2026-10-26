@@ -37,15 +37,16 @@ def test_get_session_start_time_uses_lab_time_zone(wall_clock_time, utc_offset_i
 def test_filter_optogenetics_metadata_keeps_only_stimulus_location():
     metadata = {
         "Optogenetics": {
+            "OptogeneticViruses": {"virus": {"name": "virus"}},
             "OptogeneticEffectors": {
                 "ChrimsonR_STN_1": {"name": "ChrimsonR_STN_1"},
                 "ChrimsonR_STN_2": {"name": "ChrimsonR_STN_2"},
                 "ChrimsonR_PPN": {"name": "ChrimsonR_PPN"},
             },
             "OptogeneticVirusInjections": {
-                "injection_STN_1": {"name": "injection_STN_1"},
-                "injection_STN_2": {"name": "injection_STN_2"},
-                "injection_PPN": {"name": "injection_PPN"},
+                "injection_STN_1": {"name": "injection_STN_1", "viral_vector_metadata_key": "virus"},
+                "injection_STN_2": {"name": "injection_STN_2", "viral_vector_metadata_key": "virus"},
+                "injection_PPN": {"name": "injection_PPN", "viral_vector_metadata_key": "virus"},
             },
             "OptogeneticSitesTable": {
                 "rows": {
@@ -63,6 +64,34 @@ def test_filter_optogenetics_metadata_keeps_only_stimulus_location():
     assert list(optogenetics["OptogeneticEffectors"]) == ["ChrimsonR_PPN"]
     assert list(optogenetics["OptogeneticVirusInjections"]) == ["injection_PPN"]
     assert list(optogenetics["OptogeneticSitesTable"]["rows"]) == ["PPN"]
+    assert list(optogenetics["OptogeneticViruses"]) == ["virus"]
+
+
+def test_filter_optogenetics_metadata_removes_viruses_of_other_stimulus_locations():
+    # e.g. the ChrimsonR virus of the GRAB-DA metadata in the files of the mCherry controls
+    metadata = {
+        "Optogenetics": {
+            "OptogeneticViruses": {"chrimsonR": {"name": "chrimsonR"}, "mCherry": {"name": "mCherry"}},
+            "OptogeneticEffectors": {
+                "chrimsonR_STN": {"name": "chrimsonR_STN"},
+                "mCherry_STN_mCherry": {"name": "mCherry_STN_mCherry"},
+            },
+            "OptogeneticVirusInjections": {
+                "injection_STN": {"name": "injection_STN", "viral_vector_metadata_key": "chrimsonR"},
+                "injection_STN_mCherry": {"name": "injection_STN_mCherry", "viral_vector_metadata_key": "mCherry"},
+            },
+            "OptogeneticSitesTable": {
+                "rows": {
+                    "STN": {"effector_metadata_key": "chrimsonR_STN"},
+                    "STN_mCherry": {"effector_metadata_key": "mCherry_STN_mCherry"},
+                }
+            },
+        }
+    }
+
+    filter_optogenetics_metadata(metadata=metadata, stimulus_location="STN_mCherry")
+
+    assert list(metadata["Optogenetics"]["OptogeneticViruses"]) == ["mCherry"]
 
 
 def test_find_mat_file_path_uses_the_mat_cohort_folder(tmp_path):

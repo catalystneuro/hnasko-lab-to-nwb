@@ -665,6 +665,8 @@ def get_session_start_time(start_timestamp: float) -> datetime:
 def filter_optogenetics_metadata(metadata: dict, stimulus_location: str) -> None:
     """Remove optogenetics entries for stimulus sites other than stimulus_location, in place.
 
+    Viruses that none of the remaining injections uses are removed too.
+
     Parameters
     ----------
     metadata : dict
@@ -685,6 +687,12 @@ def filter_optogenetics_metadata(metadata: dict, stimulus_location: str) -> None
         key: row
         for key, row in optogenetics["OptogeneticSitesTable"]["rows"].items()
         if stimulus_location in row["effector_metadata_key"]
+    }
+    used_virus_keys = {
+        injection["viral_vector_metadata_key"] for injection in optogenetics["OptogeneticVirusInjections"].values()
+    }
+    optogenetics["OptogeneticViruses"] = {
+        key: item for key, item in optogenetics["OptogeneticViruses"].items() if key in used_virus_keys
     }
 
 
