@@ -1,7 +1,8 @@
 # Building a new conversion pipeline
 
-This page outlines how to convert a new experiment to NWB, using this repository as an example. It is a starting
-point; the linked documentation covers each step in detail.
+This page outlines how to convert a new experiment to NWB, using this repository as an example. It builds on
+[The conversion pipeline](conversion_pipeline.md), which describes the parts of a conversion. It is a starting point;
+the linked documentation covers each step in detail.
 
 ## 1. List the data and metadata
 
