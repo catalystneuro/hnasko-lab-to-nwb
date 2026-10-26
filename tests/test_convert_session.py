@@ -111,6 +111,26 @@ def test_find_mat_file_path_uses_the_mat_cohort_folder(tmp_path):
     assert mat_file_path == gaba_folder_path / "processed.mat"
 
 
+def test_find_mat_file_path_uses_the_mat_input_folder(tmp_path):
+    # the GRAB-DA mCherry controls are in the .mat file of the STN input
+    cohort_folder_path = tmp_path / "GRABDA recordings"
+    relative_protocol_folder_path = Path("Fiber photometry_TDT") / "Varying durations"
+    control_folder_path = cohort_folder_path / "STN_mCherry" / relative_protocol_folder_path
+    stn_folder_path = cohort_folder_path / "STN" / relative_protocol_folder_path
+    control_folder_path.mkdir(parents=True)
+    stn_folder_path.mkdir(parents=True)
+    (stn_folder_path / "processed.mat").touch()
+
+    mat_file_path = find_mat_file_path(
+        protocol_folder_path=control_folder_path,
+        cohort_data_folder="GRABDA recordings",
+        mat_cohort_folder="GRABDA recordings",
+        mat_input_folder="STN",
+    )
+
+    assert mat_file_path == stn_folder_path / "processed.mat"
+
+
 def test_find_mat_file_path_in_a_subgroup_folder(tmp_path):
     protocol_folder_path = (
         tmp_path / "Cell_type recordings" / "STN" / "Fiber photometry_TDT" / "Varying durations" / "Anxa1 DLS"
