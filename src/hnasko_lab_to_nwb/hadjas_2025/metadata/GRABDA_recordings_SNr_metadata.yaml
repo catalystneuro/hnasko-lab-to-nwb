@@ -1,0 +1,58 @@
+# Metadata for Hadjas 2025 --> Striatal GRAB_DA recordings (DLS & TS), SNr GABA input stim (resubmission).
+# Updates GRABDA_recordings_metadata.yaml (base_cohort in the session config).
+# The opsin (construct, manufacturer, titer, volume) is not known yet; the fields marked "lab question 10" hold
+# placeholders until the lab answers.
+NWBFile:
+  keywords: [DLS fiber photometry recordings, TS fiber photometry recordings, Dopamine release, VGAT-Cre, SNr optogenetic
+      stimulation, Parkinson's disease]
+  experiment_description: Dopamine release in the dorsolateral striatum (DLS) or the tail of the striatum (TS) during
+    optogenetic stimulation of GABAergic neurons of the substantia nigra pars reticulata (SNr). In VGAT-Cre mice, the
+    dopamine sensor GRAB-DA2m was expressed in DLS or TS and an opsin was expressed in SNr. Light was delivered through a
+    separate fiber over SNc. Freely moving mice in a plastic tub received trains of laser pulses while fluorescence was
+    recorded. Each session follows one of two protocols, varying train durations or varying pulse frequencies, described
+    in the session description.
+  surgery: Mice > 6 weeks old were anesthetized with isoflurane (4% for induction; 1-2% for maintenance). For monitoring DA
+    release in striatal subregions (DLS and TS) in VGAT-Cre mice were injected with 300 nl of AAV9-EF1a-GRABDA2m (2e12 vg/mL,
+    Addgene 140553) in either DLS (AP +0.5, ML +/-2.25, DV -2.95) or TS (AP -1.25, ML +/-2.9, DV -3.45). A fiber (200-um core,
+    0.39 NA, L = 6 mm, 1.25-mm white ceramic ferrule, RWD) was implanted over SNc (AP -3.2, ML +/-1.4, DV -4.1) for optogenetic
+    stimulation, and a second fiber (400-um core, 0.39 NA, L = 4 mm, 1.25-mm black ceramic ferrule, RWD) was implanted in
+    either DLS (AP +0.5, ML +/-2.25, DV -2.75) or TS (AP -1.25, ML +/-2.9, DV -3.25). For optogenetic stimulation, an opsin
+    was expressed by viral injection in SNr (AP -3.3, ML +/-1.3, DV -4.6).
+Subject:
+  description: All mouse experiments were performed in accordance with protocols approved by UCSD Institutional Animal
+    Care and Use Committee. Male and female mice were bred at UCSD and group-housed on a 12-hour light/dark cycle,
+    with food and water ad libitum. The experiment used VGAT-Cre mice.
+  genotype: VGAT-Cre
+Optogenetics:
+  OptogeneticViruses:
+    viral_vector_ogen_SNr:
+      name: viral_vector_ogen_SNr
+      description: Viral vector expressing the opsin in SNr GABAergic neurons.
+      manufacturer: unknown  # lab question 10
+      construct_name: unknown  # lab question 10
+      titer_in_vg_per_ml: .nan  # lab question 10
+  OptogeneticVirusInjections:
+    viral_vector_injection_SNr:
+      name: viral_vector_injection_SNr
+      description: Viral injection of the opsin into the Substantia Nigra pars reticulata (SNr), at the site of the SNr
+        GCaMP6f injections of the SN pan GABA recordings.
+      location: substantia nigra pars reticulata (SNr)
+      hemisphere: right
+      reference: bregma at the cortical surface
+      ap_in_mm: -3.3
+      ml_in_mm: 1.3
+      dv_in_mm: -4.6
+      volume_in_uL: .nan  # lab question 10
+      viral_vector_metadata_key: viral_vector_ogen_SNr
+  OptogeneticEffectors:
+    opsin_SNr:
+      name: opsin_SNr
+      description: Opsin used for optogenetic stimulation, expressed in GABAergic neurons of the SNr.
+      label: unknown  # lab question 10
+      viral_vector_injection_metadata_key: viral_vector_injection_SNr
+  OptogeneticSitesTable:
+    rows:
+      SNr:
+        excitation_source_metadata_key: optogenetic_excitation_source
+        optical_fiber_metadata_key: optical_fiber_SNc
+        effector_metadata_key: opsin_SNr

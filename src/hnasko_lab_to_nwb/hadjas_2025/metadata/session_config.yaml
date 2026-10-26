@@ -33,6 +33,11 @@ cohorts:
     base_cohort: GRABDA recordings
     mat_input_folder: STN  # the STN .mat files hold the controls as sites DLS_ctrl and TS_ctrl
     inputs: [STN_mCherry]
+  GRABDA recordings_SNr:
+    sheet_name: GRAB DA
+    data_folder: GRABDA recordings
+    base_cohort: GRABDA recordings
+    inputs: [SNr]
   Str_DA_terminal recordings:
     sheet_name: Striatal DA terminals
     data_folder: Str_DA_terminal recordings
