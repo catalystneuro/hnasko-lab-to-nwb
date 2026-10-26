@@ -20,6 +20,12 @@ def test_get_series_target_area_keeps_other_target_areas():
     assert get_series_target_area(target_area="DLS", file_path=file_path) == "DLS"
 
 
+def test_get_series_target_area_reads_mcherry_control_sites():
+    file_path = Path("GRABDA recordings") / "STN" / "Fiber photometry_TDT" / "Varying durations" / "processed.mat"
+    assert get_series_target_area(target_area="DLS_ctrl", file_path=file_path) == "DLS"
+    assert get_series_target_area(target_area="TS_ctrl", file_path=file_path) == "TS"
+
+
 def test_concatenated_interface_reads_anxa1_site_from_folder_name(tmp_path, anxa1_metadata, write_processed_mat_file):
     segments = {name: np.ones(5) for name in ("s250ms", "s1s", "s4s")}
     file_path = write_processed_mat_file(

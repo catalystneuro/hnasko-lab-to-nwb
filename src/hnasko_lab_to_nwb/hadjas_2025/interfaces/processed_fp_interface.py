@@ -17,7 +17,8 @@ def get_series_target_area(target_area: str, file_path: Path) -> str:
 
     The Anxa1 .mat files group subjects by stimulus site ("STN_to_Anxa1", "PPN_to_Anxa1").
     For these files the recording site is taken from the name of the folder holding the file
-    (e.g. "Anxa1 DLS" gives "DLS").
+    (e.g. "Anxa1 DLS" gives "DLS"). The GRAB-DA STN .mat files hold the mCherry controls under
+    "DLS_ctrl" and "TS_ctrl", which give "DLS" and "TS".
 
     Parameters
     ----------
@@ -33,7 +34,7 @@ def get_series_target_area(target_area: str, file_path: Path) -> str:
     """
     if target_area in ("STN_to_Anxa1", "PPN_to_Anxa1"):
         return Path(file_path).parent.name.replace("Anxa1 ", "")
-    return target_area
+    return target_area.removesuffix("_ctrl")
 
 
 class Hadjas2025ProcessedFiberPhotometryInterface(BaseDataInterface):
