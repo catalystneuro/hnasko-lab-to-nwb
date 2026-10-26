@@ -12,7 +12,7 @@ Write down, for one session:
 - the metadata: subject, surgery, devices, viruses, coordinates, stimulation parameters, and where each value comes
   from (a sheet, the paper, the lab's notes).
 
-[Data organization](data_organization.md) is this list for the Hadjas 2025 conversion.
+[Data organization](../src/hnasko_lab_to_nwb/hadjas_2025/docs/data_organization.md) is this list for the Hadjas 2025 conversion.
 
 ## 2. Find NeuroConv interfaces for each stream
 
@@ -33,7 +33,7 @@ and converts all sessions (`convert_session.py` and `convert_all_sessions.py` he
 ## 4. Keep the metadata in YAML files
 
 Put the metadata that does not come from the data files in YAML files, one per group of sessions that share it, and
-merge them into the converter's metadata (see [Metadata](metadata.md)).
+merge them into the converter's metadata (see [Metadata](../src/hnasko_lab_to_nwb/hadjas_2025/docs/metadata.md)).
 
 ## 5. Check and share
 

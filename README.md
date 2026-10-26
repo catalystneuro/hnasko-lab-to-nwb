@@ -37,18 +37,18 @@ hadjas-2025 convert "<data folder>" "<output folder>"
 ```
 
 `check` reports problems in the data before converting; `convert` writes one NWB file per session to the output
-folder and inspects it with NWB Inspector. See [Converting sessions](docs/converting_sessions.md).
+folder and inspects it with NWB Inspector. See [Converting sessions](src/hnasko_lab_to_nwb/hadjas_2025/docs/converting_sessions.md).
 
 ## Documentation
 
-- [Data organization](docs/data_organization.md): the data share layout, cohorts, protocols and lab files.
-- [Converting sessions](docs/converting_sessions.md): checking the data, converting sessions, and the output files.
-- [Data streams](docs/data_streams.md): raw and processed signals, raw-only conversion, recomputed signals.
-- [Metadata](docs/metadata.md): editing the metadata files, adding a cohort, ontology terms.
-- [NWB file structure](docs/nwb_file_structure.md): what is stored where, and how to read a file.
-- [Processing](docs/processing.md): the Python port of the lab's processing and how it compares with the lab's.
-- [DANDI staging](docs/dandi_staging.md): organizing, validating and uploading the files.
-- [Troubleshooting](docs/troubleshooting.md): data check findings and conversion errors.
+- [Data organization](src/hnasko_lab_to_nwb/hadjas_2025/docs/data_organization.md): the data share layout, cohorts, protocols and lab files.
+- [Converting sessions](src/hnasko_lab_to_nwb/hadjas_2025/docs/converting_sessions.md): checking the data, converting sessions, and the output files.
+- [Data streams](src/hnasko_lab_to_nwb/hadjas_2025/docs/data_streams.md): raw and processed signals, raw-only conversion, recomputed signals.
+- [Metadata](src/hnasko_lab_to_nwb/hadjas_2025/docs/metadata.md): editing the metadata files, adding a cohort, ontology terms.
+- [NWB file structure](src/hnasko_lab_to_nwb/hadjas_2025/docs/nwb_file_structure.md): what is stored where, and how to read a file.
+- [Processing](src/hnasko_lab_to_nwb/hadjas_2025/docs/processing.md): the Python port of the lab's processing and how it compares with the lab's.
+- [DANDI staging](src/hnasko_lab_to_nwb/hadjas_2025/docs/dandi_staging.md): organizing, validating and uploading the files.
+- [Troubleshooting](src/hnasko_lab_to_nwb/hadjas_2025/docs/troubleshooting.md): data check findings and conversion errors.
 - [Building a new conversion pipeline](docs/new_conversion_pipeline.md): converting another experiment to NWB.
 
 Notebooks in `src/hnasko_lab_to_nwb/hadjas_2025/tutorials/` show how to read the files and how to add processed

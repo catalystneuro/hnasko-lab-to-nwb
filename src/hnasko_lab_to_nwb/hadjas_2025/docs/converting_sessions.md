@@ -2,7 +2,7 @@
 
 A session is one protocol of one subject (one site for Anxa1 mice) and becomes one NWB file,
 `sub-<subject>_ses-<session>.nwb`. Sessions are converted with the `hadjas-2025` command, installed with the package
-(see the [README](../README.md#installation)). Run it from the conda environment of the package:
+(see the [README](../../../../README.md#installation)). Run it from the conda environment of the package:
 
 ```bash
 conda activate hnasko-lab-to-nwb-env
