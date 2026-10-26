@@ -66,6 +66,8 @@ def test_sessions_are_found_in_the_cohort_folder_of_each_overview_sheet(tmp_path
         ("Cell_type recordings_Vglut2", "C0003", "Varying frequencies", "Vglut2 SNc"),
         ("GRABDA recordings", "C0001", "Varying durations", "Varying durations"),
         ("GRABDA recordings", "C0001", "Varying frequencies", "Varying frequencies"),
+        ("GRABDA recordings_SNr", "C0002", "Varying durations", "Varying durations"),
+        ("GRABDA recordings_SNr", "C0002", "Varying frequencies", "Varying frequencies"),
     ]
 
 

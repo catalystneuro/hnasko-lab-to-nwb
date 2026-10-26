@@ -142,6 +142,21 @@ def test_mcherry_control_sessions_have_only_the_mcherry_optogenetics_entries():
     assert "ChrimsonR" not in metadata["NWBFile"]["surgery"]
 
 
+def test_snr_input_sessions_have_only_the_snr_optogenetics_entries():
+    from hnasko_lab_to_nwb.hadjas_2025.convert_session import filter_optogenetics_metadata
+
+    metadata = load_cohort_metadata("GRABDA recordings_SNr")
+    filter_optogenetics_metadata(metadata=metadata, stimulus_location="SNr")
+
+    optogenetics = metadata["Optogenetics"]
+    assert list(optogenetics["OptogeneticViruses"]) == ["viral_vector_ogen_SNr"]
+    assert list(optogenetics["OptogeneticVirusInjections"]) == ["viral_vector_injection_SNr"]
+    assert list(optogenetics["OptogeneticEffectors"]) == ["opsin_SNr"]
+    assert optogenetics["OptogeneticSitesTable"]["rows"]["SNr"]["optical_fiber_metadata_key"] == "optical_fiber_SNc"
+    assert metadata["Subject"]["genotype"] == "VGAT-Cre"
+    assert "VGLUT2" not in metadata["NWBFile"]["surgery"] + " ".join(metadata["NWBFile"]["keywords"])
+
+
 def test_subject_age_is_the_range_older_than_6_weeks():
     assert load_cohort_metadata("GRABDA recordings")["Subject"]["age"] == "P6W/"
 
@@ -191,7 +206,7 @@ def test_genotype_names_the_mouse_lines_as_the_preprint_does(recording_type):
     # e.g. "VGLUT2-Cre x DAT-Flp": line names of the preprint, joined by " x "
     lines = load_cohort_metadata(recording_type)["Subject"]["genotype"].split(" x ")
 
-    assert set(lines) <= {"VGLUT2-Cre", "VGAT-Flp", "DAT-Flp", "VGLUT2-PhiC31", "Anxa1-Cre"}
+    assert set(lines) <= {"VGLUT2-Cre", "VGAT-Cre", "VGAT-Flp", "DAT-Flp", "VGLUT2-PhiC31", "Anxa1-Cre"}
 
 
 @pytest.mark.parametrize("recording_type", sorted(load_session_config()["cohorts"]))
@@ -199,7 +214,7 @@ def test_subject_description_names_only_the_cohort_mouse_lines(recording_type):
     subject = load_cohort_metadata(recording_type)["Subject"]
 
     lines = subject["genotype"].split(" x ")
-    for line in ("VGLUT2-Cre", "VGAT-Flp", "DAT-Flp", "VGLUT2-PhiC31", "Anxa1-Cre"):
+    for line in ("VGLUT2-Cre", "VGAT-Cre", "VGAT-Flp", "DAT-Flp", "VGLUT2-PhiC31", "Anxa1-Cre"):
         assert (f"{line} " in subject["description"]) == (line in lines), line
 
 
