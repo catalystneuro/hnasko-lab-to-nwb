@@ -106,6 +106,9 @@ def get_processed_source(data_streams: dict, cohort_config: dict) -> str | bool:
 def load_cohort_metadata(recording_type: str) -> dict:
     """Load the metadata shared by all cohorts, updated with the metadata file of one cohort.
 
+    A cohort whose session config entry has a base_cohort (e.g. the GRAB-DA mCherry controls) has a metadata file
+    that updates the base cohort's file; its lists (e.g. keywords) replace those of the base cohort.
+
     Parameters
     ----------
     recording_type : str
@@ -116,11 +119,19 @@ def load_cohort_metadata(recording_type: str) -> dict:
     dict
         The merged metadata.
     """
+
+    def get_cohort_file_path(cohort: str) -> Path:
+        return METADATA_FOLDER_PATH / f"{cohort.replace(' ', '_')}_metadata.yaml"
+
     metadata = dict()
     for file_name in SHARED_METADATA_FILE_NAMES:
         metadata = dict_deep_update(metadata, load_dict_from_file(METADATA_FOLDER_PATH / file_name))
-    cohort_file_path = METADATA_FOLDER_PATH / f"{recording_type.replace(' ', '_')}_metadata.yaml"
-    return dict_deep_update(metadata, load_dict_from_file(cohort_file_path))
+    cohort_metadata = load_dict_from_file(get_cohort_file_path(recording_type))
+    base_cohort = load_session_config()["cohorts"][recording_type].get("base_cohort")
+    if base_cohort is not None:
+        base_cohort_metadata = load_dict_from_file(get_cohort_file_path(base_cohort))
+        cohort_metadata = dict_deep_update(base_cohort_metadata, cohort_metadata, append_list=False)
+    return dict_deep_update(metadata, cohort_metadata)
 
 
 def load_rig_devices_metadata(rig_name: str) -> dict:
@@ -561,8 +572,10 @@ def get_session_description(protocol: str, epoc_names: list[str], number_of_bloc
     return protocol_config["session_description"]
 
 
-def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_cohort_folder: str) -> Path:
-    """Find the lab's processed .mat file of a protocol folder, possibly in another cohort's folder.
+def find_mat_file_path(
+    protocol_folder_path: Path, cohort_data_folder: str, mat_cohort_folder: str, mat_input_folder: str | None = None
+) -> Path:
+    """Find the lab's processed .mat file of a protocol folder, possibly in another cohort's or input's folder.
 
     Parameters
     ----------
@@ -573,6 +586,9 @@ def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_
         Data folder of the session's cohort.
     mat_cohort_folder : str
         Data folder of the cohort whose protocol folder holds the .mat file (the session's own by default).
+    mat_input_folder : str, optional
+        Input folder whose protocol folder holds the .mat file (default is None, the session's own). The GRAB-DA
+        mCherry controls (STN_mCherry) are in the .mat file of the STN input.
 
     Returns
     -------
@@ -582,8 +598,9 @@ def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_
     parts = protocol_folder_path.parts
     cohort_index = len(parts) - 1 - parts[::-1].index(cohort_data_folder)
     data_dir_path = Path(*parts[:cohort_index])
-    relative_protocol_folder_path = Path(*parts[cohort_index + 1 :])
-    mat_folder_path = data_dir_path / mat_cohort_folder / relative_protocol_folder_path
+    input_folder = mat_input_folder if mat_input_folder is not None else parts[cohort_index + 1]
+    relative_protocol_folder_path = Path(*parts[cohort_index + 2 :])
+    mat_folder_path = data_dir_path / mat_cohort_folder / input_folder / relative_protocol_folder_path
     mat_file_paths = list(mat_folder_path.glob("*.mat"))
     if len(mat_file_paths) != 1:
         raise FileNotFoundError(f"Expected one .mat file in {mat_folder_path}, found {len(mat_file_paths)}.")
@@ -665,6 +682,8 @@ def get_session_start_time(start_timestamp: float) -> datetime:
 def filter_optogenetics_metadata(metadata: dict, stimulus_location: str) -> None:
     """Remove optogenetics entries for stimulus sites other than stimulus_location, in place.
 
+    Viruses that none of the remaining injections uses are removed too.
+
     Parameters
     ----------
     metadata : dict
@@ -685,6 +704,12 @@ def filter_optogenetics_metadata(metadata: dict, stimulus_location: str) -> None
         key: row
         for key, row in optogenetics["OptogeneticSitesTable"]["rows"].items()
         if stimulus_location in row["effector_metadata_key"]
+    }
+    used_virus_keys = {
+        injection["viral_vector_metadata_key"] for injection in optogenetics["OptogeneticVirusInjections"].values()
+    }
+    optogenetics["OptogeneticViruses"] = {
+        key: item for key, item in optogenetics["OptogeneticViruses"].items() if key in used_virus_keys
     }
 
 
@@ -804,6 +829,7 @@ def session_to_nwb(
             protocol_folder_path=protocol_folder_path,
             cohort_data_folder=cohort_config["data_folder"],
             mat_cohort_folder=mat_cohort_folder,
+            mat_input_folder=cohort_config.get("mat_input_folder"),
         )
         target_area, mat_subject_id = get_target_area_for_subject(mat_file_path, subject_id)
         mat_segment_names = match_mat_segments(

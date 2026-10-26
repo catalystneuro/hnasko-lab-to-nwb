@@ -50,6 +50,27 @@ def test_load_cohort_metadata_merges_shared_files_with_cohort_overrides():
     assert isosbestic_model["wavelength_range_in_nm"] == [410.0, 420.0]
 
 
+def test_load_cohort_metadata_updates_the_base_cohort_metadata(tmp_path, monkeypatch):
+    from hnasko_lab_to_nwb.hadjas_2025 import convert_session
+
+    for file_name in ("general_metadata.yaml", "subject_metadata.yaml", "devices_metadata.yaml"):
+        (tmp_path / file_name).write_text("NWBFile:\n  lab: Hnasko\n")
+    (tmp_path / "Base_recordings_metadata.yaml").write_text(
+        "NWBFile:\n  keywords: [base keyword]\n  surgery: base surgery\nSubject:\n  genotype: base genotype\n"
+    )
+    (tmp_path / "Base_recordings_controls_metadata.yaml").write_text(
+        "NWBFile:\n  keywords: [control keyword]\n  surgery: control surgery\n"
+    )
+    session_config = dict(cohorts={"Base recordings_controls": dict(base_cohort="Base recordings")})
+    monkeypatch.setattr(convert_session, "METADATA_FOLDER_PATH", tmp_path)
+    monkeypatch.setattr(convert_session, "load_session_config", lambda: session_config)
+
+    metadata = load_cohort_metadata("Base recordings_controls")
+
+    assert metadata["NWBFile"] == dict(lab="Hnasko", keywords=["control keyword"], surgery="control surgery")
+    assert metadata["Subject"]["genotype"] == "base genotype"
+
+
 @pytest.mark.parametrize(
     "rig_name, led_manufacturer, photodetector_manufacturer, photodetector_model_number",
     [
@@ -107,6 +128,35 @@ def test_striatal_cohorts_have_4_mm_recording_fibers_and_a_200_um_snc_stimulatio
     assert device_models[stimulation_fiber["device_model_metadata_key"]]["core_diameter_in_um"] == 200
 
 
+def test_mcherry_control_sessions_have_only_the_mcherry_optogenetics_entries():
+    from hnasko_lab_to_nwb.hadjas_2025.convert_session import filter_optogenetics_metadata
+
+    metadata = load_cohort_metadata("GRABDA recordings_STN_mCherry")
+    filter_optogenetics_metadata(metadata=metadata, stimulus_location="STN_mCherry")
+
+    optogenetics = metadata["Optogenetics"]
+    assert list(optogenetics["OptogeneticViruses"]) == ["viral_vector_mcherry"]
+    assert list(optogenetics["OptogeneticVirusInjections"]) == ["viral_vector_injection_STN_mCherry"]
+    assert list(optogenetics["OptogeneticEffectors"]) == ["mCherry_STN_mCherry"]
+    assert list(optogenetics["OptogeneticSitesTable"]["rows"]) == ["STN_mCherry"]
+    assert "ChrimsonR" not in metadata["NWBFile"]["surgery"]
+
+
+def test_snr_input_sessions_have_only_the_snr_optogenetics_entries():
+    from hnasko_lab_to_nwb.hadjas_2025.convert_session import filter_optogenetics_metadata
+
+    metadata = load_cohort_metadata("GRABDA recordings_SNr")
+    filter_optogenetics_metadata(metadata=metadata, stimulus_location="SNr")
+
+    optogenetics = metadata["Optogenetics"]
+    assert list(optogenetics["OptogeneticViruses"]) == ["viral_vector_ogen_SNr"]
+    assert list(optogenetics["OptogeneticVirusInjections"]) == ["viral_vector_injection_SNr"]
+    assert list(optogenetics["OptogeneticEffectors"]) == ["opsin_SNr"]
+    assert optogenetics["OptogeneticSitesTable"]["rows"]["SNr"]["optical_fiber_metadata_key"] == "optical_fiber_SNc"
+    assert metadata["Subject"]["genotype"] == "VGAT-Cre"
+    assert "VGLUT2" not in metadata["NWBFile"]["surgery"] + " ".join(metadata["NWBFile"]["keywords"])
+
+
 def test_subject_age_is_the_range_older_than_6_weeks():
     assert load_cohort_metadata("GRABDA recordings")["Subject"]["age"] == "P6W/"
 
@@ -122,7 +172,13 @@ def test_opsin_injection_volume_and_titer_are_the_upper_bounds_of_the_ranges(rec
     # the preprint gives 150 to 200 nl of ChrimsonR at 4 to 8.5e12 vg/ml (1e13 vg/ml for the Anxa1 cohort)
     optogenetics = load_cohort_metadata(recording_type)["Optogenetics"]
 
-    for injection in optogenetics["OptogeneticVirusInjections"].values():
+    chrimson_injections = [
+        injection
+        for injection in optogenetics["OptogeneticVirusInjections"].values()
+        if injection["viral_vector_metadata_key"] == "viral_vector_ogen"
+    ]
+    assert chrimson_injections
+    for injection in chrimson_injections:
         assert injection["volume_in_uL"] == 0.2
         assert "150 to 200 nl" in injection["description"]
     expected_titer = 1.0e13 if recording_type == "Cell_type recordings_Anxa1" else 8.5e12
@@ -150,7 +206,7 @@ def test_genotype_names_the_mouse_lines_as_the_preprint_does(recording_type):
     # e.g. "VGLUT2-Cre x DAT-Flp": line names of the preprint, joined by " x "
     lines = load_cohort_metadata(recording_type)["Subject"]["genotype"].split(" x ")
 
-    assert set(lines) <= {"VGLUT2-Cre", "VGAT-Flp", "DAT-Flp", "VGLUT2-PhiC31", "Anxa1-Cre"}
+    assert set(lines) <= {"VGLUT2-Cre", "VGAT-Cre", "VGAT-Flp", "DAT-Flp", "VGLUT2-PhiC31", "Anxa1-Cre"}
 
 
 @pytest.mark.parametrize("recording_type", sorted(load_session_config()["cohorts"]))
@@ -158,7 +214,7 @@ def test_subject_description_names_only_the_cohort_mouse_lines(recording_type):
     subject = load_cohort_metadata(recording_type)["Subject"]
 
     lines = subject["genotype"].split(" x ")
-    for line in ("VGLUT2-Cre", "VGAT-Flp", "DAT-Flp", "VGLUT2-PhiC31", "Anxa1-Cre"):
+    for line in ("VGLUT2-Cre", "VGAT-Cre", "VGAT-Flp", "DAT-Flp", "VGLUT2-PhiC31", "Anxa1-Cre"):
         assert (f"{line} " in subject["description"]) == (line in lines), line
 
 
