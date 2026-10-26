@@ -36,6 +36,9 @@ signals. `inspect` inspects every file again.
 From Python, `session_to_nwb` in `shock_sessions/convert_session.py` converts one session from the subject's row of
 the overview sheet and its TDT block.
 
+The notebook `shock_sessions/tutorials/shock_sessions.ipynb` reads a converted file and plots the dF/F around the
+CS+ and CS- cues.
+
 ## What is written
 
 Each session becomes `sub-<subject>_ses-shocks.nwb`, with:
