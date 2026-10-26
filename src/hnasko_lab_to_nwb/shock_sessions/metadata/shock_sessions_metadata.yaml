@@ -8,3 +8,8 @@ NWBFile:
     in SNr while freely moving mice in a shock chamber heard auditory cues. These mice are the SN pan GABA PPN mice of
     Hadjas et al. (2025), which also expressed ChrimsonR in PPN glutamatergic neurons; there was no optogenetic
     stimulation in these sessions.
+AuditoryCueIntervals:
+  name: auditory_cue_intervals
+  description: One row per auditory cue of 8 s, from the cue onset and offset events stored by TDT Synapse. CS+ cues
+    were paired with a shock and CS- cues were not. The shocks were controlled by MedPC and their times are not in the
+    TDT data.
