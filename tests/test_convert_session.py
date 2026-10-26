@@ -153,6 +153,11 @@ def test_session_config_points_2022_sn_pan_da_stn_subjects_to_the_sn_pan_gaba_ma
         assert subjects_config[subject_id]["mat_cohort_folder"] == "SN pan GABA recordings"
 
 
+def test_session_config_recomputes_the_processed_signals_of_the_snr_input_cohort():
+    # the lab has not shared a .mat file for the GRAB-DA SNr-input mice
+    assert load_session_config()["cohorts"]["GRABDA recordings_SNr"]["processed"] == "recomputed"
+
+
 @pytest.mark.parametrize("value, hemisphere", [("Left", "Left"), ("L", "Left"), ("Right", "Right"), ("R", "Right")])
 def test_normalize_hemisphere_reads_full_and_short_values(value, hemisphere):
     assert normalize_hemisphere(value) == hemisphere
