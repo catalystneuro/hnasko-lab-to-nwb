@@ -4,6 +4,7 @@ from pynwb.testing.mock.file import mock_NWBFile
 
 from hnasko_lab_to_nwb.shock_sessions.convert_session import load_session_config, load_shock_session_metadata
 from hnasko_lab_to_nwb.shock_sessions.interfaces import AuditoryCueIntervalsInterface, auditory_cue_intervals_interface
+from hnasko_lab_to_nwb.shock_sessions.nwbconverter import ShockSessionsNWBConverter
 
 
 def test_shock_session_metadata_is_the_sn_pan_gaba_metadata_without_optogenetics():
@@ -49,3 +50,10 @@ def test_cue_intervals_fail_on_a_block_without_cue_epocs(tmp_path, monkeypatch):
 
     with pytest.raises(ValueError, match="No cue epocs"):
         interface.get_cue_intervals()
+
+
+def test_shock_sessions_converter_has_the_cue_interface(tmp_path):
+    source_data = dict(AuditoryCueIntervals=dict(folder_path=tmp_path, cue_epocs=load_session_config()["cue_epocs"]))
+    converter = ShockSessionsNWBConverter(source_data=source_data, verbose=False)
+
+    assert isinstance(converter.data_interface_objects["AuditoryCueIntervals"], AuditoryCueIntervalsInterface)
