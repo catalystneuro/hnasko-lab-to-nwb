@@ -106,6 +106,9 @@ def get_processed_source(data_streams: dict, cohort_config: dict) -> str | bool:
 def load_cohort_metadata(recording_type: str) -> dict:
     """Load the metadata shared by all cohorts, updated with the metadata file of one cohort.
 
+    A cohort whose session config entry has a base_cohort (e.g. the GRAB-DA mCherry controls) has a metadata file
+    that updates the base cohort's file; its lists (e.g. keywords) replace those of the base cohort.
+
     Parameters
     ----------
     recording_type : str
@@ -116,11 +119,19 @@ def load_cohort_metadata(recording_type: str) -> dict:
     dict
         The merged metadata.
     """
+
+    def get_cohort_file_path(cohort: str) -> Path:
+        return METADATA_FOLDER_PATH / f"{cohort.replace(' ', '_')}_metadata.yaml"
+
     metadata = dict()
     for file_name in SHARED_METADATA_FILE_NAMES:
         metadata = dict_deep_update(metadata, load_dict_from_file(METADATA_FOLDER_PATH / file_name))
-    cohort_file_path = METADATA_FOLDER_PATH / f"{recording_type.replace(' ', '_')}_metadata.yaml"
-    return dict_deep_update(metadata, load_dict_from_file(cohort_file_path))
+    cohort_metadata = load_dict_from_file(get_cohort_file_path(recording_type))
+    base_cohort = load_session_config()["cohorts"][recording_type].get("base_cohort")
+    if base_cohort is not None:
+        base_cohort_metadata = load_dict_from_file(get_cohort_file_path(base_cohort))
+        cohort_metadata = dict_deep_update(base_cohort_metadata, cohort_metadata, append_list=False)
+    return dict_deep_update(metadata, cohort_metadata)
 
 
 def load_rig_devices_metadata(rig_name: str) -> dict:
