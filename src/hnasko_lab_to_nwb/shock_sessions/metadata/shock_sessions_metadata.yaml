@@ -1,0 +1,10 @@
+# Metadata of the shock sessions. Updates the metadata of the base cohort (session_config.yaml); lists replace those of
+# the base cohort.
+NWBFile:
+  keywords: [SNr fiber photometry recordings, SNr GABAergic neurons, VGLUT2-Cre x VGAT-Flp, auditory cues, shock,
+      Parkinson's disease]
+  experiment_description: Activity of SNr GABA neurons during auditory cues paired or not paired with a shock. In
+    VGLUT2-Cre x VGAT-Flp mice, GCaMP6f was expressed in SNr GABA neurons and fluorescence was recorded through a fiber
+    in SNr while freely moving mice in a shock chamber heard auditory cues. These mice are the SN pan GABA PPN mice of
+    Hadjas et al. (2025), which also expressed ChrimsonR in PPN glutamatergic neurons; there was no optogenetic
+    stimulation in these sessions.
