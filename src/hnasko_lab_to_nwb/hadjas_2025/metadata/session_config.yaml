@@ -38,6 +38,7 @@ cohorts:
     data_folder: GRABDA recordings
     base_cohort: GRABDA recordings
     inputs: [SNr]
+    processed: recomputed  # the lab has not shared a .mat file for this cohort
   Str_DA_terminal recordings:
     sheet_name: Striatal DA terminals
     data_folder: Str_DA_terminal recordings
