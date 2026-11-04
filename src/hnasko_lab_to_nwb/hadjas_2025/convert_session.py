@@ -763,7 +763,7 @@ def session_to_nwb(
     which has one block for all durations.
 
     The metadata is merged in this order: the shared and cohort metadata files (load_cohort_metadata), moved to
-    the left hemisphere if the subject was implanted on the left, the devices of the rig (load_rig_devices_metadata),
+    the left hemisphere if the subject was implanted on the left, the devices of the rig (get_raw_stream_settings),
     then the subject, session and LED modulation fields set here. The ontology terms
     (load_external_resources_metadata) are set after the last merge. Optogenetics entries for other stimulus
     sites are removed.
