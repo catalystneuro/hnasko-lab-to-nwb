@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import List
 import numpy as np
 
@@ -6,6 +7,7 @@ from pydantic import DirectoryPath, validate_call
 from pynwb.file import NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import read_tdt_epocs, read_tdt_start_timestamp
+from hnasko_lab_to_nwb.hadjas_2025.utils.train_durations import label_train_duration
 from neuroconv.basetemporalalignmentinterface import BaseDataInterface
 from neuroconv.tools.nwb_helpers import _add_device_to_nwbfile
 from neuroconv.utils import DeepDict
@@ -175,7 +177,8 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         Returns
         -------
         dict
-            {epoc name: {"onset": list, "offset": list}}.
+            {epoc name: {"onset": list, "offset": list, "block_name": list}}, with the name of the TDT block folder
+            of each event.
         """
         folder_paths = self.source_data["folder_paths"]
         start_timestamps = [read_tdt_start_timestamp(folder_path) for folder_path in folder_paths]
@@ -187,9 +190,10 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
             segment_start_time = start_timestamp - start_timestamps[0]
             for stream_name, stream_events in read_tdt_epocs(folder_path).items():
                 if stream_name not in all_events:
-                    all_events[stream_name] = {"onset": [], "offset": []}
+                    all_events[stream_name] = {"onset": [], "offset": [], "block_name": []}
                 all_events[stream_name]["onset"].extend(stream_events["onset"] + segment_start_time)
                 all_events[stream_name]["offset"].extend(stream_events["offset"] + segment_start_time)
+                all_events[stream_name]["block_name"].extend([Path(folder_path).name] * len(stream_events["onset"]))
 
         return all_events
 
@@ -224,6 +228,12 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
             target_tables={"optogenetic_sites": optogenetic_sites_table},
         )
         opto_epochs_table.add_column(name="stimulus_frequency", description="Frequency of the stimulation in Hz.")
+        opto_epochs_table.add_column(
+            name="train_duration",
+            description="Duration of the train in the protocol (250ms, 1s, 4s or 16s); the recorded duration is "
+            "stop_time - start_time.",
+        )
+        opto_epochs_table.add_column(name="tdt_block", description="Name of the TDT block folder of the train.")
         # Populate
         tdt_events = self.get_events()
         if not set(tdt_stimulus_channel_to_frequency) & set(tdt_events):
@@ -231,31 +241,41 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
                 f"None of the stimulation epocs {list(tdt_stimulus_channel_to_frequency)} is in the TDT events "
                 f"{list(tdt_events)}."
             )
-        trains = []  # (start time, stop time, pulse frequency) of every train, in time order
+        trains = []  # (start time, stop time, pulse frequency, TDT block) of every train
         for stream_name, stimulus_frequency in tdt_stimulus_channel_to_frequency.items():
             if stream_name not in tdt_events:
                 continue
             onsets = np.asarray(tdt_events[stream_name]["onset"], dtype=float)
             offsets = np.asarray(tdt_events[stream_name]["offset"], dtype=float)
-            # Trains without an offset (recording stopped first) or of zero length are not written
-            is_valid = np.isfinite(onsets) & np.isfinite(offsets) & (offsets > onsets)
+            block_names = np.asarray(tdt_events[stream_name]["block_name"])
+            # Trains without an offset (recording stopped first), of zero length, or of a duration that is not the
+            # protocol's (electrical artifacts, e.g. the 0.54 s events of C2659) are not written
+            train_durations = [label_train_duration(duration) for duration in offsets - onsets]
+            is_valid = (
+                np.isfinite(onsets)
+                & np.isfinite(offsets)
+                & (offsets > onsets)
+                & np.array([train_duration is not None for train_duration in train_durations], dtype=bool)
+            )
             if not is_valid.all():
                 logger.warning(
                     f"Dropped {np.count_nonzero(~is_valid)} of {is_valid.size} {stream_name} trains without an "
-                    f"offset or of zero length."
+                    f"offset, of zero length or of a duration that is not the protocol's."
                 )
             trains.extend(
-                (start_time, stop_time, stimulus_frequency)
-                for start_time, stop_time in zip(onsets[is_valid], offsets[is_valid])
+                (start_time, stop_time, stimulus_frequency, block_name)
+                for start_time, stop_time, block_name in zip(onsets[is_valid], offsets[is_valid], block_names[is_valid])
             )
-        for start_time, stop_time, stimulus_frequency in sorted(trains):
+        for start_time, stop_time, stimulus_frequency, block_name in sorted(trains):
             number_pulses_per_pulse_train = int((stop_time - start_time) * stimulus_frequency)
             opto_epochs_table.add_row(
                 start_time=start_time,
                 stop_time=stop_time,
                 stimulus_frequency=stimulus_frequency,
+                train_duration=label_train_duration(stop_time - start_time),
+                tdt_block=str(block_name),
                 stimulation_on=True,
-                pulse_length_in_ms=1.0,  # Unknown
+                pulse_length_in_ms=np.nan,  # TDT stores only the train onsets and offsets
                 period_in_ms=(1 / stimulus_frequency) * 1000,
                 number_pulses_per_pulse_train=number_pulses_per_pulse_train,
                 number_trains=1,
