@@ -303,16 +303,15 @@ class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
         stream_indices = fiber_photometry_response_series_metadata.get("stream_indices", None)
 
         fiber_photometry_table = get_fiber_photometry_table(nwbfile, metadata)
-        concatenated_timestamps = []
-        concatenated_data = []
+        data_segments = []
+        timestamps_segments = []
+        if stub_test:
+            assert t2 == 0.0, (
+                f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
+            )
+            t2 = t1 + 1.0
         for i, tdt_interface in enumerate(self._tdt_interfaces):
             # Load Data
-            if stub_test:
-                assert t2 == 0.0, (
-                    f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
-                )
-                t2 = t1 + 1.0
-
             tdt_photometry = tdt_interface.load(t1=t1, t2=t2)
 
             # timing_source is used to avoid loading the data twice if alignment is NOT used.
@@ -335,13 +334,16 @@ class ConcatenatedTDTFiberPhotometryInterface(TDTFiberPhotometryInterface):
                 data = data.flatten()
             if len(data.shape) > 1:
                 data = data.flatten()
-            concatenated_data = np.concatenate((concatenated_data, data))
-            concatenated_timestamps = np.concatenate((concatenated_timestamps, timestamps))
+            data_segments.append(data)
+            timestamps_segments.append(timestamps)
 
             # Add trials for each segment
             if len(self._tdt_interfaces) > 1:
                 tag = tdt_interface.source_data["folder_path"].parts[-2].replace("varFreq_", "")
                 nwbfile.add_trial(start_time=timestamps[0], stop_time=timestamps[-1], tags=tag)
+
+        concatenated_data = np.concatenate(data_segments)
+        concatenated_timestamps = np.concatenate(timestamps_segments)
 
         # Fill gaps with NaNs
         if fill_gaps:

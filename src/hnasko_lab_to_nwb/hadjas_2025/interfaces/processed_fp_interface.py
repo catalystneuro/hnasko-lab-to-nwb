@@ -1,4 +1,5 @@
 from copy import deepcopy
+from pathlib import Path
 from typing import Dict, List, Literal
 
 import h5py
@@ -215,6 +216,30 @@ def get_fp_series_metadata(metadata: dict, stream_name: str, target_area: str) -
             fiber_photometry_response_series_metadata = deepcopy(series_metadata)
             break
     return fiber_photometry_response_series_metadata
+
+
+def get_series_target_area(target_area: str, file_path: Path) -> str:
+    """Get the target area used to look up the series metadata.
+
+    The Anxa1 .mat files group subjects by stimulus site ("STN_to_Anxa1", "PPN_to_Anxa1").
+    For these files the recording site is taken from the name of the folder holding the file
+    (e.g. "Anxa1 DLS" gives "DLS").
+
+    Parameters
+    ----------
+    target_area : str
+        The target area group of the subject in the .mat file.
+    file_path : Path
+        Path to the .mat file.
+
+    Returns
+    -------
+    str
+        The target area of the series metadata.
+    """
+    if target_area in ("STN_to_Anxa1", "PPN_to_Anxa1"):
+        return Path(file_path).parent.name.replace("Anxa1 ", "")
+    return target_area
 
 
 class Hadjas2025ProcessedFiberPhotometryInterface(BaseTemporalAlignmentInterface):
@@ -509,12 +534,7 @@ class Hadjas2025ProcessedFiberPhotometryInterface(BaseTemporalAlignmentInterface
         )
 
         # Get series metadata
-        if self._target_area == "STN_to_Anxa1" or self._target_area == "PPN_to_Anxa1":
-            # Adjust target area for metadata retrieval for Anxa1 recordings
-            genotype_area = self.source_data["file_path"].parent.name
-            target_area = genotype_area.replace("Anxa1 ", "")
-        else:
-            target_area = self._target_area
+        target_area = get_series_target_area(target_area=self._target_area, file_path=self.source_data["file_path"])
         fiber_photometry_response_series_metadata = get_fp_series_metadata(
             metadata=metadata, stream_name=self._stream_name, target_area=target_area
         )
@@ -655,12 +675,7 @@ class ConcatenatedHadjas2025ProcessedFiberPhotometryInterface(Hadjas2025Processe
         )
 
         # Get series metadata
-        if self._target_area == "STN_to_Anxa1" or self._target_area == "PPN_to_Anxa1":
-            # Adjust target area for metadata retrieval for Anxa1 recordings
-            genotype_area = self.source_data["file_path"].parent
-            target_area = genotype_area.replace("Anxa1 ", "")
-        else:
-            target_area = self._target_area
+        target_area = get_series_target_area(target_area=self._target_area, file_path=self.source_data["file_path"])
         fiber_photometry_response_series_metadata = get_fp_series_metadata(
             metadata=metadata, stream_name=self._stream_name, target_area=target_area
         )
@@ -672,8 +687,13 @@ class ConcatenatedHadjas2025ProcessedFiberPhotometryInterface(Hadjas2025Processe
             region=fiber_photometry_response_series_metadata["fiber_photometry_table_region"],
         )
         # Validate stimulus channel name
-        concatenated_data = np.array([])
-        concatenated_timestamps = np.array([])
+        data_segments = []
+        timestamps_segments = []
+        if stub_test:
+            assert t2 == 0.0, (
+                f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
+            )
+            t2 = t1 + 1.0
         for i, stimulus_channel_name in enumerate(stimulus_channel_names):
             if stimulus_channel_name not in self.available_stimulus_channel_names[self._target_area][self._subject_id]:
                 raise ValueError(
@@ -681,18 +701,15 @@ class ConcatenatedHadjas2025ProcessedFiberPhotometryInterface(Hadjas2025Processe
                     f"Available: {self.available_stimulus_channel_names[self._target_area][self._subject_id]}"
                 )
             # Load Data
-            if stub_test:
-                assert t2 == 0.0, (
-                    f"stub_test cannot be used with a specified t2 ({t2}). Use t2=0.0 for stub_test or set stub_test=False."
-                )
-                t2 = t1 + 1.0
             data = self._extract_signal(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
 
             # Get the timing information
-            self._starting_time = segment_starting_times[i]
-            timestamps = self.get_timestamps(t1=t1, t2=t2, stimulus_channel_name=stimulus_channel_name)
-            concatenated_data = np.concatenate((concatenated_data, data))
-            concatenated_timestamps = np.concatenate((concatenated_timestamps, timestamps))
+            timestamps = segment_starting_times[i] + t1 + np.arange(len(data)) / self.get_sampling_frequency()
+            data_segments.append(data)
+            timestamps_segments.append(timestamps)
+
+        concatenated_data = np.concatenate(data_segments)
+        concatenated_timestamps = np.concatenate(timestamps_segments)
 
         # Fill gaps with NaNs
         if fill_gaps:

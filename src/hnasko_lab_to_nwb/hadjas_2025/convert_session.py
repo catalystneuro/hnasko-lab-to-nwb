@@ -3,9 +3,9 @@
 from datetime import datetime
 from pathlib import Path
 from typing import Union
+from zoneinfo import ZoneInfo
 
 import pandas as pd
-import pytz
 
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface import (
     ConcatenatedTDTFiberPhotometryInterface,
@@ -94,6 +94,44 @@ def update_coordinates_for_left_hemisphere(metadata: dict) -> dict:
     # Update the metadata in place
     update_value(updated_metadata)
     return updated_metadata
+
+
+def localize_session_start_time(session_start_datetime: datetime) -> datetime:
+    """Attach the lab's time zone (America/Los_Angeles) to a session start time read from a TDT block folder name.
+
+    Parameters
+    ----------
+    session_start_datetime : datetime
+        Naive session start time, in the local time of the recording computer.
+
+    Returns
+    -------
+    datetime
+        The session start time with its time zone.
+    """
+    return session_start_datetime.replace(tzinfo=ZoneInfo("America/Los_Angeles"))
+
+
+def filter_optogenetics_metadata(metadata: dict, stimulus_location: str) -> None:
+    """Remove optogenetics entries for stimulus sites other than stimulus_location, in place.
+
+    Parameters
+    ----------
+    metadata : dict
+        The metadata dictionary with an "Optogenetics" section.
+    stimulus_location : str
+        Location of the stimulus (e.g., "PPN", "STN").
+    """
+    optogenetics = metadata["Optogenetics"]
+    optogenetics["OptogeneticEffectors"] = [
+        item for item in optogenetics["OptogeneticEffectors"] if stimulus_location in item["name"]
+    ]
+    optogenetics["OptogeneticVirusInjections"] = [
+        item for item in optogenetics["OptogeneticVirusInjections"] if stimulus_location in item["name"]
+    ]
+    optogenetics["OptogeneticSitesTable"]["rows"] = [
+        row for row in optogenetics["OptogeneticSitesTable"]["rows"] if stimulus_location in row["effector"]
+    ]
 
 
 def varying_frequencies_session_to_nwb(
@@ -314,7 +352,7 @@ def varying_frequencies_session_to_nwb(
     metadata["Subject"]["sex"] = subject_metadata["Sex"]
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
-    metadata["NWBFile"]["session_start_time"] = session_start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
+    metadata["NWBFile"]["session_start_time"] = localize_session_start_time(session_start_datetime)
 
     # Remove entries for other target areas from metadata
     for key in metadata["Ophys"]["FiberPhotometry"].keys():
@@ -328,15 +366,7 @@ def varying_frequencies_session_to_nwb(
         metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"][i]["stream_indices"] = stream_indices
 
     # Remove entries for other stimulus sites from metadata
-    for item in metadata["Optogenetics"]["OptogeneticEffectors"]:
-        if stimulus_location not in item["name"]:
-            metadata["Optogenetics"]["OptogeneticEffectors"].remove(item)
-    for item in metadata["Optogenetics"]["OptogeneticVirusInjections"]:
-        if stimulus_location not in item["name"]:
-            metadata["Optogenetics"]["OptogeneticVirusInjections"].remove(item)
-    for row in metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"]:
-        if stimulus_location not in row["effector"]:
-            metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"].remove(row)
+    filter_optogenetics_metadata(metadata=metadata, stimulus_location=stimulus_location)
 
     # Run conversion
     converter.run_conversion(
@@ -539,7 +569,7 @@ def varying_durations_session_to_nwb(  #
     metadata["Subject"]["sex"] = subject_metadata["Sex"]
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = session_description
-    metadata["NWBFile"]["session_start_time"] = session_start_datetime.replace(tzinfo=pytz.timezone("Europe/London"))
+    metadata["NWBFile"]["session_start_time"] = localize_session_start_time(session_start_datetime)
 
     # Remove entries for other target areas from metadata
     if target_area == "STN_to_Anxa1" or target_area == "PPN_to_Anxa1":
@@ -555,15 +585,7 @@ def varying_durations_session_to_nwb(  #
         metadata["Ophys"]["FiberPhotometry"]["FiberPhotometryResponseSeries"][i]["stream_indices"] = stream_indices
 
     # Remove entries for other stimulus sites from metadata
-    for item in metadata["Optogenetics"]["OptogeneticEffectors"]:
-        if stimulus_location not in item["name"]:
-            metadata["Optogenetics"]["OptogeneticEffectors"].remove(item)
-    for item in metadata["Optogenetics"]["OptogeneticVirusInjections"]:
-        if stimulus_location not in item["name"]:
-            metadata["Optogenetics"]["OptogeneticVirusInjections"].remove(item)
-    for row in metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"]:
-        if stimulus_location not in row["effector"]:
-            metadata["Optogenetics"]["OptogeneticSitesTable"]["rows"].remove(row)
+    filter_optogenetics_metadata(metadata=metadata, stimulus_location=stimulus_location)
 
     # Run conversion
     converter.run_conversion(
