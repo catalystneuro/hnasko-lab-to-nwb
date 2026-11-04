@@ -21,10 +21,10 @@ from hnasko_lab_to_nwb.hadjas_2025.utils.train_durations import label_train_dura
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 METADATA_FOLDER_PATH = Path(__file__).parent / "metadata"
-SHARED_METADATA_FILE_NAMES = ("general_metadata.yaml", "subject_metadata.yaml", "devices_metadata.yaml")
 SESSION_CONFIG_FILE_PATH = METADATA_FOLDER_PATH / "session_config.yaml"
-RIG_DEVICES_METADATA_FILE_PATH = METADATA_FOLDER_PATH / "rig_devices_metadata.yaml"
-EXTERNAL_RESOURCES_METADATA_FILE_PATH = METADATA_FOLDER_PATH / "external_resources_metadata.yaml"
+EXTERNAL_RESOURCES_METADATA_FILE_PATH = (
+    METADATA_FOLDER_PATH / "external_resources_metadata.yaml"
+)
 
 
 def load_session_config() -> dict:
@@ -43,13 +43,20 @@ def get_rig_settings(sampling_frequency: float) -> dict:
     Returns
     -------
     dict
-        The rig name ("rig_name") and the Fi1r channels holding the signal ("stream_indices", None for all).
+        The rig name ("rig_name"), the Fi1r channels holding the signal ("stream_indices", None for all) and the
+        rig's device metadata ("metadata"), which updates the shared devices.
     """
     for rig_name, rig_config in load_session_config()["rigs"].items():
         if abs(rig_config["fi1r_sampling_frequency"] - sampling_frequency) < 1.0:
             channel = rig_config["fi1r_signal_channel"]
-            return dict(rig_name=rig_name, stream_indices=None if channel is None else [channel])
-    raise ValueError(f"No rig in the session config records Fi1r at {sampling_frequency} Hz.")
+            return dict(
+                rig_name=rig_name,
+                stream_indices=None if channel is None else [channel],
+                metadata=rig_config["metadata"],
+            )
+    raise ValueError(
+        f"No rig in the session config records Fi1r at {sampling_frequency} Hz."
+    )
 
 
 def get_raw_stream_settings(folder_path: Path) -> dict:
@@ -63,10 +70,13 @@ def get_raw_stream_settings(folder_path: Path) -> dict:
     Returns
     -------
     dict
-        "sampling_frequency" (Hz) of Fi1r, plus "rig_name" and "stream_indices" from get_rig_settings.
+        "sampling_frequency" (Hz) of Fi1r, plus "rig_name", "stream_indices" and "metadata" from
+        get_rig_settings.
     """
     sampling_frequency = float(read_tdt_stream(Path(folder_path), "Fi1r").fs)
-    return dict(sampling_frequency=sampling_frequency, **get_rig_settings(sampling_frequency))
+    return dict(
+        sampling_frequency=sampling_frequency, **get_rig_settings(sampling_frequency)
+    )
 
 
 def load_cohort_metadata(recording_type: str) -> dict:
@@ -82,27 +92,11 @@ def load_cohort_metadata(recording_type: str) -> dict:
     dict
         The merged metadata.
     """
-    metadata = dict()
-    for file_name in SHARED_METADATA_FILE_NAMES:
-        metadata = dict_deep_update(metadata, load_dict_from_file(METADATA_FOLDER_PATH / file_name))
-    cohort_file_path = METADATA_FOLDER_PATH / f"{recording_type.replace(' ', '_')}_metadata.yaml"
+    metadata = load_dict_from_file(METADATA_FOLDER_PATH / "general_metadata.yaml")
+    cohort_file_path = (
+        METADATA_FOLDER_PATH / f"{recording_type.replace(' ', '_')}_metadata.yaml"
+    )
     return dict_deep_update(metadata, load_dict_from_file(cohort_file_path))
-
-
-def load_rig_devices_metadata(rig_name: str) -> dict:
-    """Load the devices of one recording rig (metadata/rig_devices_metadata.yaml), which update the shared devices.
-
-    Parameters
-    ----------
-    rig_name : str
-        Rig name from get_rig_settings (e.g. "RZ5P", "RZ10x").
-
-    Returns
-    -------
-    dict
-        The rig's "DeviceModels" (and "Devices") entries.
-    """
-    return load_dict_from_file(RIG_DEVICES_METADATA_FILE_PATH)[rig_name]
 
 
 def load_external_resources_metadata() -> dict:
@@ -116,7 +110,9 @@ def load_external_resources_metadata() -> dict:
     dict
         The "ExternalResources" metadata, one map of terms per kind of value, keyed by the value they annotate.
     """
-    return load_dict_from_file(EXTERNAL_RESOURCES_METADATA_FILE_PATH)["ExternalResources"]
+    return load_dict_from_file(EXTERNAL_RESOURCES_METADATA_FILE_PATH)[
+        "ExternalResources"
+    ]
 
 
 def get_target_area_for_subject(file_path: Path, subject_id: str) -> tuple[str, str]:
@@ -168,10 +164,13 @@ def find_tdt_folder_paths(protocol_folder_path: Path, subject_id: str) -> list[P
     tdt_folder_paths = [
         folder_path
         for folder_path in candidate_folder_paths
-        if folder_path.is_dir() and folder_path.name.lower().startswith(f"{subject_id.lower()}-")
+        if folder_path.is_dir()
+        and folder_path.name.lower().startswith(f"{subject_id.lower()}-")
     ]
     if len(tdt_folder_paths) == 0:
-        raise FileNotFoundError(f"No TDT block for {subject_id} in {protocol_folder_path}")
+        raise FileNotFoundError(
+            f"No TDT block for {subject_id} in {protocol_folder_path}"
+        )
     for folder_path in tdt_folder_paths:
         nested_tsq_file_paths = list(folder_path.glob("*/*.tsq"))
         if nested_tsq_file_paths:
@@ -179,7 +178,9 @@ def find_tdt_folder_paths(protocol_folder_path: Path, subject_id: str) -> list[P
                 f"TDT block {folder_path} holds another block, {nested_tsq_file_paths[0].parent.name}. "
                 "Move nested blocks out of block folders before converting."
             )
-    return sorted(tdt_folder_paths, key=lambda folder_path: folder_path.name.split("-", 1)[1])
+    return sorted(
+        tdt_folder_paths, key=lambda folder_path: folder_path.name.split("-", 1)[1]
+    )
 
 
 def normalize_hemisphere(hemisphere) -> str:
@@ -196,7 +197,10 @@ def normalize_hemisphere(hemisphere) -> str:
         "Left" or "Right".
     """
     hemisphere_values = dict(left="Left", l="Left", right="Right", r="Right")
-    if not isinstance(hemisphere, str) or hemisphere.strip().lower() not in hemisphere_values:
+    if (
+        not isinstance(hemisphere, str)
+        or hemisphere.strip().lower() not in hemisphere_values
+    ):
         raise ValueError(f"Unknown hemisphere {hemisphere!r} in the overview sheet.")
     return hemisphere_values[hemisphere.strip().lower()]
 
@@ -253,7 +257,9 @@ def update_coordinates_for_left_hemisphere(metadata: dict) -> dict:
     return updated_metadata
 
 
-def read_trains(folder_path: Path, epoc_names: list[str]) -> tuple[np.ndarray, np.ndarray]:
+def read_trains(
+    folder_path: Path, epoc_names: list[str]
+) -> tuple[np.ndarray, np.ndarray]:
     """Read the onsets and offsets of the stimulation trains of a TDT block that have an offset.
 
     Parameters
@@ -270,11 +276,17 @@ def read_trains(folder_path: Path, epoc_names: list[str]) -> tuple[np.ndarray, n
     """
     epocs = read_tdt_epocs(Path(folder_path))
     names = [name for name in epoc_names if name in epocs]
-    onsets = np.concatenate([np.asarray(epocs[name]["onset"]) for name in names] or [np.array([])])
-    offsets = np.concatenate([np.asarray(epocs[name]["offset"]) for name in names] or [np.array([])])
+    onsets = np.concatenate(
+        [np.asarray(epocs[name]["onset"]) for name in names] or [np.array([])]
+    )
+    offsets = np.concatenate(
+        [np.asarray(epocs[name]["offset"]) for name in names] or [np.array([])]
+    )
     has_offset = np.isfinite(offsets)
     if not has_offset.any():
-        raise ValueError(f"No stimulation epocs {epoc_names} with an offset in {folder_path}.")
+        raise ValueError(
+            f"No stimulation epocs {epoc_names} with an offset in {folder_path}."
+        )
     return onsets[has_offset], offsets[has_offset]
 
 
@@ -297,7 +309,9 @@ def get_train_duration_label(folder_path: Path, epoc_names: list[str]) -> str:
     median_duration = float(np.median(offsets - onsets))
     label = label_train_duration(median_duration)
     if label is None:
-        raise ValueError(f"Train duration {median_duration} s of {folder_path} is not one of the protocol's.")
+        raise ValueError(
+            f"Train duration {median_duration} s of {folder_path} is not one of the protocol's."
+        )
     return label
 
 
@@ -327,7 +341,9 @@ def get_train_duration_trials(folder_path: Path, epoc_names: list[str]) -> list[
     trials = []
     for label in set(labels):
         if label is None:
-            raise ValueError(f"A train of {folder_path} has a duration that is not one of the protocol's.")
+            raise ValueError(
+                f"A train of {folder_path} has a duration that is not one of the protocol's."
+            )
         trials.append(
             dict(
                 start_time=float(onsets[labels == label].min()),
@@ -338,7 +354,9 @@ def get_train_duration_trials(folder_path: Path, epoc_names: list[str]) -> list[
     trials = sorted(trials, key=lambda trial: trial["start_time"])
     for trial, next_trial in zip(trials, trials[1:]):
         if trial["stop_time"] > next_trial["start_time"]:
-            raise ValueError(f"Trains of different durations alternate in {folder_path}.")
+            raise ValueError(
+                f"Trains of different durations alternate in {folder_path}."
+            )
     return trials
 
 
@@ -379,7 +397,12 @@ def get_block_trials(
 
 
 def match_mat_segments(
-    mat_file_path: Path, target_area: str, mat_subject_id: str, folder_paths: list[Path], *, epoc_names: list[str]
+    mat_file_path: Path,
+    target_area: str,
+    mat_subject_id: str,
+    folder_paths: list[Path],
+    *,
+    epoc_names: list[str],
 ) -> list[str]:
     """Find the segment of the lab's .mat file that holds each TDT block, by number of samples.
 
@@ -415,13 +438,23 @@ def match_mat_segments(
     with h5py.File(mat_file_path, "r") as f:
         subject_group = f["Gc_raw"][target_area][mat_subject_id]
         # segments are (1, number of samples), or (number of samples, 1) in some files
-        segment_name_to_length = {name: max(subject_group[name].shape) for name in subject_group}
+        segment_name_to_length = {
+            name: max(subject_group[name].shape) for name in subject_group
+        }
     segment_names = []
     for folder_path in folder_paths:
-        number_of_samples = np.asarray(read_tdt_stream(Path(folder_path), "Fi1r").data).shape[-1]
-        matches = [name for name, length in segment_name_to_length.items() if length == number_of_samples]
+        number_of_samples = np.asarray(
+            read_tdt_stream(Path(folder_path), "Fi1r").data
+        ).shape[-1]
+        matches = [
+            name
+            for name, length in segment_name_to_length.items()
+            if length == number_of_samples
+        ]
         if len(matches) > 1:
-            label = get_train_duration_label(folder_path=folder_path, epoc_names=epoc_names)
+            label = get_train_duration_label(
+                folder_path=folder_path, epoc_names=epoc_names
+            )
             matches = [name for name in matches if name == f"s{label}"]
         if len(matches) != 1:
             raise ValueError(
@@ -450,7 +483,9 @@ def get_recording_site(recording_type: str, protocol_folder_path: Path) -> str |
     cohort_config = load_session_config()["cohorts"][recording_type]
     if "subgroup_folder_prefix" not in cohort_config:
         return None
-    return Path(protocol_folder_path).name.removeprefix(f"{cohort_config['subgroup_folder_prefix']} ")
+    return Path(protocol_folder_path).name.removeprefix(
+        f"{cohort_config['subgroup_folder_prefix']} "
+    )
 
 
 def get_raw_series_site(subject_metadata: dict, recording_site: str | None) -> str:
@@ -468,10 +503,16 @@ def get_raw_series_site(subject_metadata: dict, recording_site: str | None) -> s
     str
         The site of the Cell_type subgroup folder, or else the Recording Site of the overview sheet.
     """
-    return recording_site if recording_site is not None else subject_metadata["Recording Site"]
+    return (
+        recording_site
+        if recording_site is not None
+        else subject_metadata["Recording Site"]
+    )
 
 
-def get_session_id(protocol: str, recording_type: str, recording_site: str | None) -> str:
+def get_session_id(
+    protocol: str, recording_type: str, recording_site: str | None
+) -> str:
     """Get the session ID: the protocol's, followed by the recording site for cohorts recorded at several sites.
 
     Parameters
@@ -495,7 +536,9 @@ def get_session_id(protocol: str, recording_type: str, recording_site: str | Non
     return session_id
 
 
-def get_session_description(protocol: str, epoc_names: list[str], number_of_blocks: int) -> str:
+def get_session_description(
+    protocol: str, epoc_names: list[str], number_of_blocks: int
+) -> str:
     """Get the session description of a protocol, which differs for 2022 blocks and for sessions of one block.
 
     Parameters
@@ -515,7 +558,9 @@ def get_session_description(protocol: str, epoc_names: list[str], number_of_bloc
         session_description of the protocol.
     """
     protocol_config = load_session_config()["protocols"][protocol]
-    for epoc_name, session_description in protocol_config.get("session_description_by_epoc", {}).items():
+    for epoc_name, session_description in protocol_config.get(
+        "session_description_by_epoc", {}
+    ).items():
         if epoc_name in epoc_names:
             return session_description
     if number_of_blocks == 1 and "session_description_single_block" in protocol_config:
@@ -523,7 +568,9 @@ def get_session_description(protocol: str, epoc_names: list[str], number_of_bloc
     return protocol_config["session_description"]
 
 
-def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_cohort_folder: str) -> Path:
+def find_mat_file_path(
+    protocol_folder_path: Path, cohort_data_folder: str, mat_cohort_folder: str
+) -> Path:
     """Find the lab's processed .mat file of a protocol folder, possibly in another cohort's folder.
 
     Parameters
@@ -548,7 +595,9 @@ def find_mat_file_path(protocol_folder_path: Path, cohort_data_folder: str, mat_
     mat_folder_path = data_dir_path / mat_cohort_folder / relative_protocol_folder_path
     mat_file_paths = list(mat_folder_path.glob("*.mat"))
     if len(mat_file_paths) != 1:
-        raise FileNotFoundError(f"Expected one .mat file in {mat_folder_path}, found {len(mat_file_paths)}.")
+        raise FileNotFoundError(
+            f"Expected one .mat file in {mat_folder_path}, found {len(mat_file_paths)}."
+        )
     return mat_file_paths[0]
 
 
@@ -573,10 +622,16 @@ def get_led_modulation(session_start_time: datetime) -> dict:
         if date.fromisoformat(str(entry["first_recording_date"])) <= recording_date
     ]
     if len(entries) == 0:
-        raise ValueError(f"No LED modulation in the session config for a recording on {recording_date}.")
-    entry = max(entries, key=lambda entry: date.fromisoformat(str(entry["first_recording_date"])))
+        raise ValueError(
+            f"No LED modulation in the session config for a recording on {recording_date}."
+        )
+    entry = max(
+        entries,
+        key=lambda entry: date.fromisoformat(str(entry["first_recording_date"])),
+    )
     return dict(
-        calcium_signal_in_hz=entry["calcium_signal_in_hz"], isosbestic_control_in_hz=entry["isosbestic_control_in_hz"]
+        calcium_signal_in_hz=entry["calcium_signal_in_hz"],
+        isosbestic_control_in_hz=entry["isosbestic_control_in_hz"],
     )
 
 
@@ -596,8 +651,12 @@ def add_led_modulation_to_metadata(metadata: dict, led_modulation: dict) -> None
     )
     for signal, frequency in signal_to_frequency.items():
         excitation_source = metadata["Devices"][f"excitation_source_{signal}"]
-        excitation_source["description"] = f"{excitation_source['description']} Modulated at {frequency:g} Hz."
-    demodulated_series_prefix_to_signal = dict(Gc_raw_="calcium_signal", af_raw_="isosbestic_control")
+        excitation_source["description"] = (
+            f"{excitation_source['description']} Modulated at {frequency:g} Hz."
+        )
+    demodulated_series_prefix_to_signal = dict(
+        Gc_raw_="calcium_signal", af_raw_="isosbestic_control"
+    )
     for key, series_metadata in metadata["FiberPhotometry"].items():
         for prefix, signal in demodulated_series_prefix_to_signal.items():
             if key.startswith(prefix):
@@ -636,7 +695,9 @@ def filter_optogenetics_metadata(metadata: dict, stimulus_location: str) -> None
     """
     optogenetics = metadata["Optogenetics"]
     optogenetics["OptogeneticEffectors"] = {
-        key: item for key, item in optogenetics["OptogeneticEffectors"].items() if stimulus_location in item["name"]
+        key: item
+        for key, item in optogenetics["OptogeneticEffectors"].items()
+        if stimulus_location in item["name"]
     }
     optogenetics["OptogeneticVirusInjections"] = {
         key: item
@@ -700,14 +761,20 @@ def session_to_nwb(
     protocol_config = session_config["protocols"][protocol]
     cohort_config = session_config["cohorts"][recording_type]
     subject_config = session_config["subjects"].get(subject_id, {})
-    mat_cohort_folder = subject_config.get("mat_cohort_folder", cohort_config["data_folder"])
+    mat_cohort_folder = subject_config.get(
+        "mat_cohort_folder", cohort_config["data_folder"]
+    )
     data_streams = dict(session_config["data_streams"], **(data_streams or {}))
     unknown_data_streams = set(data_streams) - set(session_config["data_streams"])
     if unknown_data_streams:
         raise ValueError(f"Unknown data streams {sorted(unknown_data_streams)}.")
     protocol_folder_path = Path(protocol_folder_path)
-    recording_site = get_recording_site(recording_type=recording_type, protocol_folder_path=protocol_folder_path)
-    session_id = get_session_id(protocol=protocol, recording_type=recording_type, recording_site=recording_site)
+    recording_site = get_recording_site(
+        recording_type=recording_type, protocol_folder_path=protocol_folder_path
+    )
+    session_id = get_session_id(
+        protocol=protocol, recording_type=recording_type, recording_site=recording_site
+    )
     output_dir_path = Path(output_dir_path)
     if stub_test:
         output_dir_path = output_dir_path / "nwb_stub"
@@ -718,25 +785,37 @@ def session_to_nwb(
     if normalize_hemisphere(subject_metadata["Hemisphere"]) == "Left":
         editable_metadata = update_coordinates_for_left_hemisphere(editable_metadata)
 
-    tdt_folder_paths = find_tdt_folder_paths(protocol_folder_path=protocol_folder_path, subject_id=subject_id)
+    tdt_folder_paths = find_tdt_folder_paths(
+        protocol_folder_path=protocol_folder_path, subject_id=subject_id
+    )
 
     raw_stream_settings = get_raw_stream_settings(tdt_folder_paths[0])
-    editable_metadata = dict_deep_update(editable_metadata, load_rig_devices_metadata(raw_stream_settings["rig_name"]))
+    editable_metadata = dict_deep_update(
+        editable_metadata, raw_stream_settings["metadata"]
+    )
     raw_source_data = dict(
         folder_paths=tdt_folder_paths,
         stream_name="Fi1r",
         metadata_key=f"Fi1r_{get_raw_series_site(subject_metadata=subject_metadata, recording_site=recording_site)}",
         stream_indices=raw_stream_settings["stream_indices"],
     )
-    session_start_time = get_session_start_time(read_tdt_start_timestamp(tdt_folder_paths[0]))
-    segment_starting_times = ConcatenatedTDTFiberPhotometryInterface(**raw_source_data).segment_starting_times
+    session_start_time = get_session_start_time(
+        read_tdt_start_timestamp(tdt_folder_paths[0])
+    )
+    segment_starting_times = ConcatenatedTDTFiberPhotometryInterface(
+        **raw_source_data
+    ).segment_starting_times
     epoc_names = list(protocol_config["epoc_name_to_frequency_in_hz"])
     if protocol == "Varying frequencies" and len(tdt_folder_paths) == 1:
         # SN pan GABA PPN records the three train durations one after the other in one block
-        block_trials = get_train_duration_trials(folder_path=tdt_folder_paths[0], epoc_names=epoc_names)
+        block_trials = get_train_duration_trials(
+            folder_path=tdt_folder_paths[0], epoc_names=epoc_names
+        )
     else:
         block_trials = get_block_trials(
-            folder_paths=tdt_folder_paths, segment_starting_times=segment_starting_times, epoc_names=epoc_names
+            folder_paths=tdt_folder_paths,
+            segment_starting_times=segment_starting_times,
+            epoc_names=epoc_names,
         )
 
     source_data = dict()
@@ -754,7 +833,9 @@ def session_to_nwb(
             cohort_data_folder=cohort_config["data_folder"],
             mat_cohort_folder=mat_cohort_folder,
         )
-        target_area, mat_subject_id = get_target_area_for_subject(mat_file_path, subject_id)
+        target_area, mat_subject_id = get_target_area_for_subject(
+            mat_file_path, subject_id
+        )
         mat_segment_names = match_mat_segments(
             mat_file_path=mat_file_path,
             target_area=target_area,
@@ -775,7 +856,11 @@ def session_to_nwb(
                 subject_id=mat_subject_id,
                 stream_name=stream_name,
                 target_area=target_area,
-                sampling_frequency=raw_stream_settings["sampling_frequency"] if "raw" in stream_name else 100.0,
+                sampling_frequency=(
+                    raw_stream_settings["sampling_frequency"]
+                    if "raw" in stream_name
+                    else 100.0
+                ),
             )
             conversion_options[interface_name] = dict(
                 stub_test=stub_test,
@@ -785,11 +870,15 @@ def session_to_nwb(
 
     # Behavioral video
     video_time_alignment_dict = None
-    if data_streams["behavioral_video"] and stimulus_location in cohort_config.get("behavioral_video_inputs", []):
+    if data_streams["behavioral_video"] and stimulus_location in cohort_config.get(
+        "behavioral_video_inputs", []
+    ):
         from hnasko_lab_to_nwb.hadjas_2025.utils import get_video_aligned_starting_time
 
         video_time_alignment_dict = dict()
-        video_folder_path = protocol_folder_path.parents[1] / "AnyMaze videos_mp4" / protocol
+        video_folder_path = (
+            protocol_folder_path.parents[1] / "AnyMaze videos_mp4" / protocol
+        )
         video_metadata_file_path = video_folder_path / "video_metadata.xlsx"
         video_file_paths = list(video_folder_path.glob(f"{subject_id}*.mp4"))
         expected_number_of_videos = 1 if protocol == "Varying durations" else 3
@@ -802,20 +891,35 @@ def session_to_nwb(
             if expected_number_of_videos == 1:
                 interface_name, video_name = "Video", "BehavioralVideo"
             else:
-                suffix = video_file_path.name.split("_")[-1].split(".")[0]  # train duration, e.g. "250ms"
-                interface_name, video_name = f"Video_{suffix}", f"BehavioralVideo_{suffix}"
-            source_data[interface_name] = dict(file_paths=[video_file_path], video_name=video_name)
+                suffix = video_file_path.name.split("_")[-1].split(".")[
+                    0
+                ]  # train duration, e.g. "250ms"
+                interface_name, video_name = (
+                    f"Video_{suffix}",
+                    f"BehavioralVideo_{suffix}",
+                )
+            source_data[interface_name] = dict(
+                file_paths=[video_file_path], video_name=video_name
+            )
             video_starting_time = get_video_aligned_starting_time(
                 video_metadata_file_path=video_metadata_file_path,
                 video_file_path=video_file_path,
-                session_starting_time=session_start_time.replace(tzinfo=None),  # video metadata times are local
+                session_starting_time=session_start_time.replace(
+                    tzinfo=None
+                ),  # video metadata times are local
             )
-            video_time_alignment_dict[interface_name] = dict(video_starting_time=video_starting_time)
+            video_time_alignment_dict[interface_name] = dict(
+                video_starting_time=video_starting_time
+            )
 
     # Optogenetic stimulation
     source_data.update(OptogeneticStimulus=dict(folder_paths=tdt_folder_paths))
     conversion_options.update(
-        OptogeneticStimulus=dict(tdt_stimulus_channel_to_frequency=protocol_config["epoc_name_to_frequency_in_hz"])
+        OptogeneticStimulus=dict(
+            tdt_stimulus_channel_to_frequency=protocol_config[
+                "epoc_name_to_frequency_in_hz"
+            ]
+        )
     )
 
     converter = Hadjas2025NWBConverter(
@@ -834,23 +938,36 @@ def session_to_nwb(
     metadata["Subject"]["sex"] = subject_metadata["Sex"]
     metadata["NWBFile"]["session_id"] = session_id
     metadata["NWBFile"]["session_description"] = get_session_description(
-        protocol=protocol, epoc_names=list(read_tdt_epocs(tdt_folder_paths[0])), number_of_blocks=len(tdt_folder_paths)
+        protocol=protocol,
+        epoc_names=list(read_tdt_epocs(tdt_folder_paths[0])),
+        number_of_blocks=len(tdt_folder_paths),
     )
     if cohort_config.get("site_in_session_id", False):
         # Anxa1 mice have one session per recording site
-        site_location = metadata["FiberPhotometry"]["FiberPhotometryTable"]["rows"][f"{recording_site}_465"]["location"]
-        metadata["NWBFile"]["session_description"] += f" Fluorescence was recorded through the {site_location} fiber."
+        site_location = metadata["FiberPhotometry"]["FiberPhotometryTable"]["rows"][
+            f"{recording_site}_465"
+        ]["location"]
+        metadata["NWBFile"][
+            "session_description"
+        ] += f" Fluorescence was recorded through the {site_location} fiber."
     metadata["NWBFile"]["session_start_time"] = session_start_time
-    add_led_modulation_to_metadata(metadata=metadata, led_modulation=get_led_modulation(session_start_time))
+    add_led_modulation_to_metadata(
+        metadata=metadata, led_modulation=get_led_modulation(session_start_time)
+    )
 
     # Remove entries for other stimulus sites from metadata
     filter_optogenetics_metadata(metadata=metadata, stimulus_location=stimulus_location)
 
     try:
         converter.run_conversion(
-            metadata=metadata, nwbfile_path=nwbfile_path, conversion_options=conversion_options, overwrite=overwrite
+            metadata=metadata,
+            nwbfile_path=nwbfile_path,
+            conversion_options=conversion_options,
+            overwrite=overwrite,
         )
     finally:
         clear_tdt_block_cache()
     if verbose:
-        print(f"Session {session_id} for subject {subject_id} converted successfully to NWB format at {nwbfile_path}")
+        print(
+            f"Session {session_id} for subject {subject_id} converted successfully to NWB format at {nwbfile_path}"
+        )
