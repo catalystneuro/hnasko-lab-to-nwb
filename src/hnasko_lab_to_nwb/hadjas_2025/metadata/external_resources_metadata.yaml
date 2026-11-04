@@ -1,6 +1,17 @@
 # Ontology terms shared by all Hadjas 2025 cohorts, written into the file as HERD references. Each map is keyed by the
-# exact value it annotates (Subject.species, Subject.strain, or a location string).
+# exact value it annotates (Subject.species, Subject.strain, a location string, an experimenter name, or the institution).
 ExternalResources:
+  experimenter:
+    Hadjas, Lotfi:
+      id: orcid:0000-0003-1605-3601
+      uri: https://orcid.org/0000-0003-1605-3601
+    Hollon, Nick:
+      id: orcid:0000-0003-4827-1582
+      uri: https://orcid.org/0000-0003-4827-1582
+  institution:
+    UC San Diego School of Medicine:  # ROR has no record for the school, so this is the university
+      id: ror:0168r3w48
+      uri: https://ror.org/0168r3w48
   species:
     Mus musculus:
       id: NCBITaxon:10090
@@ -10,7 +21,7 @@ ExternalResources:
       id: RRID:IMSR_JAX:000664
       uri: https://scicrunch.org/resolver/RRID:IMSR_JAX:000664
   # Allen Mouse Brain Atlas (MBA) and UBERON terms for the fiber, injection and recording locations
-  brain_regions:
+  anatomical_structures:
     substantia nigra pars compacta (SNc):
       - id: MBA:374
         uri: https://purl.brain-bican.org/ontology/mbao/MBA_374

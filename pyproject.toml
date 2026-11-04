@@ -18,7 +18,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "neuroconv @ git+https://github.com/catalystneuro/neuroconv.git@2ea9985805b36e0738a6f823585c2a8ed69272b2",
+  "neuroconv @ git+https://github.com/catalystneuro/neuroconv.git@0b1d6d4bd38f6fba982d89748bb5535731a3f921",
   "nwbinspector",
   "ndx-fiber-photometry==0.2.4",
   "ndx-ophys-devices==0.3.1",
@@ -83,5 +83,3 @@ Repository="https://github.com/catalystneuro/hnasko-lab-to-nwb"
 [tool.codespell]
 ignore-regex = '"image/png": ".*"'
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
