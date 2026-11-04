@@ -1,0 +1,87 @@
+# Settings that differ between cohorts, protocols and subjects of the Hadjas 2025 dataset.
+# Data streams written to every session; set one to false to skip it. A raw-only conversion (processed: false)
+# needs only the TDT blocks, not the lab's .mat file. Optogenetic epochs are always written.
+data_streams:
+  raw: true  # Fi1r photodetector signal of the TDT blocks
+  processed: true  # demodulated, downsampled and dF/F signals of the lab's .mat file
+  behavioral_video: false  # AnyMaze videos of the cohorts' behavioral_video_inputs, not part of the Hadjas 2025 paper
+# Each cohort key is the recording type of its metadata file (<recording type>_metadata.yaml).
+cohorts:
+  SN pan GABA recordings:
+    sheet_name: SNr GABA  # sheet of ASAP FP Overview.xlsx
+    data_folder: SN pan GABA recordings
+    inputs: [PPN, STN]
+    behavioral_video_inputs: [PPN]  # AnyMaze videos, aligned to the TDT clock
+  SN pan DA recordings:
+    sheet_name: SNc pan-DA
+    data_folder: SN pan DA recordings
+    inputs: [PPN, STN]
+  GRABDA recordings:
+    sheet_name: GRAB DA
+    data_folder: GRABDA recordings
+    inputs: [PPN, STN]  # SNr and STN_mCherry inputs are added with their metadata
+  Str_DA_terminal recordings:
+    sheet_name: Striatal DA terminals
+    data_folder: Str_DA_terminal recordings
+    inputs: [STN]
+  Cell_type recordings_Vglut2:
+    sheet_name: DA subtypes
+    data_folder: Cell_type recordings
+    genotype: DAT-flp  # rows of the sheet whose genotype contains this (VGlut2-cre X DAT-flp)
+    subgroup_folder_prefix: Vglut2  # protocol subfolders are named "<prefix> <recording site>"; the site is taken from them
+    inputs: [PPN, STN]
+  Cell_type recordings_Anxa1:
+    sheet_name: DA subtypes
+    data_folder: Cell_type recordings
+    genotype: Anxa1
+    subgroup_folder_prefix: Anxa1
+    site_in_session_id: true  # Anxa1 mice are recorded in SNc, DLS or both, one session per site
+    inputs: [PPN, STN]
+# Recording rigs, identified by the sampling frequency of the raw Fi1r stream of each TDT block.
+# 24 kHz blocks have three Fi1r channels; only channel 2 carries the photodetector signal.
+# Rig names follow the lab's hardware list and are to be confirmed per block with the lab.
+rigs:
+  RZ10x:
+    fi1r_sampling_frequency: 6103.515625
+    fi1r_signal_channel: null  # one channel
+  RZ5P:
+    fi1r_sampling_frequency: 24414.0625
+    fi1r_signal_channel: 2
+# Protocols, keyed by the protocol folder name. Stimulation trains are TDT epocs; each epoc name maps to the
+# pulse frequency of its trains. Some blocks name the duration stores ssm_, ss1_ and ss4_; the 24 kHz rig
+# names them Sms_, S1s_, S4s_ and S6s_.
+protocols:
+  Varying durations:
+    session_id: varying_durations
+    session_description: "The subject is placed in a plastic tub and is recorded for 3.5 minutes. The subject receives a 40 Hz stimulation at various durations (i.e. 250ms, 1s and 4s) 5 times for each duration) with an inter-stimulus interval (ISI) of 10s. "
+    session_description_by_epoc:  # replaces session_description for blocks with this epoc (2022 recordings)
+      S6s_: "The subject is placed in a plastic tub and receives 40 Hz optogenetic stimulation trains of 250 ms, 1 s, 4 s and 16 s, in this order, with 10 s between the end of one train and the start of the next. The sequence is repeated 5 or 10 times depending on the cohort; the optogenetic epochs table lists every train."
+    epoc_name_to_frequency_in_hz:
+      sms_: 40.0
+      s1s_: 40.0
+      s4s_: 40.0
+      ssm_: 40.0
+      ss1_: 40.0
+      ss4_: 40.0
+      S1s_: 40.0
+      S4s_: 40.0
+      S6s_: 40.0
+      Sms_: 40.0
+  Varying frequencies:
+    session_id: varying_frequencies
+    session_description: "The subject is placed in a plastic tub and undergoes 3 recording sessions corresponding to a fixed duration of stimulation (i.e., 250ms, 1s, and 4s). Each session lasted 8 minutes. The subject receives optogenetic stimulation at varying frequencies (5 Hz, 10 Hz , 20 Hz and 40 Hz) 5 times for each duration with an ISI of 10s. "
+    epoc_name_to_frequency_in_hz:
+      H10_: 10.0
+      H20_: 20.0
+      H40_: 40.0
+      H05_: 5.0
+      HH5_: 5.0  # name of the 5 Hz store in the frequencies blocks of C3412, C3798 and C4707 (Vglut2, PPN)
+# Per-subject exceptions.
+subjects:
+  # The processed signals of the 2022 SN pan DA STN subjects are in the SN pan GABA STN .mat files (site SNc).
+  B8364: {mat_cohort_folder: SN pan GABA recordings}
+  B8369: {mat_cohort_folder: SN pan GABA recordings}
+  B8370: {mat_cohort_folder: SN pan GABA recordings}
+  B8427: {mat_cohort_folder: SN pan GABA recordings}
+  B8429: {mat_cohort_folder: SN pan GABA recordings}
+  B8612: {mat_cohort_folder: SN pan GABA recordings}

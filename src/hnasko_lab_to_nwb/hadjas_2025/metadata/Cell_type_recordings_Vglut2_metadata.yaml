@@ -115,7 +115,7 @@ FiberPhotometry:
         emission_filter_metadata_key: emission_filter
         excitation_filter_metadata_key: excitation_filter
         dichroic_mirror_metadata_key: dichroic_mirror
-  Fi1r_VG2:
+  Fi1r_SNc:
     name: raw_signal_SNc
     description: The raw modulated fluorescence signal from GCaMP6f calcium indicator in SNc Vglut2+ DA neurons, excited at
       465nm and 405nm, respectively.

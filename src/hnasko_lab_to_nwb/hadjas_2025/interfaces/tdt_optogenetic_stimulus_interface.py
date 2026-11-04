@@ -1,15 +1,16 @@
-from datetime import datetime
-from logging import warning
+import logging
 from typing import List
 import numpy as np
 
 from pydantic import DirectoryPath, validate_call
 from pynwb.file import NWBFile
 
+from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import read_tdt_epocs, read_tdt_start_timestamp
 from neuroconv.basetemporalalignmentinterface import BaseDataInterface
 from neuroconv.tools.nwb_helpers import _add_device_to_nwbfile
 from neuroconv.utils import DeepDict
-import pytz
+
+logger = logging.getLogger(__name__)
 
 
 def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
@@ -40,11 +41,10 @@ def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
         ViralVectorInjection,
     )
 
-    #  check if Optogenetic lab metadata already exists
-    if "optogenetics" in nwbfile.lab_meta_data:
-        optogenetics = nwbfile.lab_meta_data["optogenetics"]
-        if isinstance(optogenetics, OptogeneticExperimentMetadata):
-            return optogenetics
+    # Reuse the optogenetic experiment metadata if it was already added (its name is fixed by ndx-optogenetics)
+    for lab_meta_data in nwbfile.lab_meta_data.values():
+        if isinstance(lab_meta_data, OptogeneticExperimentMetadata):
+            return lab_meta_data
 
     optogenetics_metadata = metadata["Optogenetics"]
 
@@ -108,7 +108,7 @@ def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
 
 class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
     """
-    Data Interface for converting optogenetic stimulus data from a Hnasko Lab tdt files.
+    Data Interface for converting and concatenating optogenetic stimulus data from multiple Hnasko Lab tdt folders.
 
     Extracts optogenetic stimulus signals from TDT system, then parses into the ndx-optogenetic format.
 
@@ -118,7 +118,7 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
     - SNc pan-DA recordings (STN stimulation)
     """
 
-    keywords = ("optogenetic stimulus",)
+    keywords = ("processed optogenetic stimulus",)
     display_name = "Hadjas2025TDTOptogeneticStimulus"
     info = "Data Interface for converting optogenetic stimulus data from .tdt files from Hnasko Lab."
     associated_suffixes = ("Tbk", "Tdx", "tev", "tin", "tsq")
@@ -126,7 +126,7 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
     @validate_call
     def __init__(
         self,
-        folder_path: DirectoryPath,
+        folder_paths: List[DirectoryPath],
         verbose: bool = True,
     ):
         """Initialize the Hadjas2025TDTOptogeneticStimulusInterface.
@@ -139,7 +139,7 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
             Whether to print status messages, default = True.
         """
         super().__init__(
-            folder_path=folder_path,
+            folder_paths=folder_paths,
             verbose=verbose,
         )
         # This module should be here so ndx_optogenetics is in the global namespace when an pynwb.io object is created
@@ -170,174 +170,22 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
 
     def get_events(self) -> dict:
         """
-        Get the events from the Hadjas2025TDTOptogeneticStimulusInterface.
+        Get the epocs of all blocks, with times in seconds from the start of the first block.
 
         Returns
         -------
         dict
-            The events dictionary for this interface.
+            {epoc name: {"onset": list, "offset": list}}.
         """
-        from neuroconv.datainterfaces import TDTFiberPhotometryInterface
-
-        tdt_interface = TDTFiberPhotometryInterface(folder_path=self.source_data["folder_path"], stream_names=["Fi1r"])
-        events = tdt_interface.get_events()
-        return events
-
-    def add_to_nwbfile(
-        self,
-        nwbfile: NWBFile,
-        metadata: dict,
-        tdt_stimulus_channel_to_frequency: dict,
-    ):
-        """
-        Add the data to an NWBFile.
-
-        Parameters
-        ----------
-        nwbfile : pynwb.NWBFile
-            The in-memory object to add the data to.
-        metadata : dict
-            Metadata dictionary with information used to create the NWBFile.
-        tdt_stimulus_channel_to_frequency : dict
-            Mapping of TDT stimulus channel names to their corresponding frequencies.
-        """
-        from ndx_optogenetics import (
-            OptogeneticEpochsTable,
-        )
-
-        # Get or create OptogeneticEpochsTable
-        optogenetic_experiment_metadata = get_optogenetic_experiment_metadata(nwbfile=nwbfile, metadata=metadata)
-        optogenetic_sites_table = optogenetic_experiment_metadata.optogenetic_sites_table
-        # Create stimulation epochs table if it doesn't exist
-        opto_epochs_table = OptogeneticEpochsTable(
-            **metadata["Optogenetics"]["OptogeneticEpochsTable"],
-            target_tables={"optogenetic_sites": optogenetic_sites_table},
-        )
-        opto_epochs_table.add_column(name="stimulus_frequency", description="Frequency of the stimulation in Hz.")
-        # Populate
-        tdt_events = self.get_events()
-        for stream_name, stimulus_frequency in tdt_stimulus_channel_to_frequency.items():
-            if stream_name not in tdt_events:
-                warning(f"Stream name {stream_name} not found in TDT events. Skipping.")
-                continue
-            for start_time, stop_time in zip(tdt_events[stream_name]["onset"], tdt_events[stream_name]["offset"]):
-                if np.isinf(start_time) or np.isinf(stop_time):
-                    warning(f"Found infinite start or stop time for stream {stream_name}. Skipping this event.")
-                    continue
-                number_pulses_per_pulse_train = int((stop_time - start_time) * stimulus_frequency)
-                opto_epochs_table.add_row(
-                    start_time=start_time,
-                    stop_time=stop_time,
-                    stimulus_frequency=stimulus_frequency,
-                    stimulation_on=True,
-                    pulse_length_in_ms=1.0,  # Unknown
-                    period_in_ms=(1 / stimulus_frequency) * 1000,
-                    number_pulses_per_pulse_train=number_pulses_per_pulse_train,
-                    number_trains=1,
-                    intertrain_interval_in_ms=0.0,
-                    power_in_mW=metadata["Optogenetics"]["power_in_mW"],
-                    wavelength_in_nm=metadata["Optogenetics"]["excitation_wavelength_in_nm"],
-                    optogenetic_sites=[0],  # assuming single stimulation site for now
-                )
-
-        nwbfile.add_time_intervals(opto_epochs_table)
-
-
-class ConcatenatedHadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
-    """
-    Data Interface for converting and concatenating optogenetic stimulus data from multiple Hnasko Lab tdt folders.
-
-    Extracts optogenetic stimulus signals from TDT system, then parses into the ndx-optogenetic format.
-
-    Verified to work with:
-    - SNr GABA recordings (PPN stimulation)
-    - GRAB-DA recordings (DLS & TS sites, PPN stimulation)
-    - SNc pan-DA recordings (STN stimulation)
-    """
-
-    keywords = ("processed optogenetic stimulus",)
-    display_name = "Hadjas2025TDTOptogeneticStimulus"
-    info = "Data Interface for converting optogenetic stimulus data from .tdt files from Hnasko Lab."
-    associated_suffixes = ("Tbk", "Tdx", "tev", "tin", "tsq")
-
-    @validate_call
-    def __init__(
-        self,
-        folder_paths: List[DirectoryPath],
-        verbose: bool = True,
-    ):
-        """Initialize the ConcatenatedHadjas2025TDTOptogeneticStimulusInterface.
-
-        Parameters
-        ----------
-        file_path : FilePath
-            The path to the .mat file containing the processed optogenetic stimulus data.
-        verbose : bool, optional
-            Whether to print status messages, default = True.
-        """
-        super().__init__(
-            folder_paths=folder_paths,
-            verbose=verbose,
-        )
-        # This module should be here so ndx_optogenetics is in the global namespace when an pynwb.io object is created
-
-    def get_metadata(self) -> DeepDict:
-        """
-        Get metadata for the ConcatenatedHadjas2025TDTOptogeneticStimulusInterface.
-
-        Returns
-        -------
-        DeepDict
-            The metadata dictionary for this interface.
-        """
-        metadata = super().get_metadata()
-        return metadata
-
-    def get_metadata_schema(self) -> dict:
-        """
-        Get the metadata schema for the Hadjas2025TDTOptogeneticStimulusInterface.
-
-        Returns
-        -------
-        dict
-            The metadata schema for this interface.
-        """
-        metadata_schema = super().get_metadata_schema()
-        return metadata_schema
-
-    def get_concatenated_events(self) -> dict:
-        """
-        Get the events from the Hadjas2025TDTOptogeneticStimulusInterface.
-
-        Returns
-        -------
-        dict
-            The events dictionary for this interface.
-        """
-        from neuroconv.datainterfaces import TDTFiberPhotometryInterface
-
-        all_events = {}
-        tdt_interfaces = []
-        session_start_datetimes = []
-        for folder_path in self.source_data["folder_paths"]:
-            tdt_interface = TDTFiberPhotometryInterface(folder_path=folder_path, stream_names=["Fi1r"])
-            tdt_photometry = tdt_interface.load(evtype=["scalars"])
-            start_timestamp = tdt_photometry.info.start_date.timestamp()
-            session_start_datetime = datetime.fromtimestamp(start_timestamp, tz=pytz.utc)
-            tdt_interfaces.append(tdt_interface)
-            session_start_datetimes.append(session_start_datetime)
-
-        assert session_start_datetimes == sorted(session_start_datetimes), (
+        folder_paths = self.source_data["folder_paths"]
+        start_timestamps = [read_tdt_start_timestamp(folder_path) for folder_path in folder_paths]
+        assert start_timestamps == sorted(start_timestamps), (
             "Session start times are not in chronological order. Please provide folder paths in chronological order."
         )
-        # Calculate segment start times based on the session start datetimes
-        # E.g. we have three consecutive sessions starting at times 10:00, 10:20, and 10:40 on the same day
-        # we want segment_starting_times to be [0, 1200, 2400] (in seconds)
-        segment_starting_times = [(dt - session_start_datetimes[0]).total_seconds() for dt in session_start_datetimes]
-        for tdt_interface, segment_start_time in zip(tdt_interfaces, segment_starting_times):
-            # Adjust event times by adding segment_start_time
-            events = tdt_interface.get_events()
-            for stream_name, stream_events in events.items():
+        all_events = {}
+        for folder_path, start_timestamp in zip(folder_paths, start_timestamps):
+            segment_start_time = start_timestamp - start_timestamps[0]
+            for stream_name, stream_events in read_tdt_epocs(folder_path).items():
                 if stream_name not in all_events:
                     all_events[stream_name] = {"onset": [], "offset": []}
                 all_events[stream_name]["onset"].extend(stream_events["onset"] + segment_start_time)
@@ -377,29 +225,44 @@ class ConcatenatedHadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
         )
         opto_epochs_table.add_column(name="stimulus_frequency", description="Frequency of the stimulation in Hz.")
         # Populate
-        tdt_events = self.get_concatenated_events()
+        tdt_events = self.get_events()
+        if not set(tdt_stimulus_channel_to_frequency) & set(tdt_events):
+            raise ValueError(
+                f"None of the stimulation epocs {list(tdt_stimulus_channel_to_frequency)} is in the TDT events "
+                f"{list(tdt_events)}."
+            )
+        trains = []  # (start time, stop time, pulse frequency) of every train, in time order
         for stream_name, stimulus_frequency in tdt_stimulus_channel_to_frequency.items():
             if stream_name not in tdt_events:
-                warning(f"Stream name {stream_name} not found in TDT events. Skipping.")
                 continue
-            for start_time, stop_time in zip(tdt_events[stream_name]["onset"], tdt_events[stream_name]["offset"]):
-                if np.isinf(start_time) or np.isinf(stop_time):
-                    warning(f"Found infinite start or stop time for stream {stream_name}. Skipping this event.")
-                    continue
-                number_pulses_per_pulse_train = int((stop_time - start_time) * stimulus_frequency)
-                opto_epochs_table.add_row(
-                    start_time=start_time,
-                    stop_time=stop_time,
-                    stimulus_frequency=stimulus_frequency,
-                    stimulation_on=True,
-                    pulse_length_in_ms=1.0,  # Unknown
-                    period_in_ms=(1 / stimulus_frequency) * 1000,
-                    number_pulses_per_pulse_train=number_pulses_per_pulse_train,
-                    number_trains=1,
-                    intertrain_interval_in_ms=0.0,
-                    power_in_mW=metadata["Optogenetics"]["power_in_mW"],
-                    wavelength_in_nm=metadata["Optogenetics"]["excitation_wavelength_in_nm"],
-                    optogenetic_sites=[0],  # assuming single stimulation site for now
+            onsets = np.asarray(tdt_events[stream_name]["onset"], dtype=float)
+            offsets = np.asarray(tdt_events[stream_name]["offset"], dtype=float)
+            # Trains without an offset (recording stopped first) or of zero length are not written
+            is_valid = np.isfinite(onsets) & np.isfinite(offsets) & (offsets > onsets)
+            if not is_valid.all():
+                logger.warning(
+                    f"Dropped {np.count_nonzero(~is_valid)} of {is_valid.size} {stream_name} trains without an "
+                    f"offset or of zero length."
                 )
+            trains.extend(
+                (start_time, stop_time, stimulus_frequency)
+                for start_time, stop_time in zip(onsets[is_valid], offsets[is_valid])
+            )
+        for start_time, stop_time, stimulus_frequency in sorted(trains):
+            number_pulses_per_pulse_train = int((stop_time - start_time) * stimulus_frequency)
+            opto_epochs_table.add_row(
+                start_time=start_time,
+                stop_time=stop_time,
+                stimulus_frequency=stimulus_frequency,
+                stimulation_on=True,
+                pulse_length_in_ms=1.0,  # Unknown
+                period_in_ms=(1 / stimulus_frequency) * 1000,
+                number_pulses_per_pulse_train=number_pulses_per_pulse_train,
+                number_trains=1,
+                intertrain_interval_in_ms=0.0,
+                power_in_mW=metadata["Optogenetics"]["power_in_mW"],
+                wavelength_in_nm=metadata["Optogenetics"]["excitation_wavelength_in_nm"],
+                optogenetic_sites=[0],  # assuming single stimulation site for now
+            )
 
         nwbfile.add_time_intervals(opto_epochs_table)
