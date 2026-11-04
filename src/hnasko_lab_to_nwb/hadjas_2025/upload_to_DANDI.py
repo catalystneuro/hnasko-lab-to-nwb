@@ -1,3 +1,5 @@
+"""Upload converted NWB files to a dandiset on the DANDI archive."""
+
 from pathlib import Path
 from shutil import rmtree
 
@@ -20,14 +22,14 @@ def dandi_upload(
     1. Downloads the specified Dandiset from the DANDI archive (metadata only, not assets).
     2. Organizes the provided NWB files into the downloaded Dandiset folder structure using DANDI's organize utility.
     3. Uploads the organized NWB files to the DANDI instance.
-    4. Cleans up any temporary folders created during the process.
+    4. If cleanup is True, deletes the Dandiset folder and the NWB folder.
 
     Parameters
     ----------
     nwb_folder_path : DirectoryPath
         Path to the folder containing the NWB files to be uploaded.
     dandiset_folder_path : DirectoryPath
-        Path to a folder where the Dandiset will be downloaded and organized. This folder will be created if it does not exist and will be deleted after upload.
+        Path to a folder where the Dandiset will be downloaded and organized. This folder will be created if it does not exist, and deleted after upload if cleanup is True.
     dandiset_id : str
         The identifier for the Dandiset to which the NWB files will be uploaded (e.g., "000199").
     version : str, optional
@@ -43,12 +45,11 @@ def dandi_upload(
     ------
     AssertionError
         If the Dandiset download or organization fails.
-    Exception
-        If the upload process encounters an error, it will be logged and the function will proceed to clean up temporary files.
 
     Notes
     -----
-    - This function will delete both the dandiset_folder_path and nwb_folder_path after upload, so ensure these are temporary or backed up if needed.
+    - An error during upload is printed, not raised, and the cleanup still runs.
+    - With cleanup=True, both dandiset_folder_path and nwb_folder_path are deleted after upload, so ensure these are temporary or backed up if needed.
     - Uses DANDI's Python API for download, organize, and upload operations.
     - Designed for use with the DANDI archive (https://dandiarchive.org/).
     """

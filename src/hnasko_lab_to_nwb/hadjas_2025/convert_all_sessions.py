@@ -86,7 +86,7 @@ def dataset_to_nwb(
 
 
 def has_tdt_blocks(protocol_folder_path: Path, subject_id: str) -> bool:
-    """Whether a protocol folder holds TDT blocks of the subject."""
+    """Whether a protocol folder holds TDT blocks of the subject (find_tdt_folder_paths finds at least one)."""
     try:
         find_tdt_folder_paths(protocol_folder_path=protocol_folder_path, subject_id=subject_id)
     except FileNotFoundError:
