@@ -61,16 +61,12 @@ class Hadjas2025NWBConverter(NWBConverter):
         self.video_time_alignment_dict = video_time_alignment_dict or {}
 
     def temporally_align_data_interfaces(self, metadata: dict | None = None, conversion_options: dict | None = None):
-        if self.video_time_alignment_dict:
-            for video_interface_name, video_info in self.video_time_alignment_dict.items():
-                video_interface = self.data_interface_objects.get(video_interface_name)
-                video_timestamps = video_interface.get_timestamps()
-                aligned_timestamps = []
-                for video_segment in video_timestamps:
-                    aligned_timestamps.append(video_segment + video_info["video_starting_time"])
-                self.data_interface_objects[video_interface_name].set_aligned_timestamps(
-                    aligned_timestamps=aligned_timestamps
-                )
+        # Keep the frame times of each .mp4 (frames were dropped in the AnyMaze export) and shift them to the TDT clock
+        for video_interface_name, video_info in self.video_time_alignment_dict.items():
+            video_interface = self.data_interface_objects[video_interface_name]
+            temporal_alignment = video_interface.temporal_alignment
+            for key, frame_times in zip(temporal_alignment.keys(), video_interface.get_original_timestamps()):
+                temporal_alignment[key].set_times(frame_times + video_info["video_starting_time"])
 
     def add_to_nwbfile(self, nwbfile: NWBFile, metadata, conversion_options: Optional[dict] = None) -> None:
         super().add_to_nwbfile(nwbfile=nwbfile, metadata=metadata, conversion_options=conversion_options)
@@ -83,6 +79,8 @@ class Hadjas2025NWBConverter(NWBConverter):
 
         for interface_name, interface in self.data_interface_objects.items():
             if interface_name in ["Video_250ms", "Video_1s", "Video_4s"]:
-                start = interface._timestamps[0][0]
-                stop = interface._timestamps[0][-1]
-                nwbfile.add_trial(start_time=start, stop_time=stop, tags=interface_name.replace("Video_", ""))
+                (key,) = interface.temporal_alignment.keys()
+                frame_times = interface.temporal_alignment[key].get_times()
+                nwbfile.add_trial(
+                    start_time=frame_times[0], stop_time=frame_times[-1], tags=interface_name.replace("Video_", "")
+                )
