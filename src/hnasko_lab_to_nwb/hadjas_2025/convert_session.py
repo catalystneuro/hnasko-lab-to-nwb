@@ -22,7 +22,6 @@ from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 METADATA_FOLDER_PATH = Path(__file__).parent / "metadata"
 SESSION_CONFIG_FILE_PATH = METADATA_FOLDER_PATH / "session_config.yaml"
-RIG_DEVICES_METADATA_FILE_PATH = METADATA_FOLDER_PATH / "rig_devices_metadata.yaml"
 
 
 def load_session_config() -> dict:
@@ -41,12 +40,17 @@ def get_rig_settings(sampling_frequency: float) -> dict:
     Returns
     -------
     dict
-        The rig name ("rig_name") and the Fi1r channels holding the signal ("stream_indices", None for all).
+        The rig name ("rig_name"), the Fi1r channels holding the signal ("stream_indices", None for all) and the
+        rig's device metadata ("metadata"), which updates the shared devices.
     """
     for rig_name, rig_config in load_session_config()["rigs"].items():
         if abs(rig_config["fi1r_sampling_frequency"] - sampling_frequency) < 1.0:
             channel = rig_config["fi1r_signal_channel"]
-            return dict(rig_name=rig_name, stream_indices=None if channel is None else [channel])
+            return dict(
+                rig_name=rig_name,
+                stream_indices=None if channel is None else [channel],
+                metadata=rig_config["metadata"],
+            )
     raise ValueError(f"No rig in the session config records Fi1r at {sampling_frequency} Hz.")
 
 
@@ -61,7 +65,8 @@ def get_raw_stream_settings(folder_path: Path) -> dict:
     Returns
     -------
     dict
-        "sampling_frequency" (Hz) of Fi1r, plus "rig_name" and "stream_indices" from get_rig_settings.
+        "sampling_frequency" (Hz) of Fi1r, plus "rig_name", "stream_indices" and "metadata" from
+        get_rig_settings.
     """
     sampling_frequency = float(read_tdt_stream(Path(folder_path), "Fi1r").fs)
     return dict(sampling_frequency=sampling_frequency, **get_rig_settings(sampling_frequency))
@@ -83,22 +88,6 @@ def load_cohort_metadata(recording_type: str) -> dict:
     metadata = load_dict_from_file(METADATA_FOLDER_PATH / "general_metadata.yaml")
     cohort_file_path = METADATA_FOLDER_PATH / f"{recording_type.replace(' ', '_')}_metadata.yaml"
     return dict_deep_update(metadata, load_dict_from_file(cohort_file_path))
-
-
-def load_rig_devices_metadata(rig_name: str) -> dict:
-    """Load the devices of one recording rig (metadata/rig_devices_metadata.yaml), which update the shared devices.
-
-    Parameters
-    ----------
-    rig_name : str
-        Rig name from get_rig_settings (e.g. "RZ5P", "RZ10x").
-
-    Returns
-    -------
-    dict
-        The rig's "DeviceModels" (and "Devices") entries.
-    """
-    return load_dict_from_file(RIG_DEVICES_METADATA_FILE_PATH)[rig_name]
 
 
 def get_target_area_for_subject(file_path: Path, subject_id: str) -> tuple[str, str]:
@@ -703,7 +692,7 @@ def session_to_nwb(
     tdt_folder_paths = find_tdt_folder_paths(protocol_folder_path=protocol_folder_path, subject_id=subject_id)
 
     raw_stream_settings = get_raw_stream_settings(tdt_folder_paths[0])
-    editable_metadata = dict_deep_update(editable_metadata, load_rig_devices_metadata(raw_stream_settings["rig_name"]))
+    editable_metadata = dict_deep_update(editable_metadata, raw_stream_settings["metadata"])
     raw_source_data = dict(
         folder_paths=tdt_folder_paths,
         stream_name="Fi1r",
