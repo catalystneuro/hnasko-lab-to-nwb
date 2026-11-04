@@ -21,7 +21,6 @@ from hnasko_lab_to_nwb.hadjas_2025.utils.train_durations import label_train_dura
 from neuroconv.utils import dict_deep_update, load_dict_from_file
 
 METADATA_FOLDER_PATH = Path(__file__).parent / "metadata"
-SHARED_METADATA_FILE_NAMES = ("general_metadata.yaml", "subject_metadata.yaml", "devices_metadata.yaml")
 SESSION_CONFIG_FILE_PATH = METADATA_FOLDER_PATH / "session_config.yaml"
 RIG_DEVICES_METADATA_FILE_PATH = METADATA_FOLDER_PATH / "rig_devices_metadata.yaml"
 
@@ -81,9 +80,7 @@ def load_cohort_metadata(recording_type: str) -> dict:
     dict
         The merged metadata.
     """
-    metadata = dict()
-    for file_name in SHARED_METADATA_FILE_NAMES:
-        metadata = dict_deep_update(metadata, load_dict_from_file(METADATA_FOLDER_PATH / file_name))
+    metadata = load_dict_from_file(METADATA_FOLDER_PATH / "general_metadata.yaml")
     cohort_file_path = METADATA_FOLDER_PATH / f"{recording_type.replace(' ', '_')}_metadata.yaml"
     return dict_deep_update(metadata, load_dict_from_file(cohort_file_path))
 
