@@ -25,7 +25,9 @@ DANDI_INSTANCES = ("dandi", "dandi-sandbox")
 def check_dandi_instance(dandi_instance: str) -> None:
     """Raise if dandi_instance is not one of DANDI_INSTANCES."""
     if dandi_instance not in DANDI_INSTANCES:
-        raise ValueError(f"Unknown DANDI instance {dandi_instance!r}; use one of {DANDI_INSTANCES}.")
+        raise ValueError(
+            f"Unknown DANDI instance {dandi_instance!r}; use one of {DANDI_INSTANCES}."
+        )
 
 
 def organize_nwbfiles(
@@ -71,19 +73,30 @@ def organize_nwbfiles(
     dandiset_folder_path = Path(dandiset_folder_path)
     dandiset_path = dandiset_folder_path / dandiset_id
     if any(dandiset_path.rglob("*.nwb")):
-        raise FileExistsError(f"{dandiset_path} already holds organized NWB files. Remove it before organizing again.")
+        raise FileExistsError(
+            f"{dandiset_path} already holds organized NWB files. Remove it before organizing again."
+        )
     dandiset_folder_path.mkdir(parents=True, exist_ok=True)
     dandiset_url = f"{known_instances[dandi_instance].gui}/dandiset/{dandiset_id}/draft"
-    download(urls=dandiset_url, output_dir=str(dandiset_folder_path), get_metadata=True, get_assets=False)
+    download(
+        urls=dandiset_url,
+        output_dir=str(dandiset_folder_path),
+        get_metadata=True,
+        get_assets=False,
+    )
     if not (dandiset_path / "dandiset.yaml").exists():
-        raise FileNotFoundError(f"Downloading the metadata of {dandiset_url} did not create {dandiset_path}.")
+        raise FileNotFoundError(
+            f"Downloading the metadata of {dandiset_url} did not create {dandiset_path}."
+        )
     organize(
         paths=[str(nwb_folder_path)],
         dandiset_path=str(dandiset_path),
         update_external_file_paths=True,
         files_mode=FileOperationMode.COPY,
         media_files_mode=CopyMode.COPY,
-        required_fields=["session_id"],  # dandi organize leaves out the session of a subject's only file otherwise
+        required_fields=[
+            "session_id"
+        ],  # dandi organize leaves out the session of a subject's only file otherwise
     )
     return dandiset_path
 
@@ -109,12 +122,21 @@ def validate_organized_files(dandiset_path: Union[str, Path]) -> list[str]:
     from dandischema.models import get_schema_version
 
     errors = []
-    for dandi_file in find_dandi_files(dandiset_path, dandiset_path=dandiset_path, include_metadata=True):
+    for dandi_file in find_dandi_files(
+        dandiset_path, dandiset_path=dandiset_path, include_metadata=True
+    ):
         # The draft's dandiset.yaml can state an older schema version, which dandi refuses to validate. NWB files
         # keep the default, as in dandi upload: with a schema version, dandi skips their NWB Inspector checks.
-        schema_version = get_schema_version() if isinstance(dandi_file, DandisetMetadataFile) else None
+        schema_version = (
+            get_schema_version()
+            if isinstance(dandi_file, DandisetMetadataFile)
+            else None
+        )
         for result in dandi_file.get_validation_errors(schema_version=schema_version):
-            if result.severity is not None and result.severity.value >= Severity.ERROR.value:
+            if (
+                result.severity is not None
+                and result.severity.value >= Severity.ERROR.value
+            ):
                 errors.append(f"{dandi_file.filepath}: {result.message}")
     return errors
 
@@ -125,7 +147,10 @@ def get_draft_asset_paths(*, dandiset_id: str, dandi_instance: str) -> list[str]
 
     check_dandi_instance(dandi_instance)
     with DandiAPIClient.for_dandi_instance(dandi_instance) as client:
-        return [asset.path for asset in client.get_dandiset(dandiset_id, "draft").get_assets()]
+        return [
+            asset.path
+            for asset in client.get_dandiset(dandiset_id, "draft").get_assets()
+        ]
 
 
 def get_subject_and_session(asset_path: str) -> tuple[str, str]:
@@ -140,7 +165,9 @@ def get_subject_and_session(asset_path: str) -> tuple[str, str]:
     return subject.lower(), match.group(1).lower() if match else ""
 
 
-def report_draft_assets(*, dandiset_path: Union[str, Path], dandiset_id: str, dandi_instance: str) -> pd.DataFrame:
+def report_draft_assets(
+    *, dandiset_path: Union[str, Path], dandiset_id: str, dandi_instance: str
+) -> pd.DataFrame:
     """Compare an organized dandiset folder with the draft, before uploading it.
 
     Nothing is removed from the draft. Each draft asset gets a status:
@@ -177,17 +204,27 @@ def report_draft_assets(*, dandiset_path: Union[str, Path], dandiset_id: str, da
     subject_and_session_to_local_nwbfile_paths = dict()
     for local_path in local_paths:
         if local_path.endswith(".nwb"):
-            subject_and_session_to_local_nwbfile_paths.setdefault(get_subject_and_session(local_path), []).append(
-                local_path
-            )
-    draft_paths = get_draft_asset_paths(dandiset_id=dandiset_id, dandi_instance=dandi_instance)
+            subject_and_session_to_local_nwbfile_paths.setdefault(
+                get_subject_and_session(local_path), []
+            ).append(local_path)
+    draft_paths = get_draft_asset_paths(
+        dandiset_id=dandiset_id, dandi_instance=dandi_instance
+    )
     rows = []
     for draft_path in sorted(draft_paths):
-        replaced_by = subject_and_session_to_local_nwbfile_paths.get(get_subject_and_session(draft_path), [])
+        replaced_by = subject_and_session_to_local_nwbfile_paths.get(
+            get_subject_and_session(draft_path), []
+        )
         if draft_path in local_paths:
             rows.append(dict(path=draft_path, status="replaced", replaced_by=""))
         elif replaced_by:
-            rows.append(dict(path=draft_path, status="superseded", replaced_by="; ".join(replaced_by)))
+            rows.append(
+                dict(
+                    path=draft_path,
+                    status="superseded",
+                    replaced_by="; ".join(replaced_by),
+                )
+            )
         else:
             rows.append(dict(path=draft_path, status="not reconverted", replaced_by=""))
     rows += [
@@ -197,7 +234,9 @@ def report_draft_assets(*, dandiset_path: Union[str, Path], dandiset_id: str, da
     return pd.DataFrame(rows, columns=["path", "status", "replaced_by"])
 
 
-def upload_organized_files(*, dandiset_path: Union[str, Path], dandi_instance: str) -> None:
+def upload_organized_files(
+    *, dandiset_path: Union[str, Path], dandi_instance: str
+) -> None:
     """Validate an organized dandiset folder and upload it to the draft of its dandiset.
 
     Nothing is uploaded if a file or the dandiset metadata is invalid (validate_organized_files).
@@ -219,5 +258,8 @@ def upload_organized_files(*, dandiset_path: Union[str, Path], dandi_instance: s
     check_dandi_instance(dandi_instance)
     errors = validate_organized_files(dandiset_path)
     if errors:
-        raise ValueError(f"{len(errors)} validation errors in {dandiset_path}, nothing uploaded:\n" + "\n".join(errors))
+        raise ValueError(
+            f"{len(errors)} validation errors in {dandiset_path}, nothing uploaded:\n"
+            + "\n".join(errors)
+        )
     upload(paths=[str(dandiset_path)], dandi_instance=dandi_instance)
