@@ -15,9 +15,11 @@ from neuroconv.utils.checks import calculate_regular_series_rate
 def get_series_target_area(target_area: str, file_path: Path) -> str:
     """Get the target area used to look up the series metadata.
 
-    The Anxa1 .mat files group subjects by stimulus site ("STN_to_Anxa1", "PPN_to_Anxa1").
-    For these files the recording site is taken from the name of the folder holding the file
-    (e.g. "Anxa1 DLS" gives "DLS").
+    The series metadata is keyed by recording site, as the raw series (e.g. "dF_SNc" with "Fi1r_SNc"). Most .mat
+    files group subjects by recording site; the others are mapped to it. The Anxa1 .mat files group subjects by
+    stimulus site ("STN_to_Anxa1", "PPN_to_Anxa1"); for these files the recording site is taken from the name of
+    the folder holding the file (e.g. "Anxa1 DLS" gives "DLS"). The Vglut2 .mat files group subjects as "VG2", recorded
+    in the SNc.
 
     Parameters
     ----------
@@ -33,6 +35,8 @@ def get_series_target_area(target_area: str, file_path: Path) -> str:
     """
     if target_area in ("STN_to_Anxa1", "PPN_to_Anxa1"):
         return Path(file_path).parent.name.replace("Anxa1 ", "")
+    if target_area == "VG2":
+        return "SNc"
     return target_area
 
 
