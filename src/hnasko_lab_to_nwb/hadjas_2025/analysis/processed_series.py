@@ -80,11 +80,38 @@ def get_block_bounds(timestamps: np.ndarray, sampling_frequency: float) -> list[
     return list(zip(edges[:-1], edges[1:]))
 
 
+def get_series_blocks(series) -> tuple[list[tuple[int, int]], float, np.ndarray]:
+    """Get the TDT blocks of a series written by the conversion, its rate within a block and its timestamps.
+
+    A series with a rate is one block; a series with timestamps is split into its blocks at the gaps between them
+    (get_block_bounds), and its rate is that of its first block.
+
+    Parameters
+    ----------
+    series : TimeSeries
+        A raw or processed fiber photometry series, e.g. nwbfile.acquisition["raw_signal_SNr"].
+
+    Returns
+    -------
+    tuple[list[tuple[int, int]], float, np.ndarray]
+        Start (included) and end (excluded) sample of each block, the sampling frequency in Hz, and the timestamps
+        of every sample, in seconds.
+    """
+    number_of_samples = series.data.shape[0]
+    if series.rate is not None:
+        sampling_frequency = float(series.rate)
+        timestamps = series.starting_time + np.arange(number_of_samples) / sampling_frequency
+        return [(0, number_of_samples)], sampling_frequency, timestamps
+    timestamps = np.asarray(series.timestamps[:])
+    first_block_end = get_block_bounds(timestamps, 1 / np.min(np.diff(timestamps)))[0][1]
+    sampling_frequency = (first_block_end - 1) / (timestamps[first_block_end - 1] - timestamps[0])
+    return get_block_bounds(timestamps, sampling_frequency), sampling_frequency, timestamps
+
+
 def compute_processed_series(raw_series, led_modulation: dict) -> list[dict]:
     """Compute the processed signals of each TDT block of a raw photodetector series.
 
-    A series with a rate is one block; a series with timestamps is split into its blocks at the gaps between them
-    (get_block_bounds).
+    The blocks are those of get_series_blocks.
 
     Parameters
     ----------
@@ -106,16 +133,7 @@ def compute_processed_series(raw_series, led_modulation: dict) -> list[dict]:
     ValueError
         If the processed signals of a block cannot be computed (calculate_dff_with_biexponential_fit).
     """
-    if raw_series.rate is not None:
-        sampling_frequency = float(raw_series.rate)
-        raw_timestamps = raw_series.starting_time + np.arange(raw_series.data.shape[0]) / sampling_frequency
-        block_bounds = [(0, raw_series.data.shape[0])]
-    else:
-        raw_timestamps = np.asarray(raw_series.timestamps[:])
-        first_block_end = get_block_bounds(raw_timestamps, 1 / np.min(np.diff(raw_timestamps)))[0][1]
-        sampling_frequency = (first_block_end - 1) / (raw_timestamps[first_block_end - 1] - raw_timestamps[0])
-        block_bounds = get_block_bounds(raw_timestamps, sampling_frequency)
-
+    block_bounds, sampling_frequency, raw_timestamps = get_series_blocks(raw_series)
     blocks = []
     for start, end in block_bounds:
         processed = process_raw_signal(np.asarray(raw_series.data[start:end]), sampling_frequency, **led_modulation)
