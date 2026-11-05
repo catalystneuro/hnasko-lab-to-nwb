@@ -58,7 +58,7 @@ pip install --editable .
 
 Note: both of the methods above install the repository in [editable mode](https://pip.pypa.io/en/stable/cli/pip_install/#editable-installs). The dependencies for this environment are stored in the dependencies section of the `pyproject.toml` file.
 
-The tutorial and analysis notebooks need a few more packages (Jupyter kernel, matplotlib, scipy, statsmodels). The conda environment includes them. With pip, install the `analysis` extra:
+The tutorial and analysis notebooks need a few more packages (Jupyter kernel and matplotlib). The conda environment includes them. With pip, install the `analysis` extra:
 
 ```bash
 pip install --editable ".[analysis]"
@@ -196,6 +196,7 @@ hnasko-lab-to-nwb/
             ├── convert_all_sessions.py     # Batch processing script
             ├── nwbconverter.py            # NWBConverter class definition
             ├── notes.md                   # Conversion-specific notes
+            ├── analysis/                  # Python port of the lab's processing, comparison and trial analysis
             ├── interfaces/
             │   ├── __init__.py
             │   └── demodulated_tdt_interface.py  # Custom demodulated signal interface
@@ -217,6 +218,7 @@ hnasko-lab-to-nwb/
 - **`convert_session.py`**: Main script that defines the function to convert one full session
 - **`nwbconverter.py`**: Contains the `Hadjas2025NWBConverter` class that combines all data interfaces
 - **`metadata/`**: YAML files containing experimental metadata for different protocols
+- **`analysis/`**: Python port of the lab's MATLAB processing (demodulation, resampling, dF/F), its comparison with the lab's .mat files, and the paper's trial analysis
 - **`interfaces/`**: Custom data interfaces, including demodulated fiber photometry
 - **`utils/`**: Utility functions for signal processing and stimulus addition
 

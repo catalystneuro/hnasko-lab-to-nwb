@@ -16,6 +16,7 @@ from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     find_mat_file_path,
     find_tdt_folder_paths,
     get_led_modulation,
+    get_processed_source,
     get_raw_stream_settings,
     get_session_start_time,
     get_target_area_for_subject,
@@ -44,7 +45,8 @@ def check_session(
 
     The parameters are those of session_to_nwb. Errors are problems that make session_to_nwb fail: an unknown
     hemisphere, a TDT block whose raw stream or stimulation trains cannot be read, a recording date without LED
-    modulation frequencies, or, when the processed stream is converted, a missing .mat file, subject or segment.
+    modulation frequencies, or, when the processed signals come from the lab's .mat file, a missing .mat file,
+    subject or segment.
     Warnings are cases the conversion handles: a varFreq_* folder whose name disagrees with the recorded train
     duration (the conversion uses the recorded duration).
 
@@ -115,7 +117,7 @@ def check_session(
         except Exception as error:
             add_finding("error", "LED modulation", error)
 
-        if data_streams["processed"]:
+        if get_processed_source(data_streams=data_streams, cohort_config=cohort_config) == "lab":
             subject_config = session_config["subjects"].get(subject_id, {})
             try:
                 mat_file_path = find_mat_file_path(
