@@ -1,9 +1,10 @@
 """Add processed fiber photometry series recomputed from the raw series of an NWB file.
 
 add_recomputed_processed_series reads the raw photodetector series (e.g. "raw_signal_SNr" in nwbfile.acquisition),
-splits it into its TDT blocks, computes the processed signals of each block with hadjas_2025.processing, and writes
-them to the "ophys" processing module as the lab's .mat files would be written (Hadjas2025ProcessedFiberPhotometry
-Interface): the same names, units and FiberPhotometryTable rows, one series per stream concatenated over the blocks.
+splits it into its TDT blocks, computes the processed signals of each block with hadjas_2025.analysis.processing, and
+writes them to the "ophys" processing module as the lab's .mat files would be written (Hadjas2025ProcessedFiber
+PhotometryInterface): the same names, units and FiberPhotometryTable rows, one series per stream concatenated over the
+blocks.
 The series descriptions say that the signals were recomputed by this package and not by the lab.
 
 It is used by the conversion when data_streams.processed is "recomputed", and works on an NWB file that has only the
@@ -20,7 +21,7 @@ from ndx_fiber_photometry import FiberPhotometryResponseSeries
 from pynwb.file import NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.fiber_photometry_table import add_fiber_photometry_table_region
-from hnasko_lab_to_nwb.hadjas_2025.processing import PROCESSED_RATE, process_raw_signal
+from hnasko_lab_to_nwb.hadjas_2025.analysis.processing import PROCESSED_RATE, process_raw_signal
 from neuroconv.tools.nwb_helpers import get_module
 from neuroconv.utils.checks import calculate_regular_series_rate
 
@@ -49,7 +50,7 @@ def get_recomputed_description(description: str) -> str:
     if LAB_PROVENANCE not in description:
         raise ValueError(f"The series description does not say '{LAB_PROVENANCE}': {description}")
     recomputed_provenance = (
-        f"recomputed from the raw signal with hadjas_2025.processing of hnasko-lab-to-nwb "
+        f"recomputed from the raw signal with hadjas_2025.analysis.processing of hnasko-lab-to-nwb "
         f"{version('hnasko-lab-to-nwb')}, a Python port of the lab's MATLAB code (its bi-exponential fit of the "
         "isosbestic signal can differ from the lab's; see the processing module)"
     )

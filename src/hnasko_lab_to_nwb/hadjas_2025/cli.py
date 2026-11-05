@@ -12,9 +12,9 @@ no NWB file yet, inspects each new file and updates conversion_summary.csv (see 
 inspects every NWB file again. organize copies the NWB files into <dandiset folder>/<dandiset ID>, validates them and
 writes draft_asset_report.csv next to it; upload validates and uploads that folder to the draft.
 
-compare-processing recomputes the processed signals of each session from its raw signal (hadjas_2025.processing)
-and writes their comparison with the lab's .mat files to processing_comparison.csv in the output folder; with
---plot-dir-path it also plots the isosbestic fits and dF/F of each session.
+compare-processing recomputes the processed signals of each session from its raw signal
+(hadjas_2025.analysis.processing) and writes their comparison with the lab's .mat files to processing_comparison.csv
+in the output folder; with --plot-dir-path it also plots the isosbestic fits and dF/F of each session.
 """
 
 import argparse
@@ -69,7 +69,7 @@ def convert(args: argparse.Namespace) -> int:
 
 def compare_processing(args: argparse.Namespace) -> int:
     """Recompute the processed signals and compare them with the lab's .mat files; return 1 if a session failed."""
-    from hnasko_lab_to_nwb.hadjas_2025.processing_comparison import compare_dataset_processing
+    from hnasko_lab_to_nwb.hadjas_2025.analysis.processing_comparison import compare_dataset_processing
 
     args.output_dir_path.mkdir(parents=True, exist_ok=True)
     comparison = compare_dataset_processing(

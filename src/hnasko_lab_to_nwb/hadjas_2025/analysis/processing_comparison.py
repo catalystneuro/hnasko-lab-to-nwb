@@ -1,4 +1,4 @@
-"""Compare the processed signals recomputed by hadjas_2025.processing with those of the lab's .mat files.
+"""Compare the processed signals recomputed by hadjas_2025.analysis.processing with those of the lab's .mat files.
 
 compare_session_processing recomputes the processed signals of each TDT block of a session from its raw Fi1r
 stream and compares them with the segment of the lab's .mat file that holds the block (match_mat_segments), and can
@@ -27,7 +27,7 @@ from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     load_session_config,
     match_mat_segments,
 )
-from hnasko_lab_to_nwb.hadjas_2025.processing import process_raw_signal
+from hnasko_lab_to_nwb.hadjas_2025.analysis.processing import process_raw_signal
 from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import (
     clear_tdt_block_cache,
     read_tdt_start_timestamp,
