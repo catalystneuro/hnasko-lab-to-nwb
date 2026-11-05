@@ -32,7 +32,6 @@ def load_nwb_from_dandi(dandiset_id, subject_id, session_id):
     pattern = f"sub-{subject_id}/sub-{subject_id}_ses-{session_id}*.nwb"
 
     with DandiAPIClient() as client:
-        client.dandi_authenticate()
         assets = client.get_dandiset(dandiset_id, "draft").get_assets_by_glob(pattern=pattern, order="path")
 
         s3_urls = []
