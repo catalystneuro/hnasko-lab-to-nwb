@@ -97,8 +97,9 @@ def get_processed_source(data_streams: dict, cohort_config: dict) -> str | bool:
     Returns
     -------
     str | bool
-        "lab" (the lab's .mat file), "recomputed" (computed from the raw signal by hadjas_2025.analysis.recompute) or
-        False. The cohort's value applies unless data_streams["processed"] is False.
+        "lab" (the lab's .mat file), "recomputed" (computed from the raw signal by
+        hadjas_2025.analysis.processed_series) or False. The cohort's value applies unless data_streams["processed"]
+        is False.
 
     Raises
     ------

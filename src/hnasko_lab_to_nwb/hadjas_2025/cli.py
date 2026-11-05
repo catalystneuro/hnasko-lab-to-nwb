@@ -69,7 +69,7 @@ def convert(args: argparse.Namespace) -> int:
 
 def compare_processing(args: argparse.Namespace) -> int:
     """Recompute the processed signals and compare them with the lab's .mat files; return 1 if a session failed."""
-    from hnasko_lab_to_nwb.hadjas_2025.analysis.processing_comparison import compare_dataset_processing
+    from hnasko_lab_to_nwb.hadjas_2025.analysis.lab_comparison import compare_dataset_processing
 
     args.output_dir_path.mkdir(parents=True, exist_ok=True)
     comparison = compare_dataset_processing(

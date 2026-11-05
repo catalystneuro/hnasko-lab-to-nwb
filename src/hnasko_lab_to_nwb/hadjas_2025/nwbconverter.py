@@ -9,7 +9,7 @@ from hnasko_lab_to_nwb.hadjas_2025.interfaces import (
     Hadjas2025ProcessedFiberPhotometryInterface,
     Hadjas2025TDTOptogeneticStimulusInterface,
 )
-from hnasko_lab_to_nwb.hadjas_2025.analysis.recompute import add_recomputed_processed_series
+from hnasko_lab_to_nwb.hadjas_2025.analysis.processed_series import add_recomputed_processed_series
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import ExternalVideoInterface
 

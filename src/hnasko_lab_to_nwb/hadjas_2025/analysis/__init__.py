@@ -1,7 +1,7 @@
 """Analyses of the Hadjas 2025 preprint, reproduced from the NWB files on DANDI."""
 
-from .stream_from_dandi import load_nwb_from_dandi
-from .analysis_functions import (
+from .dandi_streaming import load_nwb_from_dandi
+from .trial_analysis import (
     baseline_normalize_trials,
     calculate_summary_statistics,
     extract_trials_around_events,
