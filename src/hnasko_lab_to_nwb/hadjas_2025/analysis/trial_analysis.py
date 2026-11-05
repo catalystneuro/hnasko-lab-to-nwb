@@ -14,15 +14,20 @@ up to and including stop, relative to the onset sample. The lab's scripts each c
 
 Checked against the trials and statistics of the lab's .mat files: given the lab's dF/F, the trials are the lab's and
 the statistics agree to floating point precision.
+
+add_trial_analysis writes the trial-aligned dF/F and the statistics to two tables of the "trial_analysis" module.
 """
 
 import warnings
 
 import numpy as np
 import pandas as pd
+from hdmf.common import DynamicTable, VectorData
+from pynwb.file import NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.analysis.processed_series import get_block_bounds, get_series_blocks
 from hnasko_lab_to_nwb.hadjas_2025.analysis.processing import PROCESSED_RATE
+from neuroconv.tools.nwb_helpers import get_module
 
 PRE_ONSET_SAMPLES = 500  # 5 s at 100 Hz
 POST_ONSET_SAMPLES = 1000  # 10 s at 100 Hz
@@ -226,3 +231,96 @@ def analyse_trials(dff_series, epochs: pd.DataFrame) -> tuple[pd.DataFrame, pd.D
         condition_statistics.insert(0, "train_duration", train_duration)
         statistics.append(condition_statistics)
     return trials, pd.concat(statistics, ignore_index=True)
+
+
+def add_trial_analysis(nwbfile: NWBFile, dff_series_name: str, site: str) -> None:
+    """Add the trial-aligned dF/F and the window statistics of a dF/F series to the "trial_analysis" module.
+
+    Two tables are added, named with the recording site: "trial_aligned_dff_<site>", one row per train of the
+    optogenetic epochs table, and "trial_window_statistics_<site>", one row per condition (train duration and pulse
+    frequency) and time window (analyse_trials).
+
+    Parameters
+    ----------
+    nwbfile : NWBFile
+        The NWBFile, with the dF/F series in its "ophys" processing module and the optogenetic epochs table.
+    dff_series_name : str
+        Name of the dF/F series, e.g. "deltaF_over_F_SNr".
+    site : str
+        The recording site, e.g. "SNr", which names the tables.
+    """
+    epochs_table = nwbfile.intervals["optogenetic_epochs_table"]
+    dff_series = nwbfile.processing["ophys"][dff_series_name]
+    trials, statistics = analyse_trials(dff_series=dff_series, epochs=epochs_table.to_dataframe())
+    epoch_row_of_id = {row_id: row for row, row_id in enumerate(epochs_table.id[:])}
+    trial_window = f"from {PRE_ONSET_SAMPLES / PROCESSED_RATE:g} s before to {POST_ONSET_SAMPLES / PROCESSED_RATE:g} s"
+    trial_window += f" after the onset sample of the train, at {PROCESSED_RATE:g} Hz, in percent"
+
+    module = get_module(
+        nwbfile=nwbfile,
+        name="trial_analysis",
+        description="Trial analysis of the lab's MATLAB scripts, computed by hnasko-lab-to-nwb from the dF/F series.",
+    )
+    module.add(
+        DynamicTable(
+            name=f"trial_aligned_dff_{site}",
+            description=f"dF/F of {dff_series_name} around each stimulation train ({trial_window}).",
+            columns=[
+                # Row numbers and not a DynamicTableRegion: the validator rejects a region of an extension table
+                VectorData(
+                    name="epoch_row",
+                    data=np.array([epoch_row_of_id[row_id] for row_id in trials.index]),
+                    description="Row of the train in the optogenetic epochs table, from 0.",
+                ),
+                VectorData(
+                    name="start_time",
+                    data=np.asarray(epochs_table["start_time"][:])[
+                        [epoch_row_of_id[row_id] for row_id in trials.index]
+                    ],
+                    description="Onset time of the train, in seconds.",
+                ),
+                VectorData(
+                    name="train_duration", data=trials["train_duration"].tolist(), description="Duration of the train."
+                ),
+                VectorData(
+                    name="stimulus_frequency",
+                    data=trials["stimulus_frequency"].to_numpy(),
+                    description="Pulse frequency of the train, in Hz.",
+                ),
+                VectorData(name="dff", data=np.stack(trials["dff"]), description=f"dF/F {trial_window}."),
+                VectorData(
+                    name="normalized_dff",
+                    data=np.stack(trials["normalized_dff"]),
+                    description=f"dF/F {trial_window}, minus its mean over the 101 samples before the onset sample.",
+                ),
+            ],
+        )
+    )
+    column_descriptions = dict(
+        train_duration="Duration of the trains.",
+        stimulus_frequency="Pulse frequency of the trains, in Hz.",
+        number_of_trials="Number of trains of this duration and frequency.",
+        window="Name of the time window in the lab's scripts.",
+        start="Start of the window, in seconds from the onset sample (excluded).",
+        stop="End of the window, in seconds from the onset sample (included).",
+        **{
+            statistic: f"{description}, of the normalized dF/F." for statistic, description in WINDOW_STATISTICS.items()
+        },
+    )
+    module.add(
+        DynamicTable(
+            name=f"trial_window_statistics_{site}",
+            description=f"Statistics of the normalized trial-aligned dF/F of {dff_series_name} in each time window, "
+            "per train duration and pulse frequency.",
+            columns=[
+                VectorData(
+                    name=column,
+                    data=statistics[column].tolist()
+                    if statistics[column].dtype == object
+                    else statistics[column].to_numpy(),
+                    description=column_descriptions[column],
+                )
+                for column in statistics.columns
+            ],
+        )
+    )

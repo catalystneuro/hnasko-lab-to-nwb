@@ -5,7 +5,8 @@
 - processed_series: the processed series of an NWB file recomputed from its raw series (used by the conversion when
   data_streams.processed is "recomputed").
 - lab_comparison: comparison of the recomputed signals with the lab's .mat files (hadjas-2025 compare-processing).
-- trial_analysis: trial-aligned dF/F and summary statistics, as in the lab's MATLAB scripts.
+- trial_analysis: trial-aligned dF/F and window statistics, as in the lab's MATLAB scripts, and their tables in an
+  NWB file.
 - dandi_streaming: streaming of a session's NWB file from DANDI.
 - matlab_pipeline.md: the steps of the lab's MATLAB scripts.
 - validate_processing.ipynb: recomputes the processed signals of a session and compares them with the lab's.
