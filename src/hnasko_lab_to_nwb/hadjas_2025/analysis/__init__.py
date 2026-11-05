@@ -10,6 +10,8 @@
 - dandi_streaming: streaming of a session's NWB file from DANDI.
 - matlab_pipeline.md: the steps of the lab's MATLAB scripts.
 - validate_processing.ipynb: recomputes the processed signals of a session and compares them with the lab's.
+- reproduce_paper_analysis.ipynb: adds the processed signals and the trial analysis to a raw-only NWB file and plots
+  the trials, mean responses and window statistics.
 
 Import the modules directly, e.g. from hnasko_lab_to_nwb.hadjas_2025.analysis.processing import process_raw_signal.
 """
