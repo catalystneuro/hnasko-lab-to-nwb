@@ -8,6 +8,7 @@
 - trial_analysis: trial-aligned dF/F and summary statistics, as in the lab's MATLAB scripts.
 - dandi_streaming: streaming of a session's NWB file from DANDI.
 - matlab_pipeline.md: the steps of the lab's MATLAB scripts.
+- validate_processing.ipynb: recomputes the processed signals of a session and compares them with the lab's.
 
 Import the modules directly, e.g. from hnasko_lab_to_nwb.hadjas_2025.analysis.processing import process_raw_signal.
 """
