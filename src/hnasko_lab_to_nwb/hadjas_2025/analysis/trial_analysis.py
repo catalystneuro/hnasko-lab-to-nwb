@@ -1,418 +1,326 @@
-"""
-Modular functions for reproducing Hadjas 2025 fiber photometry analysis.
+"""Trial analysis of the Hadjas 2025 preprint, as in the lab's MATLAB scripts, from the dF/F series of an NWB file.
 
-This module provides functions to process fiber photometry data from NWB files,
-following the analysis pipeline from the original MATLAB scripts.
+Each stimulation train gives one trial: dF/F from 5 s before to 10 s after the train onset, at 100 Hz (1501 samples),
+normalized by subtracting its mean over the 101 samples before the onset sample (-1.01 s to -0.01 s).
 
-Author: Catalyst Neuro
-Date: 2025
+As in the lab's code, the onset sample is counted from the start of the train's TDT block: it is the sample
+floor(100 * onset time from the block start) of the block, counting from 1 as MATLAB does. The dF/F series of a
+session of several blocks has a gap between blocks, so the block of each train is found from the series timestamps.
+
+The trials are grouped by train duration and pulse frequency (the train_duration and stimulus_frequency columns of
+the optogenetic epochs table). For each group and each time window of TIME_WINDOWS, get_window_statistics computes
+the statistics of the lab's scripts from the normalized trials. A window (start, stop] holds the samples after start
+up to and including stop, relative to the onset sample. The lab's scripts each compute a subset of these windows.
+
+Checked against the trials and statistics of the lab's .mat files: given the lab's dF/F, the trials are the lab's and
+the statistics agree to floating point precision.
+
+add_trial_analysis writes the trial-aligned dF/F and the statistics to two tables of the "trial_analysis" module.
 """
+
+import warnings
 
 import numpy as np
-import warnings
-from typing import Tuple, Dict
+import pandas as pd
+from hdmf.common import DynamicTable, VectorData
+from pynwb.file import NWBFile
+
+from hnasko_lab_to_nwb.hadjas_2025.analysis.processed_series import get_block_bounds, get_series_blocks
+from hnasko_lab_to_nwb.hadjas_2025.analysis.processing import PROCESSED_RATE
+from neuroconv.tools.nwb_helpers import get_module
+
+PRE_ONSET_SAMPLES = 500  # 5 s at 100 Hz
+POST_ONSET_SAMPLES = 1000  # 10 s at 100 Hz
+# Samples of a trial relative to the onset sample
+TRIAL_SAMPLE_OFFSETS = np.arange(-PRE_ONSET_SAMPLES, POST_ONSET_SAMPLES + 1)
+# Samples relative to the onset sample whose mean is subtracted from a trial
+BASELINE_SAMPLE_OFFSETS = np.arange(-101, 0)
+# Time windows (start, stop], in seconds from the onset, by the names of the lab's scripts
+TIME_WINDOWS = {
+    "stm_n4_0s": (-4.0, 0.0),
+    "stm_n1_0s": (-1.0, 0.0),
+    "preStm250ms": (-0.25, 0.0),
+    "stm0_250ms": (0.0, 0.25),
+    "stm0_500ms": (0.0, 0.5),
+    "stm0_1s": (0.0, 1.0),
+    "stm0_2s": (0.0, 2.0),
+    "stm0_4s": (0.0, 4.0),
+    "stm250_500ms": (0.25, 0.5),
+    "stm250_750ms": (0.25, 0.75),
+    "stm250_1250ms": (0.25, 1.25),
+    "stm250_2250ms": (0.25, 2.25),
+    "stm750_1000ms": (0.75, 1.0),
+    "stm1_2s": (1.0, 2.0),
+    "stm1_3s": (1.0, 3.0),
+    "stm3_4s": (3.0, 4.0),
+    "stm3750_4000ms": (3.75, 4.0),
+    "stm4_5s": (4.0, 5.0),
+    "stm4_6s": (4.0, 6.0),
+    "stm4_8s": (4.0, 8.0),
+    "stm5_6s": (5.0, 6.0),
+}
+WINDOW_STATISTICS = {
+    "mean": "mean dF/F over the window, averaged over trials",
+    "auc": "area under the dF/F curve over the window (trapezoidal, in % x s), averaged over trials",
+    "peak": "maximum dF/F over the window, averaged over trials",
+    "peak_of_mean_trace": "maximum over the window of the dF/F averaged over trials",
+    "max_absolute_deviation": "dF/F at the sample of largest absolute value in the window, averaged over trials",
+    "max_absolute_deviation_of_mean_trace": (
+        "value at the sample of largest absolute value in the window of the dF/F averaged over trials"
+    ),
+}
 
 
-def extract_trials_around_events(
-    signal: np.ndarray,
-    event_times: np.ndarray,
-    sampling_rate: float = 100.0,
-    baseline_duration: float = 5.0,
-    post_event_duration: float = 10.0,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Extract signal segments aligned to event times.
-
-    Parameters
-    ----------
-    signal : np.ndarray
-        Continuous signal to extract trials from, shape (n_samples,)
-    event_times : np.ndarray
-        Event onset times in seconds, shape (n_events,)
-    sampling_rate : float, optional
-        Sampling rate in Hz, by default 100.0
-    baseline_duration : float, optional
-        Duration before event to include (seconds), by default 5.0
-    post_event_duration : float, optional
-        Duration after event to include (seconds), by default 10.0
-
-    Returns
-    -------
-    trial_matrix : np.ndarray
-        Trials × timepoints matrix, shape (n_events, n_timepoints)
-    time_vector : np.ndarray
-        Time vector relative to event onset (seconds), shape (n_timepoints,)
-
-    Notes
-    -----
-    Trials that extend beyond signal boundaries are filled with NaN.
-
-    Examples
-    --------
-    >>> dff = calculate_dff_with_biexponential_fit(calcium, isosbestic)[0]
-    >>> stim_times = nwbfile.intervals['optogenetic_epochs_table']['start_time'][:]
-    >>> trials, time_vec = extract_trials_around_events(dff, stim_times)
-    """
-    # Calculate window parameters
-    pre_samples = int(baseline_duration * sampling_rate)
-    post_samples = int(post_event_duration * sampling_rate)
-    total_samples = pre_samples + post_samples + 1
-
-    # Convert event times to sample indices
-    event_indices = np.floor(event_times * sampling_rate).astype(int)
-    n_events = len(event_indices)
-
-    # Initialize trial matrix with NaN
-    trial_matrix = np.full((n_events, total_samples), np.nan)
-
-    # Extract each trial
-    signal_length = len(signal)
-    for i, event_idx in enumerate(event_indices):
-        start_idx = event_idx - pre_samples
-        end_idx = event_idx + post_samples + 1
-
-        # Check boundaries
-        if start_idx < 0 or end_idx > signal_length:
-            warnings.warn(
-                f"Trial {i} extends beyond signal boundaries. "
-                f"Event at index {event_idx}, signal length {signal_length}. "
-                "Filling with NaN.",
-                RuntimeWarning,
-            )
-            # Calculate valid range
-            valid_start = max(0, start_idx)
-            valid_end = min(signal_length, end_idx)
-            trial_start = max(0, -start_idx)
-            trial_end = trial_start + (valid_end - valid_start)
-
-            trial_matrix[i, trial_start:trial_end] = signal[valid_start:valid_end]
-        else:
-            trial_matrix[i, :] = signal[start_idx:end_idx]
-
-    # Create time vector
-    time_vector = np.arange(-baseline_duration, post_event_duration + 1 / sampling_rate, 1 / sampling_rate)
-    # Ensure exact length match
-    time_vector = time_vector[:total_samples]
-
-    return trial_matrix, time_vector
-
-
-def baseline_normalize_trials(
-    trial_matrix: np.ndarray,
-    time_vector: np.ndarray,
-    baseline_window: Tuple[float, float] = (-1.0, 0.0),
-) -> np.ndarray:
-    """
-    Normalize trials by subtracting baseline period mean.
+def get_onset_indices(timestamps: np.ndarray, onset_times: np.ndarray, rate: float = PROCESSED_RATE) -> np.ndarray:
+    """Get the index of the onset sample of each train in a dF/F series, as the lab's code.
 
     Parameters
     ----------
-    trial_matrix : np.ndarray
-        Matrix of trials, shape (n_trials, n_timepoints)
-    time_vector : np.ndarray
-        Time vector in seconds, shape (n_timepoints,)
-    baseline_window : tuple of float, optional
-        (start, end) of baseline period in seconds, by default (-1.0, 0.0)
+    timestamps : np.ndarray
+        Timestamps of the dF/F series, in seconds. Each block starts at the start of its TDT block.
+    onset_times : np.ndarray
+        Onset times of the trains, in seconds, on the same clock as timestamps.
+    rate : float, optional
+        Rate of the dF/F series within a block, in Hz (default is 100).
 
     Returns
     -------
+    np.ndarray
+        For each train, the index (from 0) of its onset sample in the series.
+
+    Raises
+    ------
+    ValueError
+        If a train starts before the first sample of the series.
+    """
+    block_starts = np.array([start for start, _ in get_block_bounds(timestamps, rate)])
+    block_start_times = timestamps[block_starts]
+    blocks = np.searchsorted(block_start_times, onset_times, side="right") - 1
+    if np.any(blocks < 0):
+        raise ValueError("A train starts before the first sample of the dF/F series.")
+    # floor(rate * time from block start) counts samples from 1 in MATLAB; subtract one to count from 0
+    samples_into_block = np.floor(rate * (onset_times - block_start_times[blocks])).astype(int) - 1
+    return block_starts[blocks] + samples_into_block
+
+
+def extract_trials(dff: np.ndarray, onset_indices: np.ndarray) -> np.ndarray:
+    """Extract the dF/F of each trial, from 5 s before to 10 s after its onset sample.
+
+    Parameters
+    ----------
+    dff : np.ndarray
+        dF/F of the session, shape (number of samples,).
+    onset_indices : np.ndarray
+        Index of the onset sample of each train (get_onset_indices).
+
+    Returns
+    -------
+    np.ndarray
+        dF/F of each trial, shape (number of trains, 1501). Samples outside the series are NaN, with a warning.
+    """
+    indices = onset_indices[:, np.newaxis] + TRIAL_SAMPLE_OFFSETS[np.newaxis, :]
+    outside = (indices < 0) | (indices >= len(dff))
+    if np.any(outside):
+        warnings.warn(f"{np.any(outside, axis=1).sum()} trials extend beyond the dF/F series; filled with NaN.")
+    trials = np.asarray(dff)[np.clip(indices, 0, len(dff) - 1)].astype(float)
+    trials[outside] = np.nan
+    return trials
+
+
+def normalize_trials(trials: np.ndarray) -> np.ndarray:
+    """Subtract from each trial its mean over the 101 samples before its onset sample (-1.01 s to -0.01 s).
+
+    Parameters
+    ----------
+    trials : np.ndarray
+        dF/F of each trial, shape (number of trains, 1501) (extract_trials).
+
+    Returns
+    -------
+    np.ndarray
+        The normalized trials, same shape.
+    """
+    baseline_columns = PRE_ONSET_SAMPLES + BASELINE_SAMPLE_OFFSETS
+    return trials - np.mean(trials[:, baseline_columns], axis=1, keepdims=True)
+
+
+def get_window_columns(start: float, stop: float, rate: float = PROCESSED_RATE) -> np.ndarray:
+    """Get the columns of a trial in the time window (start, stop], in seconds from the onset sample."""
+    first_offset, last_offset = round(start * rate) + 1, round(stop * rate)
+    return PRE_ONSET_SAMPLES + np.arange(first_offset, last_offset + 1)
+
+
+def get_window_statistics(normalized_trials: np.ndarray, rate: float = PROCESSED_RATE) -> pd.DataFrame:
+    """Compute the statistics of the lab's scripts in each time window, from the normalized trials of one condition.
+
+    Parameters
+    ----------
     normalized_trials : np.ndarray
-        Baseline-normalized trials, shape (n_trials, n_timepoints)
-
-    Notes
-    -----
-    For each trial, the mean of the baseline period is subtracted from
-    the entire trial, making the baseline period centered at zero.
-
-    Examples
-    --------
-    >>> trials, time_vec = extract_trials_around_events(dff, stim_times)
-    >>> norm_trials = baseline_normalize_trials(trials, time_vec)
-    """
-    # Find baseline period indices
-    baseline_mask = (time_vector >= baseline_window[0]) & (time_vector <= baseline_window[1])
-
-    if not np.any(baseline_mask):
-        raise ValueError(
-            f"No timepoints found in baseline window {baseline_window}. "
-            f"Time vector range: [{time_vector[0]:.2f}, {time_vector[-1]:.2f}]"
-        )
-
-    # Calculate baseline mean for each trial
-    baseline_means = np.nanmean(trial_matrix[:, baseline_mask], axis=1, keepdims=True)
-
-    # Subtract baseline from each trial
-    normalized_trials = trial_matrix - baseline_means
-
-    return normalized_trials
-
-
-def calculate_summary_statistics(
-    trial_matrix: np.ndarray,
-    time_vector: np.ndarray,
-    time_windows: Dict[str, Tuple[float, float]],
-    sampling_rate: float = 100.0,
-) -> Dict[str, np.ndarray]:
-    """
-    Calculate summary statistics for specified time windows.
-
-    Parameters
-    ----------
-    trial_matrix : np.ndarray
-        Matrix of trials, shape (n_trials, n_timepoints)
-    time_vector : np.ndarray
-        Time vector in seconds, shape (n_timepoints,)
-    time_windows : dict
-        Dictionary mapping window names to (start, end) tuples in seconds
-        Example: {'during_stim': (0.0, 1.0), 'post_stim': (1.0, 2.0)}
-    sampling_rate : float, optional
-        Sampling rate in Hz, by default 100.0
+        Normalized dF/F of the trials of one train duration and pulse frequency, shape (number of trains, 1501).
+    rate : float, optional
+        Rate of the trials, in Hz (default is 100).
 
     Returns
     -------
-    statistics : dict
-        Dictionary containing statistics for each window:
-        - 'mean': Mean across trials, shape (n_windows,)
-        - 'auc': Area under curve, shape (n_windows,)
-        - 'peak': Peak value from mean trace, shape (n_windows,)
-        - 'max_abs_dev': Maximum absolute deviation, shape (n_windows,)
-
-    Examples
-    --------
-    >>> windows = {
-    ...     'stim_0_250ms': (0.0, 0.25),
-    ...     'post_stim_1s': (0.25, 1.25),
-    ... }
-    >>> stats = calculate_summary_statistics(norm_trials, time_vec, windows)
+    pd.DataFrame
+        One row per window of TIME_WINDOWS, with "window", "start" and "stop" (seconds from the onset) and one
+        column per statistic of WINDOW_STATISTICS.
     """
-    n_windows = len(time_windows)
-    n_trials = trial_matrix.shape[0]
-
-    # Initialize output arrays
-    mean_values = np.full(n_windows, np.nan)
-    auc_values = np.full(n_windows, np.nan)
-    peak_values = np.full(n_windows, np.nan)
-    max_abs_dev_values = np.full(n_windows, np.nan)
-
-    # Process each time window
-    for i, (window_name, (t_start, t_end)) in enumerate(time_windows.items()):
-        # Find indices for this window
-        window_mask = (time_vector >= t_start) & (time_vector <= t_end)
-
-        if not np.any(window_mask):
-            warnings.warn(
-                f"No timepoints found in window '{window_name}' ({t_start}, {t_end})",
-                RuntimeWarning,
+    rows = []
+    for window, (start, stop) in TIME_WINDOWS.items():
+        values = normalized_trials[:, get_window_columns(start, stop, rate)]  # (trials, samples)
+        trial_indices = np.arange(values.shape[0])
+        mean_trace = values.mean(axis=0)
+        rows.append(
+            dict(
+                window=window,
+                start=start,
+                stop=stop,
+                mean=values.mean(axis=1).mean(),
+                auc=(np.trapezoid(values, axis=1) / rate).mean(),
+                peak=values.max(axis=1).mean(),
+                peak_of_mean_trace=mean_trace.max(),
+                max_absolute_deviation=values[trial_indices, np.abs(values).argmax(axis=1)].mean(),
+                max_absolute_deviation_of_mean_trace=mean_trace[np.abs(mean_trace).argmax()],
             )
-            continue
-
-        # Extract data for this window
-        window_data = trial_matrix[:, window_mask]
-
-        # Calculate mean across all trials and timepoints
-        mean_values[i] = np.nanmean(window_data)
-
-        # Calculate AUC (area under curve) using trapezoidal integration
-        # Average AUC across trials
-        aucs = []
-        for trial_idx in range(n_trials):
-            trial_segment = window_data[trial_idx, :]
-            if not np.all(np.isnan(trial_segment)):
-                auc = np.trapezoid(trial_segment, dx=1 / sampling_rate)
-                aucs.append(auc)
-
-        if aucs:
-            auc_values[i] = np.mean(aucs)
-
-        # Calculate peak from mean trace
-        mean_trace = np.nanmean(window_data, axis=0)
-        if not np.all(np.isnan(mean_trace)):
-            peak_values[i] = np.nanmax(mean_trace)
-
-        # Calculate maximum absolute deviation from mean trace
-        if not np.all(np.isnan(mean_trace)):
-            abs_trace = np.abs(mean_trace)
-            max_idx = np.nanargmax(abs_trace)
-            max_abs_dev_values[i] = mean_trace[max_idx]
-
-    statistics = {
-        "mean": mean_values,
-        "auc": auc_values,
-        "peak": peak_values,
-        "max_abs_dev": max_abs_dev_values,
-    }
-
-    return statistics
+        )
+    return pd.DataFrame(rows)
 
 
-def get_standard_time_windows(
-    stimulus_duration: float,
-) -> Dict[str, Tuple[float, float]]:
-    """
-    Get standard time windows for analysis based on stimulus duration.
+def analyse_trials(dff_series, epochs: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Run the trial analysis of the lab's scripts on the dF/F series of a session.
 
     Parameters
     ----------
-    stimulus_duration : float
-        Duration of stimulus in seconds (0.25, 1.0, or 4.0)
+    dff_series : FiberPhotometryResponseSeries
+        The dF/F series, e.g. nwbfile.processing["ophys"]["deltaF_over_F_SNr"].
+    epochs : pd.DataFrame
+        The optogenetic epochs table (nwbfile.intervals["optogenetic_epochs_table"].to_dataframe()), with one row
+        per train and the columns start_time, train_duration and stimulus_frequency.
 
     Returns
     -------
-    windows : dict
-        Dictionary of time window names and (start, end) tuples
-
-    Notes
-    -----
-    Windows are designed to capture:
-    - Pre-stimulus baseline
-    - During stimulus
-    - Post-stimulus response
-    - Late stimulus (for longer stimuli)
-
-    Examples
-    --------
-    >>> windows_250ms = get_standard_time_windows(0.25)
-    >>> windows_1s = get_standard_time_windows(1.0)
-    >>> windows_4s = get_standard_time_windows(4.0)
+    trials : pd.DataFrame
+        One row per train, indexed by the row of the epochs table, with "train_duration", "stimulus_frequency",
+        "dff" and "normalized_dff" (arrays of 1501 samples, from 5 s before to 10 s after the onset sample).
+    statistics : pd.DataFrame
+        One row per condition (train duration and pulse frequency) and time window, with "train_duration",
+        "stimulus_frequency", "number_of_trials" and the columns of get_window_statistics.
     """
-    # Common windows for all durations
-    windows = {
-        "baseline_1s": (-1.0, 0.0),
-        "baseline_4s": (-4.0, 0.0),
-        "pre_stim_250ms": (-0.25, 0.0),
-    }
+    _, rate, timestamps = get_series_blocks(dff_series)
+    dff = dff_series.data[:]
+    onset_indices = get_onset_indices(timestamps, epochs["start_time"].to_numpy(), rate)
+    dff_trials = extract_trials(dff, onset_indices)
+    normalized = normalize_trials(dff_trials)
+    trials = pd.DataFrame(
+        dict(
+            train_duration=epochs["train_duration"].to_numpy(),
+            stimulus_frequency=epochs["stimulus_frequency"].to_numpy(),
+            dff=list(dff_trials),
+            normalized_dff=list(normalized),
+        ),
+        index=epochs.index,
+    )
 
-    # Duration-specific windows
-    if stimulus_duration == 0.25:
-        windows.update(
-            {
-                "during_stim": (0.0, 0.25),
-                "post_stim_250ms": (0.25, 0.5),
-                "post_stim_1s": (0.25, 1.25),
-                "post_stim_2s": (0.25, 2.25),
-            }
-        )
-
-    elif stimulus_duration == 1.0:
-        windows.update(
-            {
-                "during_stim": (0.0, 1.0),
-                "late_stim_250ms": (0.75, 1.0),
-                "post_stim_1s": (1.0, 2.0),
-                "post_stim_2s": (1.0, 3.0),
-            }
-        )
-
-    elif stimulus_duration == 4.0:
-        windows.update(
-            {
-                "during_stim": (0.0, 4.0),
-                "late_stim_1s": (3.0, 4.0),
-                "late_stim_250ms": (3.75, 4.0),
-                "post_stim_1s": (4.0, 5.0),
-                "post_stim_2s": (4.0, 6.0),
-                "post_stim_4s": (4.0, 8.0),
-            }
-        )
-
-    else:
-        warnings.warn(
-            f"Stimulus duration {stimulus_duration}s not standard. Using generic windows.",
-            RuntimeWarning,
-        )
-        windows.update(
-            {
-                "during_stim": (0.0, stimulus_duration),
-                "post_stim": (stimulus_duration, stimulus_duration + 1.0),
-            }
-        )
-
-    return windows
+    statistics = []
+    conditions = trials.groupby(["train_duration", "stimulus_frequency"], sort=False).indices
+    for (train_duration, stimulus_frequency), positions in conditions.items():
+        condition_statistics = get_window_statistics(normalized[positions], rate)
+        condition_statistics.insert(0, "number_of_trials", len(positions))
+        condition_statistics.insert(0, "stimulus_frequency", stimulus_frequency)
+        condition_statistics.insert(0, "train_duration", train_duration)
+        statistics.append(condition_statistics)
+    return trials, pd.concat(statistics, ignore_index=True)
 
 
-def organize_by_stimulus_condition(
-    nwbfile,
-    dff: np.ndarray,
-    sampling_rate: float = 100.0,
-) -> Dict[str, Dict[str, np.ndarray]]:
-    """
-    Organize trials by stimulus condition (duration or frequency).
+def add_trial_analysis(nwbfile: NWBFile, dff_series_name: str, site: str) -> None:
+    """Add the trial-aligned dF/F and the window statistics of a dF/F series to the "trial_analysis" module.
+
+    Two tables are added, named with the recording site: "trial_aligned_dff_<site>", one row per train of the
+    optogenetic epochs table, and "trial_window_statistics_<site>", one row per condition (train duration and pulse
+    frequency) and time window (analyse_trials).
 
     Parameters
     ----------
     nwbfile : NWBFile
-        NWB file object containing optogenetic stimulation epochs
-    dff : np.ndarray
-        Continuous dF/F signal, shape (n_samples,)
-    sampling_rate : float, optional
-        Sampling rate in Hz, by default 100.0
-
-    Returns
-    -------
-    organized_data : dict
-        Nested dictionary organized by stimulus condition:
-        {
-            'Stim250ms': {
-                'trials': trial_matrix,
-                'time_vector': time_vector,
-                'event_times': event_times,
-                'normalized': normalized_trials,
-            },
-            ...
-        }
-
-    Examples
-    --------
-    >>> dff = calculate_dff_with_biexponential_fit(calcium, isosbestic)[0]
-    >>> data_by_condition = organize_by_stimulus_condition(nwbfile, dff)
-    >>> trials_250ms = data_by_condition['Stim250ms']['normalized']
+        The NWBFile, with the dF/F series in its "ophys" processing module and the optogenetic epochs table.
+    dff_series_name : str
+        Name of the dF/F series, e.g. "deltaF_over_F_SNr".
+    site : str
+        The recording site, e.g. "SNr", which names the tables.
     """
-    # Get optogenetic epochs table
-    epochs_df = nwbfile.intervals["optogenetic_epochs_table"].to_dataframe()
+    epochs_table = nwbfile.intervals["optogenetic_epochs_table"]
+    dff_series = nwbfile.processing["ophys"][dff_series_name]
+    trials, statistics = analyse_trials(dff_series=dff_series, epochs=epochs_table.to_dataframe())
+    epoch_row_of_id = {row_id: row for row, row_id in enumerate(epochs_table.id[:])}
+    trial_window = f"from {PRE_ONSET_SAMPLES / PROCESSED_RATE:g} s before to {POST_ONSET_SAMPLES / PROCESSED_RATE:g} s"
+    trial_window += f" after the onset sample of the train, at {PROCESSED_RATE:g} Hz, in percent"
 
-    # Identify unique conditions based on stimulus duration or frequency
-    # Try to group by duration first
-    epochs_df["duration"] = epochs_df["stop_time"] - epochs_df["start_time"]
-
-    # Round durations to standard values
-    duration_map = {
-        0.25: "Stim250ms",
-        1.0: "Stim1s",
-        4.0: "Stim4s",
-    }
-
-    organized_data = {}
-
-    for duration_val, condition_label in duration_map.items():
-        # Find trials matching this duration (with small tolerance)
-        mask = np.abs(epochs_df["duration"] - duration_val) < 0.05
-
-        if not np.any(mask):
-            continue
-
-        # Extract event times for this condition
-        event_times = epochs_df.loc[mask, "start_time"].values
-
-        if len(event_times) == 0:
-            continue
-
-        # Extract trials
-        trials, time_vec = extract_trials_around_events(
-            dff,
-            event_times,
-            sampling_rate=sampling_rate,
+    module = get_module(
+        nwbfile=nwbfile,
+        name="trial_analysis",
+        description="Trial analysis of the lab's MATLAB scripts, computed by hnasko-lab-to-nwb from the dF/F series.",
+    )
+    module.add(
+        DynamicTable(
+            name=f"trial_aligned_dff_{site}",
+            description=f"dF/F of {dff_series_name} around each stimulation train ({trial_window}).",
+            columns=[
+                # Row numbers and not a DynamicTableRegion: the validator rejects a region of an extension table
+                VectorData(
+                    name="epoch_row",
+                    data=np.array([epoch_row_of_id[row_id] for row_id in trials.index]),
+                    description="Row of the train in the optogenetic epochs table, from 0.",
+                ),
+                VectorData(
+                    name="start_time",
+                    data=np.asarray(epochs_table["start_time"][:])[
+                        [epoch_row_of_id[row_id] for row_id in trials.index]
+                    ],
+                    description="Onset time of the train, in seconds.",
+                ),
+                VectorData(
+                    name="train_duration", data=trials["train_duration"].tolist(), description="Duration of the train."
+                ),
+                VectorData(
+                    name="stimulus_frequency",
+                    data=trials["stimulus_frequency"].to_numpy(),
+                    description="Pulse frequency of the train, in Hz.",
+                ),
+                VectorData(name="dff", data=np.stack(trials["dff"]), description=f"dF/F {trial_window}."),
+                VectorData(
+                    name="normalized_dff",
+                    data=np.stack(trials["normalized_dff"]),
+                    description=f"dF/F {trial_window}, minus its mean over the 101 samples before the onset sample.",
+                ),
+            ],
         )
-
-        # Normalize trials
-        normalized = baseline_normalize_trials(trials, time_vec)
-
-        # Store in organized structure
-        organized_data[condition_label] = {
-            "trials": trials,
-            "time_vector": time_vec,
-            "event_times": event_times,
-            "normalized": normalized,
-            "duration": duration_val,
-        }
-
-    return organized_data
+    )
+    column_descriptions = dict(
+        train_duration="Duration of the trains.",
+        stimulus_frequency="Pulse frequency of the trains, in Hz.",
+        number_of_trials="Number of trains of this duration and frequency.",
+        window="Name of the time window in the lab's scripts.",
+        start="Start of the window, in seconds from the onset sample (excluded).",
+        stop="End of the window, in seconds from the onset sample (included).",
+        **{
+            statistic: f"{description}, of the normalized dF/F." for statistic, description in WINDOW_STATISTICS.items()
+        },
+    )
+    module.add(
+        DynamicTable(
+            name=f"trial_window_statistics_{site}",
+            description=f"Statistics of the normalized trial-aligned dF/F of {dff_series_name} in each time window, "
+            "per train duration and pulse frequency.",
+            columns=[
+                VectorData(
+                    name=column,
+                    data=statistics[column].tolist()
+                    if statistics[column].dtype == object
+                    else statistics[column].to_numpy(),
+                    description=column_descriptions[column],
+                )
+                for column in statistics.columns
+            ],
+        )
+    )
