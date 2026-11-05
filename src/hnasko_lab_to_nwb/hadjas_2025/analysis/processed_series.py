@@ -21,11 +21,14 @@ from ndx_fiber_photometry import FiberPhotometryResponseSeries
 from pynwb.file import NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.fiber_photometry_table import add_fiber_photometry_table_region
-from hnasko_lab_to_nwb.hadjas_2025.analysis.processing import PROCESSED_RATE, process_raw_signal
+from hnasko_lab_to_nwb.hadjas_2025.analysis.processing import (
+    PROCESSED_RATE,
+    PROCESSED_STREAM_NAMES,
+    process_raw_signal,
+)
 from neuroconv.tools.nwb_helpers import get_module
 from neuroconv.utils.checks import calculate_regular_series_rate
 
-PROCESSED_STREAM_NAMES = ("Gc_raw", "af_raw", "Gc", "af", "dF")
 LAB_PROVENANCE = "computed by the lab with custom MATLAB code"
 
 

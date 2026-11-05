@@ -34,6 +34,8 @@ import numpy as np
 from scipy import optimize, signal
 
 PROCESSED_RATE = 100.0  # Hz, rate of the resampled signals and dF/F
+# The processed streams of the lab's .mat files, as returned by process_raw_signal
+PROCESSED_STREAM_NAMES = ("Gc_raw", "af_raw", "Gc", "af", "dF")
 LOWPASS_CUTOFF = 6.0  # Hz, cutoff of the lowpass filter of the demodulation
 # Rates of the two exponentials searched for start points of the bi-exponential fit, per sample at 100 Hz: time
 # constants from 1 s to about 30 years, decaying or growing, and a constant term

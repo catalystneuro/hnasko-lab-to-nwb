@@ -27,14 +27,13 @@ from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     load_session_config,
     match_mat_segments,
 )
-from hnasko_lab_to_nwb.hadjas_2025.analysis.processing import process_raw_signal
+from hnasko_lab_to_nwb.hadjas_2025.analysis.processing import PROCESSED_STREAM_NAMES, process_raw_signal
 from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import (
     clear_tdt_block_cache,
     read_tdt_start_timestamp,
     read_tdt_stream,
 )
 
-PROCESSED_STREAM_NAMES = ("Gc_raw", "af_raw", "Gc", "af", "dF")
 # Blocks whose isosbestic fit the lab adjusted by hand, by .mat file name, subject and segment, with what was
 # changed. Their dF/F is not expected to match.
 LAB_ADJUSTED_FITS = {
