@@ -9,10 +9,10 @@ data_streams:
   raw: true  # Fi1r photodetector signal of the TDT blocks
   processed: lab  # lab, recomputed or false
   behavioral_video: false  # AnyMaze videos of the cohorts' behavioral_video_inputs, not part of the Hadjas 2025 paper
-# Each cohort key is the recording type of its metadata file (<recording type>_metadata.yaml). inputs lists the
-# stimulated inputs converted (Input column of the sheet, and the input folder under data_folder). A cohort with a
-# base_cohort has a metadata file that only gives what differs from the base cohort's file. mat_input_folder is the
-# input folder whose protocol folders hold the cohort's lab .mat files, when it is not the session's own.
+# Each cohort key is the recording type, which names the cohort's metadata function in cohort_metadata.py. inputs
+# lists the stimulated inputs converted (Input column of the sheet, and the input folder under data_folder).
+# mat_input_folder is the input folder whose protocol folders hold the cohort's lab .mat files, when it is not the
+# session's own.
 cohorts:
   SN pan GABA recordings:
     sheet_name: SNr GABA  # sheet of ASAP FP Overview.xlsx
@@ -30,13 +30,11 @@ cohorts:
   GRABDA recordings_STN_mCherry:
     sheet_name: GRAB DA
     data_folder: GRABDA recordings
-    base_cohort: GRABDA recordings
     mat_input_folder: STN  # the STN .mat files hold the controls as sites DLS_ctrl and TS_ctrl
     inputs: [STN_mCherry]
   GRABDA recordings_SNr:
     sheet_name: GRAB DA
     data_folder: GRABDA recordings
-    base_cohort: GRABDA recordings
     inputs: [SNr]
   Str_DA_terminal recordings:
     sheet_name: Striatal DA terminals
