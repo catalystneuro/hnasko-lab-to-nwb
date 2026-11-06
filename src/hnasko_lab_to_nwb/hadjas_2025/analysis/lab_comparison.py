@@ -1,4 +1,4 @@
-"""Compare the processed signals recomputed by hadjas_2025.processing with those of the lab's .mat files.
+"""Compare the processed signals recomputed by hadjas_2025.analysis.processing with those of the lab's .mat files.
 
 compare_session_processing recomputes the processed signals of each TDT block of a session from its raw Fi1r
 stream and compares them with the segment of the lab's .mat file that holds the block (match_mat_segments), and can
@@ -27,14 +27,13 @@ from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     load_session_config,
     match_mat_segments,
 )
-from hnasko_lab_to_nwb.hadjas_2025.processing import process_raw_signal
+from hnasko_lab_to_nwb.hadjas_2025.analysis.processing import PROCESSED_STREAM_NAMES, process_raw_signal
 from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import (
     clear_tdt_block_cache,
     read_tdt_start_timestamp,
     read_tdt_stream,
 )
 
-PROCESSED_STREAM_NAMES = ("Gc_raw", "af_raw", "Gc", "af", "dF")
 # Blocks whose isosbestic fit the lab adjusted by hand, by .mat file name, subject and segment, with what was
 # changed. Their dF/F is not expected to match.
 LAB_ADJUSTED_FITS = {
@@ -151,7 +150,7 @@ def compare_signals(recomputed: np.ndarray, lab: np.ndarray) -> dict:
     )
 
 
-def plot_session_comparison(blocks: list[dict], title: str, file_path: Path) -> None:
+def plot_session_comparison(blocks: list[dict], title: str, file_path: Path | None = None):
     """Plot, for each block of a session, the lab's and the recomputed isosbestic fits and dF/F.
 
     Needs matplotlib (the "analysis" extra).
@@ -159,37 +158,45 @@ def plot_session_comparison(blocks: list[dict], title: str, file_path: Path) -> 
     Parameters
     ----------
     blocks : list[dict]
-        One dict per block with "block", "segment", "lab_adjusted_fit" (or None), and the 100 Hz signals "af" (the
-        isosbestic signal), "lab_af_fit" and "af_fit" (the lab's and the recomputed bi-exponential fits), "lab_dF"
-        and "dF".
+        One dict per block with "block" (its name), and the 100 Hz signals "af" (the isosbestic signal), "af_fit"
+        (the recomputed bi-exponential fit), "lab_dF" and "dF". Optionally "segment" (the segment of the lab's .mat
+        file), "lab_adjusted_fit" (LAB_ADJUSTED_FITS) and "lab_af_fit" (the lab's bi-exponential fit, which is in the
+        lab's .mat files but not in the NWB files).
     title : str
         Title of the figure.
-    file_path : Path
-        The image file to write.
+    file_path : Path, optional
+        If given, the image file to write.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        The figure, which a notebook shows when it is the last expression of a cell.
     """
-    import matplotlib
+    # A Figure without pyplot needs no display backend, so the command line can write it without a screen
+    from matplotlib.figure import Figure
 
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    figure, axes = plt.subplots(len(blocks), 2, figsize=(15, 3.6 * len(blocks) + 0.6), squeeze=False)
+    figure = Figure(figsize=(15, 3.6 * len(blocks) + 0.6))
+    axes = figure.subplots(len(blocks), 2, squeeze=False)
     for row, block in enumerate(blocks):
         minutes = np.arange(1, len(block["af"]) + 1) / 100.0 / 60
         number_of_samples = min(len(block["dF"]), len(block["lab_dF"]))
         difference = np.max(np.abs(block["dF"][:number_of_samples] - block["lab_dF"][:number_of_samples]))
-        label = f"{block['block']} ({block['segment']})"
-        if block["lab_adjusted_fit"]:
+        label = block["block"]
+        if block.get("segment"):
+            label += f" ({block['segment']})"
+        if block.get("lab_adjusted_fit"):
             label += f", lab fit adjusted by hand: {block['lab_adjusted_fit']}"
 
         ax = axes[row, 0]
         ax.plot(minutes, 1000 * block["af"], color="0.75", lw=0.5, label="405 nm signal")
-        ax.plot(
-            minutes[: len(block["lab_af_fit"])],
-            1000 * block["lab_af_fit"],
-            color="tab:blue",
-            lw=2,
-            label="lab fit (MATLAB)",
-        )
+        if block.get("lab_af_fit") is not None:
+            ax.plot(
+                minutes[: len(block["lab_af_fit"])],
+                1000 * block["lab_af_fit"],
+                color="tab:blue",
+                lw=2,
+                label="lab fit (MATLAB)",
+            )
         ax.plot(minutes, 1000 * block["af_fit"], color="tab:orange", lw=1.5, ls="--", label="recomputed fit (Python)")
         low, high = np.percentile(1000 * block["af"], [0.5, 99.5])
         ax.set_ylim(low - 0.2 * (high - low), high + 0.2 * (high - low))
@@ -205,9 +212,10 @@ def plot_session_comparison(blocks: list[dict], title: str, file_path: Path) -> 
         ax.legend(fontsize=8, loc="upper right")
     figure.suptitle(title)
     figure.tight_layout()
-    Path(file_path).parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(file_path, dpi=80)
-    plt.close(figure)
+    if file_path is not None:
+        Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+        figure.savefig(file_path, dpi=80)
+    return figure
 
 
 def compare_session_processing(

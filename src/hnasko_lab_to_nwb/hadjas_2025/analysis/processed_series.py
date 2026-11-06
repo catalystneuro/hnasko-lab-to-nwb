@@ -1,13 +1,14 @@
-"""Add processed fiber photometry series recomputed from the raw series of an NWB file.
+"""Processed fiber photometry series recomputed from the raw series of an NWB file.
 
-add_recomputed_processed_series reads the raw photodetector series (e.g. "raw_signal_SNr" in nwbfile.acquisition),
-splits it into its TDT blocks, computes the processed signals of each block with hadjas_2025.processing, and writes
-them to the "ophys" processing module as the lab's .mat files would be written (Hadjas2025ProcessedFiberPhotometry
-Interface): the same names, units and FiberPhotometryTable rows, one series per stream concatenated over the blocks.
-The series descriptions say that the signals were recomputed by this package and not by the lab.
+compute_processed_series splits the raw photodetector series (e.g. "raw_signal_SNr" in nwbfile.acquisition) into its
+TDT blocks and computes the processed signals of each block with hadjas_2025.analysis.processing; it only reads the
+file, so it also works on a file streamed from DANDI.
 
-It is used by the conversion when data_streams.processed is "recomputed", and works on an NWB file that has only the
-raw series, opened in append mode.
+add_recomputed_processed_series writes them to the "ophys" processing module as the lab's .mat files would be written
+(Hadjas2025ProcessedFiberPhotometryInterface): the same names, units and FiberPhotometryTable rows, one series per
+stream concatenated over the blocks. The series descriptions say that the signals were recomputed by this package and
+not by the lab. It is used by the conversion when data_streams.processed is "recomputed", and works on an NWB file
+that has only the raw series, opened in append mode.
 """
 
 from importlib.metadata import version
@@ -20,11 +21,14 @@ from ndx_fiber_photometry import FiberPhotometryResponseSeries
 from pynwb.file import NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.fiber_photometry_table import add_fiber_photometry_table_region
-from hnasko_lab_to_nwb.hadjas_2025.processing import PROCESSED_RATE, process_raw_signal
+from hnasko_lab_to_nwb.hadjas_2025.analysis.processing import (
+    PROCESSED_RATE,
+    PROCESSED_STREAM_NAMES,
+    process_raw_signal,
+)
 from neuroconv.tools.nwb_helpers import get_module
 from neuroconv.utils.checks import calculate_regular_series_rate
 
-PROCESSED_STREAM_NAMES = ("Gc_raw", "af_raw", "Gc", "af", "dF")
 LAB_PROVENANCE = "computed by the lab with custom MATLAB code"
 
 
@@ -49,7 +53,7 @@ def get_recomputed_description(description: str) -> str:
     if LAB_PROVENANCE not in description:
         raise ValueError(f"The series description does not say '{LAB_PROVENANCE}': {description}")
     recomputed_provenance = (
-        f"recomputed from the raw signal with hadjas_2025.processing of hnasko-lab-to-nwb "
+        f"recomputed from the raw signal with hadjas_2025.analysis.processing of hnasko-lab-to-nwb "
         f"{version('hnasko-lab-to-nwb')}, a Python port of the lab's MATLAB code (its bi-exponential fit of the "
         "isosbestic signal can differ from the lab's; see the processing module)"
     )
@@ -74,6 +78,67 @@ def get_block_bounds(timestamps: np.ndarray, sampling_frequency: float) -> list[
     gap_indices = np.flatnonzero(np.diff(timestamps) > 1.5 / sampling_frequency) + 1
     edges = [0, *gap_indices.tolist(), len(timestamps)]
     return list(zip(edges[:-1], edges[1:]))
+
+
+def get_series_blocks(series) -> tuple[list[tuple[int, int]], float, np.ndarray]:
+    """Get the TDT blocks of a series written by the conversion, its rate within a block and its timestamps.
+
+    A series with a rate is one block; a series with timestamps is split into its blocks at the gaps between them
+    (get_block_bounds), and its rate is that of its first block.
+
+    Parameters
+    ----------
+    series : TimeSeries
+        A raw or processed fiber photometry series, e.g. nwbfile.acquisition["raw_signal_SNr"].
+
+    Returns
+    -------
+    tuple[list[tuple[int, int]], float, np.ndarray]
+        Start (included) and end (excluded) sample of each block, the sampling frequency in Hz, and the timestamps
+        of every sample, in seconds.
+    """
+    number_of_samples = series.data.shape[0]
+    if series.rate is not None:
+        sampling_frequency = float(series.rate)
+        timestamps = series.starting_time + np.arange(number_of_samples) / sampling_frequency
+        return [(0, number_of_samples)], sampling_frequency, timestamps
+    timestamps = np.asarray(series.timestamps[:])
+    first_block_end = get_block_bounds(timestamps, 1 / np.min(np.diff(timestamps)))[0][1]
+    sampling_frequency = (first_block_end - 1) / (timestamps[first_block_end - 1] - timestamps[0])
+    return get_block_bounds(timestamps, sampling_frequency), sampling_frequency, timestamps
+
+
+def compute_processed_series(raw_series, led_modulation: dict) -> list[dict]:
+    """Compute the processed signals of each TDT block of a raw photodetector series.
+
+    The blocks are those of get_series_blocks.
+
+    Parameters
+    ----------
+    raw_series : FiberPhotometryResponseSeries
+        The raw series, e.g. nwbfile.acquisition["raw_signal_SNr"].
+    led_modulation : dict
+        Modulation frequencies of the LEDs, "calcium_signal_in_hz" and "isosbestic_control_in_hz"
+        (get_led_modulation of the session start time).
+
+    Returns
+    -------
+    list[dict]
+        One dict per block, in time order: "starting_time", the timestamp of the block's first raw sample, at which
+        its processed signals start, as for the lab's signals; "sampling_frequency", the rate of the raw signal in Hz;
+        and the signals of process_raw_signal by stream name.
+
+    Raises
+    ------
+    ValueError
+        If the processed signals of a block cannot be computed (calculate_dff_with_biexponential_fit).
+    """
+    block_bounds, sampling_frequency, raw_timestamps = get_series_blocks(raw_series)
+    blocks = []
+    for start, end in block_bounds:
+        processed = process_raw_signal(np.asarray(raw_series.data[start:end]), sampling_frequency, **led_modulation)
+        blocks.append(dict(starting_time=raw_timestamps[start], sampling_frequency=sampling_frequency, **processed))
+    return blocks
 
 
 def add_recomputed_processed_series(
@@ -105,32 +170,16 @@ def add_recomputed_processed_series(
     """
     site = raw_metadata_key.removeprefix("Fi1r_")
     raw_series = nwbfile.acquisition[metadata["FiberPhotometry"][raw_metadata_key]["name"]]
-    if raw_series.rate is not None:
-        sampling_frequency = float(raw_series.rate)
-        raw_timestamps = raw_series.starting_time + np.arange(raw_series.data.shape[0]) / sampling_frequency
-        block_bounds = [(0, raw_series.data.shape[0])]
-    else:
-        raw_timestamps = np.asarray(raw_series.timestamps[:])
-        first_block_end = get_block_bounds(raw_timestamps, 1 / np.min(np.diff(raw_timestamps)))[0][1]
-        sampling_frequency = (first_block_end - 1) / (raw_timestamps[first_block_end - 1] - raw_timestamps[0])
-        block_bounds = get_block_bounds(raw_timestamps, sampling_frequency)
-
-    segments = {stream_name: [] for stream_name in PROCESSED_STREAM_NAMES}
-    timestamps = {stream_name: [] for stream_name in PROCESSED_STREAM_NAMES}
-    for start, end in block_bounds:
-        processed = process_raw_signal(np.asarray(raw_series.data[start:end]), sampling_frequency, **led_modulation)
-        for stream_name in PROCESSED_STREAM_NAMES:
-            rate = sampling_frequency if stream_name.endswith("_raw") else PROCESSED_RATE
-            segments[stream_name].append(processed[stream_name])
-            # as for the lab's signals, each block's samples start at the block's first raw timestamp
-            timestamps[stream_name].append(raw_timestamps[start] + np.arange(len(processed[stream_name])) / rate)
+    blocks = compute_processed_series(raw_series=raw_series, led_modulation=led_modulation)
 
     ophys_module = get_module(nwbfile=nwbfile, name="ophys", description="Processed fiber photometry signals")
     for stream_name in PROCESSED_STREAM_NAMES:
         metadata_key = f"{stream_name}_{site}"
         series_metadata = metadata["FiberPhotometry"][metadata_key]
-        rate = sampling_frequency if stream_name.endswith("_raw") else PROCESSED_RATE
-        series_timestamps = np.concatenate(timestamps[stream_name])
+        rate = blocks[0]["sampling_frequency"] if stream_name.endswith("_raw") else PROCESSED_RATE
+        series_timestamps = np.concatenate(
+            [block["starting_time"] + np.arange(len(block[stream_name])) / rate for block in blocks]
+        )
         if calculate_regular_series_rate(series_timestamps) is not None:
             timing_kwargs = dict(starting_time=series_timestamps[0], rate=rate)
         else:
@@ -139,7 +188,7 @@ def add_recomputed_processed_series(
             FiberPhotometryResponseSeries(
                 name=series_metadata["name"],
                 description=get_recomputed_description(series_metadata["description"]),
-                data=np.concatenate(segments[stream_name]),
+                data=np.concatenate([block[stream_name] for block in blocks]),
                 unit=series_metadata["unit"],
                 fiber_photometry_table_region=add_fiber_photometry_table_region(
                     nwbfile=nwbfile, metadata=metadata, metadata_key=metadata_key

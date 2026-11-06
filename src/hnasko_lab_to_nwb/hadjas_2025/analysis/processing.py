@@ -23,7 +23,7 @@ Checked against the lab's .mat files with hadjas-2025 compare-processing, which 
   and a ValueError is raised if no fit has a baseline above zero. As in the lab's code, a negative scaling slope
   gives a warning and the fit is kept (56 of the lab's 560 blocks, nearly all GRAB-DA).
 - The lab adjusted the fit by hand for seven blocks, which are not reproduced here (LAB_ADJUSTED_FITS in
-  processing_comparison): it left out other lead-in times (1.2 s, 20 s, or 0.08 s instead of 1 s), fitted from the
+  lab_comparison): it left out other lead-in times (1.2 s, 20 s, or 0.08 s instead of 1 s), fitted from the
   start of the recording, left out the end of a recording where the fiber was unplugged, or joined separate fits
   of two or three parts of a recording with a jump in the signal.
 """
@@ -34,6 +34,8 @@ import numpy as np
 from scipy import optimize, signal
 
 PROCESSED_RATE = 100.0  # Hz, rate of the resampled signals and dF/F
+# The processed streams of the lab's .mat files, as returned by process_raw_signal
+PROCESSED_STREAM_NAMES = ("Gc_raw", "af_raw", "Gc", "af", "dF")
 LOWPASS_CUTOFF = 6.0  # Hz, cutoff of the lowpass filter of the demodulation
 # Rates of the two exponentials searched for start points of the bi-exponential fit, per sample at 100 Hz: time
 # constants from 1 s to about 30 years, decaying or growing, and a constant term

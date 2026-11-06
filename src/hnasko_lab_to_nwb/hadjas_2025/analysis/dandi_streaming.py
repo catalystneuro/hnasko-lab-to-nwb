@@ -1,13 +1,8 @@
 """Stream a session's NWB file from the DANDI archive for the reproduced analyses."""
 
-# Standard library imports
 import h5py
-
-# Visualization
 import remfile
 from dandi.dandiapi import DandiAPIClient
-
-# NWB and DANDI access
 from pynwb import NWBHDF5IO
 
 
@@ -21,7 +16,8 @@ def load_nwb_from_dandi(dandiset_id, subject_id, session_id):
     subject_id : str
         The subject ID of the session.
     session_id : str
-        The session ID, e.g. "varying_durations".
+        The session ID as written in the DANDI file names, e.g. "varying-durations" (DANDI writes the underscores
+        of the session IDs as hyphens).
 
     Returns
     -------
@@ -36,7 +32,6 @@ def load_nwb_from_dandi(dandiset_id, subject_id, session_id):
     pattern = f"sub-{subject_id}/sub-{subject_id}_ses-{session_id}*.nwb"
 
     with DandiAPIClient() as client:
-        client.dandi_authenticate()
         assets = client.get_dandiset(dandiset_id, "draft").get_assets_by_glob(pattern=pattern, order="path")
 
         s3_urls = []

@@ -116,7 +116,7 @@ FiberPhotometry:
       the excitation sources); the processed series in the ophys module are demodulated from it.
     fiber_photometry_table_region: [SNc_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
-  Gc_raw_VG2:
+  Gc_raw_SNc:
     name: demodulated_calcium_signal_SNc
     description: GCaMP6f fluorescence in the substantia nigra pars compacta (SNc) excited at 465 nm (the sensor), computed
       by the lab with custom MATLAB code, which demodulated it from the raw signal and lowpass filtered at 6 Hz with a
@@ -125,7 +125,7 @@ FiberPhotometry:
     fiber_photometry_table_region: [SNc_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
       of SNc.
-  af_raw_VG2:
+  af_raw_SNc:
     name: demodulated_isosbestic_control_SNc
     description: GCaMP6f fluorescence in the substantia nigra pars compacta (SNc) excited at 405 nm (the isosbestic
       control), computed by the lab with custom MATLAB code, which demodulated it from the raw signal and lowpass filtered at 6
@@ -134,7 +134,7 @@ FiberPhotometry:
     fiber_photometry_table_region: [SNc_405]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
       of SNc.
-  Gc_VG2:
+  Gc_SNc:
     name: downsampled_calcium_signal_SNc
     description: GCaMP6f fluorescence in the substantia nigra pars compacta (SNc) excited at 465 nm (the sensor), computed
       by the lab with custom MATLAB code, which demodulated it, lowpass filtered it at 6 Hz with a zero-phase filter and
@@ -143,7 +143,7 @@ FiberPhotometry:
     fiber_photometry_table_region: [SNc_465]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the calcium signal
       of SNc.
-  af_VG2:
+  af_SNc:
     name: downsampled_isosbestic_control_SNc
     description: GCaMP6f fluorescence in the substantia nigra pars compacta (SNc) excited at 405 nm (the isosbestic
       control), computed by the lab with custom MATLAB code, which demodulated it, lowpass filtered it at 6 Hz with a zero-phase
@@ -152,7 +152,7 @@ FiberPhotometry:
     fiber_photometry_table_region: [SNc_405]
     fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the isosbestic control
       of SNc.
-  dF_VG2:
+  dF_SNc:
     name: deltaF_over_F_SNc
     description: dF/F of the GCaMP6f signal in the substantia nigra pars compacta (SNc), in percent, computed by the lab
       with custom MATLAB code. A biexponential curve was fit to the 100 Hz isosbestic signal and scaled to the 100 Hz

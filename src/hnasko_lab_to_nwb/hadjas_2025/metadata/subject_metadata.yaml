@@ -1,6 +1,0 @@
-# Subject metadata shared by all Hadjas 2025 cohorts. Cohort files add to or override these values; each cohort file
-# describes its own mouse lines.
-Subject:
-  species: Mus musculus
-  age: P6W/  # older than 6 weeks at surgery (ISO 8601 interval with no upper bound)
-  strain: C57BL/6J
