@@ -46,7 +46,7 @@ stimulation site) it has:
   `stop_time - start_time`.
 - `tdt_block`: the TDT block folder of the train.
 
-The pulse width was not recorded, so `pulse_length_in_ms` is NaN.
+TDT does not record single pulses. `pulse_length_in_ms` is the 10 ms pulse width of the protocol.
 
 ## Trials
 

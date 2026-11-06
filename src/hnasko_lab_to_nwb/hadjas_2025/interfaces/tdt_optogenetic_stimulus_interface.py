@@ -229,7 +229,8 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
             The in-memory object to add the data to.
         metadata : dict
             Metadata dictionary with the "Optogenetics" section (including "OptogeneticEpochsTable",
-            "power_in_mW" and "excitation_wavelength_in_nm") and the "Devices" and "DeviceModels" registry.
+            "power_in_mW", "pulse_length_in_ms" and "excitation_wavelength_in_nm") and the "Devices" and
+            "DeviceModels" registry.
         tdt_stimulus_channel_to_frequency : dict
             Pulse frequency in Hz of each stimulation epoc name of the protocol, e.g. {"H10_": 10.0}
             (epoc_name_to_frequency_in_hz of the session config).
@@ -300,7 +301,7 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
                 train_duration=train_duration,
                 tdt_block=str(block_name),
                 stimulation_on=True,
-                pulse_length_in_ms=np.nan,  # TDT stores only the train onsets and offsets
+                pulse_length_in_ms=metadata["Optogenetics"]["pulse_length_in_ms"],
                 period_in_ms=(1 / stimulus_frequency) * 1000,
                 number_pulses_per_pulse_train=number_pulses_per_pulse_train,
                 number_trains=1,
