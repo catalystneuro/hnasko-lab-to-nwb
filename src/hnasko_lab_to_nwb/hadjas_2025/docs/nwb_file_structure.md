@@ -46,7 +46,8 @@ wavelength, pulse period, number of pulses, stimulation site) it has:
   `stop_time - start_time`.
 - `tdt_block`: the TDT block folder of the train.
 
-TDT does not record single pulses. `pulse_length_in_ms` is the 10 ms pulse width of the protocol.
+TDT does not record single pulses. `pulse_length_in_ms` is the 10 ms pulse width of the protocol. Each row holds one
+train, so `number_trains` is 1 and `intertrain_interval_in_ms` is NaN.
 
 ## Trials
 

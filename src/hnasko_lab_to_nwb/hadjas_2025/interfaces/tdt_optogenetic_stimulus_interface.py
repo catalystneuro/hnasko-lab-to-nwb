@@ -305,7 +305,7 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
                 period_in_ms=(1 / stimulus_frequency) * 1000,
                 number_pulses_per_pulse_train=number_pulses_per_pulse_train,
                 number_trains=1,
-                intertrain_interval_in_ms=0.0,
+                intertrain_interval_in_ms=np.nan,  # one train per row, so there is no next train in the row
                 power_in_mW=metadata["Optogenetics"]["power_in_mW"],
                 wavelength_in_nm=metadata["Optogenetics"]["excitation_wavelength_in_nm"],
                 optogenetic_sites=[0],  # assuming single stimulation site for now
