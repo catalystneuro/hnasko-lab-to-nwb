@@ -1,6 +1,6 @@
 # Metadata for Hadjas 2025 --> SNr pan-GABA GCaMP6f recordings, STN & PPN stim
 NWBFile:
-  keywords: [SNc fiber photometry recordings, SNr GABAergic neurons, VGLUT2-Cre x VGAT-Flp, STN optogenetic stimulation, PPN
+  keywords: [SNr fiber photometry recordings, SNr GABAergic neurons, VGLUT2-Cre x VGAT-Flp, STN optogenetic stimulation, PPN
       optogenetic stimulation, Parkinson's disease]
   experiment_description: Activity of SNr GABA neurons during optogenetic stimulation of excitatory inputs to the
     substantia nigra (SN). In VGLUT2-Cre x VGAT-Flp mice, GCaMP6f was expressed in SNr GABA neurons and ChrimsonR was
