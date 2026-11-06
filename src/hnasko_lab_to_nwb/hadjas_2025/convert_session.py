@@ -1,8 +1,9 @@
 """Convert one session of the Hadjas 2025 dataset to NWB with Hadjas2025NWBConverter.
 
 A session is one protocol (varying durations or varying frequencies) of one subject. session_to_nwb finds the
-session's TDT blocks and the lab's processed .mat file, builds the metadata from the files in metadata/ and the
-session config (metadata/session_config.yaml), and writes sub-<subject ID>_ses-<session ID>.nwb.
+session's TDT blocks and the lab's processed .mat file, builds the metadata from the files in metadata/, the
+cohort metadata (cohort_metadata.py) and the session config (metadata/session_config.yaml), and writes
+sub-<subject ID>_ses-<session ID>.nwb.
 """
 
 from datetime import date, datetime
@@ -12,6 +13,7 @@ from zoneinfo import ZoneInfo
 
 import numpy as np
 
+from hnasko_lab_to_nwb.hadjas_2025.cohort_metadata import build_cohort_metadata
 from hnasko_lab_to_nwb.hadjas_2025.interfaces.concatenated_tdt_fp_interface import (
     ConcatenatedTDTFiberPhotometryInterface,
 )
@@ -113,10 +115,10 @@ def get_processed_source(data_streams: dict) -> str | bool:
 
 
 def load_cohort_metadata(recording_type: str) -> dict:
-    """Load the metadata shared by all cohorts, updated with the metadata file of one cohort.
+    """Load the metadata shared by all cohorts (metadata/general_metadata.yaml), updated with one cohort's metadata.
 
-    A cohort whose session config entry has a base_cohort (e.g. the GRAB-DA mCherry controls) has a metadata file
-    that updates the base cohort's file; its lists (e.g. keywords) replace those of the base cohort.
+    The cohort's metadata is built by hadjas_2025.cohort_metadata, which fills in the shared sentences of
+    general_metadata.yaml (TextTemplates); the sentences are not part of the returned metadata.
 
     Parameters
     ----------
@@ -128,17 +130,9 @@ def load_cohort_metadata(recording_type: str) -> dict:
     dict
         The merged metadata.
     """
-
-    def get_cohort_file_path(cohort: str) -> Path:
-        return METADATA_FOLDER_PATH / f"{cohort.replace(' ', '_')}_metadata.yaml"
-
     metadata = load_dict_from_file(METADATA_FOLDER_PATH / "general_metadata.yaml")
-    metadata.pop("TextTemplates")  # sentences filled in by hadjas_2025.cohort_metadata
-    cohort_metadata = load_dict_from_file(get_cohort_file_path(recording_type))
-    base_cohort = load_session_config()["cohorts"][recording_type].get("base_cohort")
-    if base_cohort is not None:
-        base_cohort_metadata = load_dict_from_file(get_cohort_file_path(base_cohort))
-        cohort_metadata = dict_deep_update(base_cohort_metadata, cohort_metadata, append_list=False)
+    text_templates = metadata.pop("TextTemplates")
+    cohort_metadata = build_cohort_metadata(recording_type=recording_type, text_templates=text_templates)
     return dict_deep_update(metadata, cohort_metadata)
 
 
@@ -824,9 +818,9 @@ def session_to_nwb(
     block per train duration in varFreq_* subfolders, written as one concatenated series, except SN pan GABA PPN,
     which has one block for all durations.
 
-    The metadata is merged in this order: the shared and cohort metadata files (load_cohort_metadata), moved to
-    the left hemisphere if the subject was implanted on the left, the devices of the rig (get_raw_stream_settings),
-    then the subject, session and LED modulation fields set here. The ontology terms
+    The metadata is merged in this order: the shared metadata file and the cohort metadata (load_cohort_metadata),
+    moved to the left hemisphere if the subject was implanted on the left, the devices of the rig
+    (get_raw_stream_settings), then the subject, session and LED modulation fields set here. The ontology terms
     (load_external_resources_metadata) are set after the last merge. Optogenetics entries for other stimulus
     sites are removed.
     """
