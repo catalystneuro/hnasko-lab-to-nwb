@@ -10,7 +10,8 @@ optogenetically.
 ## Notebooks
 
 - `read_a_session.ipynb`: opens one session, lists what the file holds, and plots dF/F with the stimulation trains,
-  the raw photodetector signal and the signals computed from it, and the stimulation and recording site metadata.
+  the raw photodetector signal and the signals computed from it, and the stimulation and recording site metadata. It
+  ends with the ontology terms that the file's HERD table links to its values.
 - `trial_aligned_responses.ipynb`: aligns dF/F on the stimulation trains of one session, as the lab's code does, and
   plots every trial, the mean response to each train duration and pulse frequency, and the mean dF/F during the
   train. The default session records SNr GABA neurons during PPN stimulation.
