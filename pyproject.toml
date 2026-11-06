@@ -49,7 +49,6 @@ analysis = [
 [dependency-groups]
 dev = [
     "pre-commit",
-    "pytest",
     "ruff",
 ]
 

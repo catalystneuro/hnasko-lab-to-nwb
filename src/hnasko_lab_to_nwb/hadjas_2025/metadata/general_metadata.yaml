@@ -1,5 +1,6 @@
 # Metadata shared by all Hadjas 2025 cohorts. Cohort files add to or override these values; each cohort file
-# describes its own mouse lines, and the devices that differ between recording rigs are in rig_devices_metadata.yaml.
+# describes its own mouse lines, and the devices that differ between recording rigs are in the rigs section of
+# session_config.yaml.
 NWBFile:
   related_publications: ['doi:10.1101/2025.06.03.657460']  # Hadjas et al. 2025, bioRxiv preprint
   institution: UC San Diego School of Medicine
