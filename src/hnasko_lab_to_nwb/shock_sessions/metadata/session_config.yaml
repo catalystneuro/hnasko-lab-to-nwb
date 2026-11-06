@@ -1,0 +1,20 @@
+# Settings of the shock session conversion. The shock mice are SN pan GABA PPN mice of the Hadjas 2025 dataset: their
+# metadata is that of base_cohort (a cohort of hadjas_2025/metadata/session_config.yaml), updated with
+# shock_sessions_metadata.yaml, and their rows are in the same tab of the overview sheet.
+base_cohort: SN pan GABA recordings
+sheet_name: SNr GABA  # tab of ASAP FP Overview.xlsx
+data_folder: SN pan GABA recordings
+inputs: [PPN]  # input folders with a Shocks protocol folder
+protocol_folder: Shocks  # <data folder>/<input>/Fiber photometry_TDT/<protocol_folder>/<subject>-<yymmdd>-<hhmmss>
+session_id: shocks
+session_description: "The mouse is placed in a shock chamber for 15 minutes and hears 10 auditory cues of 8 s paired with
+  a shock (CS+) and 10 auditory cues of 8 s not paired with a shock (CS-). The shocks were controlled by MedPC and are not
+  recorded in the TDT blocks; the cue intervals table lists the cues."
+# Auditory cue epocs of the TDT blocks
+cue_epocs:
+  CSp_:
+    cue_type: CS+
+    paired_with_shock: true
+  CSm_:
+    cue_type: CS-
+    paired_with_shock: false

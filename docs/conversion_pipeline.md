@@ -1,8 +1,12 @@
 # The conversion pipeline
 
 This page explains how a conversion in this repository turns a lab's recordings into NWB files and shares them on
-DANDI. Each conversion project has its own documentation next to its code; for the recordings of Hadjas et al. (2025),
-see [hadjas_2025/docs](../src/hnasko_lab_to_nwb/hadjas_2025/docs/).
+DANDI. Each conversion project has its own documentation next to its code:
+
+- [hadjas_2025](../src/hnasko_lab_to_nwb/hadjas_2025/docs/): the recordings of Hadjas et al. (2025), shared in
+  DANDI:001528.
+- [shock_sessions](../src/hnasko_lab_to_nwb/shock_sessions/docs/): the shock sessions of the SN pan GABA PPN mice,
+  converted to local files.
 
 ## NWB and NeuroConv
 
