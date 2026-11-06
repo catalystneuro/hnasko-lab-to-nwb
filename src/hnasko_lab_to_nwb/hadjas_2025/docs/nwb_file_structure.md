@@ -37,9 +37,9 @@ epochs.
 
 ## Optogenetic stimulation
 
-`intervals/optogenetic_epochs_table` (ndx-optogenetics) has one row per train, from its onset and offset recorded by
-TDT Synapse. Besides the standard columns (start and stop time, power, wavelength, pulse period, number of pulses,
-stimulation site) it has:
+`intervals/optogenetic_epochs_table` (ndx-optogenetics) has one row per train, from the onset and offset of the TTL
+that AnyMaze sent to TDT Synapse with each train. Besides the standard columns (start and stop time, power,
+wavelength, pulse period, number of pulses, stimulation site) it has:
 
 - `stimulus_frequency`: the pulse frequency in Hz.
 - `train_duration`: the train duration of the protocol (`250ms`, `1s`, `4s` or `16s`). The recorded duration is

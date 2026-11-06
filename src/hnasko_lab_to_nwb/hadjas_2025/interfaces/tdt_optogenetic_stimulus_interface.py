@@ -122,10 +122,10 @@ def get_optogenetic_experiment_metadata(nwbfile: NWBFile, metadata: dict):
 class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
     """Write the optogenetic stimulation trains of the TDT blocks of a session as one epochs table.
 
-    Input files: the TDT block folders of one session (.Tbk, .Tdx, .tev, .tin and .tsq files). TDT Synapse stores
-    the onset and offset of each stimulation train as an epoc, under a name per train duration (e.g. "s1s_",
-    varying-durations protocol) or per pulse frequency (e.g. "H10_", varying-frequencies protocol). The epocs of
-    all blocks are read, with times from the start of the first block.
+    Input files: the TDT block folders of one session (.Tbk, .Tdx, .tev, .tin and .tsq files). AnyMaze sends a TTL
+    to TDT Synapse with each stimulation train, and Synapse stores its onset and offset as an epoc, under a name per
+    train duration (e.g. "s1s_", varying-durations protocol) or per pulse frequency (e.g. "H10_", varying-frequencies
+    protocol). The epocs of all blocks are read, with times from the start of the first block.
 
     NWB objects written:
 
