@@ -1,0 +1,55 @@
+# Metadata for Hadjas 2025 --> 3. Striatal GRAB_DA recordings (DLS & TS), mCherry controls for STN stim.
+# Updates GRABDA_recordings_metadata.yaml (base_cohort in the session config).
+# The control virus (construct, manufacturer, titer, volume) is not known yet; the fields marked "lab question 12"
+# hold placeholders until the lab answers.
+NWBFile:
+  keywords: [DLS fiber photometry recordings, TS fiber photometry recordings, Dopamine release, VGLUT2-Cre, STN optogenetic
+      stimulation, mCherry control, Parkinson's disease]
+  experiment_description: Control experiment for the optogenetic stimulation of STN inputs to the substantia nigra (SN),
+    with dopamine release recorded in the dorsolateral striatum (DLS) or the tail of the striatum (TS). In VGLUT2-Cre mice,
+    the dopamine sensor GRAB-DA2m was expressed in DLS or TS and mCherry, without an opsin, was expressed in the
+    subthalamic nucleus (STN). Light was delivered through a separate fiber over SNc. Freely moving mice in a plastic tub
+    received trains of 635 nm laser pulses while fluorescence was recorded, as in the mice expressing ChrimsonR. Each
+    session follows one of two protocols, varying train durations or varying pulse frequencies, described in the session
+    description.
+  surgery: Mice > 6 weeks old were anesthetized with isoflurane (4% for induction; 1-2% for maintenance). For monitoring DA
+    release in striatal subregions (DLS and TS) in VGLUT2-Cre mice were injected with 300 nl of AAV9-EF1a-GRABDA2m (2e12 vg/mL,
+    Addgene 140553) in either DLS (AP +0.5, ML +/-2.25, DV -2.95) or TS (AP -1.25, ML +/-2.9, DV -3.45). A fiber (200-um core,
+    0.39 NA, L = 6 mm, 1.25-mm white ceramic ferrule, RWD) was implanted in SNc (AP -3.2, ML +/-1.4, DV -4.1) for optogenetic
+    stimulation, and a second fiber (400-um core, 0.39 NA, L = 4 mm, 1.25-mm black ceramic ferrule, RWD) was implanted in
+    either DLS (AP +0.5, ML +/-2.25, DV -2.75) or TS (AP -1.25, ML +/-2.9, DV -3.25). As a control for optogenetic
+    stimulation, a virus expressing mCherry without an opsin was injected in STN (AP -2.00, ML +/-1.6, DV -4.5). Mice were
+    allowed to recover for 4 weeks before starting experiments.
+Optogenetics:
+  OptogeneticViruses:
+    viral_vector_mcherry:
+      name: viral_vector_mcherry
+      description: Control viral vector expressing mCherry without an opsin.
+      manufacturer: unknown  # lab question 12
+      construct_name: unknown  # lab question 12
+      titer_in_vg_per_ml: .nan  # lab question 12
+  OptogeneticVirusInjections:
+    viral_vector_injection_STN_mCherry:
+      name: viral_vector_injection_STN_mCherry
+      description: Viral injection of the mCherry control virus into the Subthalamic Nucleus (STN).
+      location: subthalamic nucleus (STN)
+      hemisphere: right
+      reference: bregma at the cortical surface
+      ap_in_mm: -2.0
+      ml_in_mm: 1.6
+      dv_in_mm: -4.5
+      volume_in_uL: .nan  # lab question 12
+      viral_vector_metadata_key: viral_vector_mcherry
+  OptogeneticEffectors:
+    mCherry_STN_mCherry:
+      name: mCherry_STN_mCherry
+      description: mCherry, a fluorescent protein without an opsin, expressed in the STN as a control for optogenetic
+        stimulation.
+      label: mCherry
+      viral_vector_injection_metadata_key: viral_vector_injection_STN_mCherry
+  OptogeneticSitesTable:
+    rows:
+      STN_mCherry:
+        excitation_source_metadata_key: optogenetic_excitation_source
+        optical_fiber_metadata_key: optical_fiber_SNc
+        effector_metadata_key: mCherry_STN_mCherry
