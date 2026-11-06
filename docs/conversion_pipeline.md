@@ -46,10 +46,9 @@ A conversion runs in these steps:
 ## Keeping a conversion correct
 
 - Metadata lives in YAML files, so that it can be corrected and reviewed without changing code.
-- Tests in `tests/` check the code and the metadata files (for example that every location has its ontology terms).
-  They run on every pull request.
-- A bug fix comes with a test that fails without the fix.
-- Ontology terms (species, strain, brain regions) are written into the files, so that the values can be found by
+- The data check runs before converting and NWB Inspector after, so that problems in the data or the files are found
+  before the upload.
+- Ontology terms (species, strain, brain regions, experimenters, institution) are written into the files, so that the values can be found by
   their standard identifiers.
 
 To convert a new experiment, see [Building a new conversion pipeline](new_conversion_pipeline.md).
