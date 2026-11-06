@@ -9,7 +9,7 @@ from pydantic import DirectoryPath, validate_call
 from pynwb.file import NWBFile
 
 from hnasko_lab_to_nwb.hadjas_2025.utils.tdt_blocks import read_tdt_epocs, read_tdt_start_timestamp
-from hnasko_lab_to_nwb.hadjas_2025.utils.train_durations import label_train_duration
+from hnasko_lab_to_nwb.hadjas_2025.utils.train_durations import count_pulses, label_train_duration
 from neuroconv.basetemporalalignmentinterface import BaseDataInterface
 from neuroconv.tools.nwb_helpers import _add_device_to_nwbfile
 from neuroconv.utils import DeepDict
@@ -291,12 +291,13 @@ class Hadjas2025TDTOptogeneticStimulusInterface(BaseDataInterface):
                 for start_time, stop_time, block_name in zip(onsets[is_valid], offsets[is_valid], block_names[is_valid])
             )
         for start_time, stop_time, stimulus_frequency, block_name in sorted(trains):
-            number_pulses_per_pulse_train = int((stop_time - start_time) * stimulus_frequency)
+            train_duration = label_train_duration(stop_time - start_time)
+            number_pulses_per_pulse_train = count_pulses(train_duration, stimulus_frequency)
             opto_epochs_table.add_row(
                 start_time=start_time,
                 stop_time=stop_time,
                 stimulus_frequency=stimulus_frequency,
-                train_duration=label_train_duration(stop_time - start_time),
+                train_duration=train_duration,
                 tdt_block=str(block_name),
                 stimulation_on=True,
                 pulse_length_in_ms=np.nan,  # TDT stores only the train onsets and offsets
