@@ -266,6 +266,8 @@ def compare_session_processing(
         mat_cohort_folder=subject_config.get("mat_cohort_folder", cohort_config["data_folder"]),
         mat_input_folder=cohort_config.get("mat_input_folder"),
     )
+    if mat_file_path is None:
+        raise FileNotFoundError(f"No lab .mat file to compare with for {subject_id} in {protocol_folder_path}.")
     target_area, mat_subject_id = get_target_area_for_subject(mat_file_path, subject_id)
     segments = match_mat_segments(
         mat_file_path=mat_file_path,

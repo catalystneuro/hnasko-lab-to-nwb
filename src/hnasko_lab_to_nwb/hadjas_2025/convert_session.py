@@ -84,29 +84,27 @@ def get_raw_stream_settings(folder_path: Path) -> dict:
     )
 
 
-def get_processed_source(data_streams: dict, cohort_config: dict) -> str | bool:
+def get_processed_source(data_streams: dict) -> str | bool:
     """Get where the processed signals of a session come from.
 
     Parameters
     ----------
     data_streams : dict
         The data streams of the conversion, with "processed" set to "lab", "recomputed" or False.
-    cohort_config : dict
-        The cohort's entry of the session config, which can set its own "processed" value.
 
     Returns
     -------
     str | bool
         "lab" (the lab's .mat file), "recomputed" (computed from the raw signal by
-        hadjas_2025.analysis.processed_series) or False. The cohort's value applies unless data_streams["processed"]
-        is False.
+        hadjas_2025.analysis.processed_series) or False. With "lab", a session without a lab .mat file gets no
+        processed signals (find_mat_file_path); they are recomputed only when "recomputed" is asked.
 
     Raises
     ------
     ValueError
         If the value is not "lab", "recomputed" or False, or if "recomputed" is asked without the raw stream.
     """
-    processed = data_streams["processed"] and cohort_config.get("processed", data_streams["processed"])
+    processed = data_streams["processed"]
     if processed not in ("lab", "recomputed", False):
         raise ValueError(f"processed must be 'lab', 'recomputed' or false, not {processed!r}.")
     if processed == "recomputed" and not data_streams["raw"]:
@@ -618,7 +616,7 @@ def get_session_description(
 
 def find_mat_file_path(
     protocol_folder_path: Path, cohort_data_folder: str, mat_cohort_folder: str, mat_input_folder: str | None = None
-) -> Path:
+) -> Path | None:
     """Find the lab's processed .mat file of a protocol folder, possibly in another cohort's or input's folder.
 
     Parameters
@@ -636,8 +634,14 @@ def find_mat_file_path(
 
     Returns
     -------
-    Path
-        The only .mat file in the matching protocol folder.
+    Path | None
+        The only .mat file in the matching protocol folder, or None if it has none (the lab has not shared one, e.g.
+        for the GRAB-DA SNr input).
+
+    Raises
+    ------
+    FileNotFoundError
+        If the matching protocol folder has more than one .mat file.
     """
     parts = protocol_folder_path.parts
     cohort_index = len(parts) - 1 - parts[::-1].index(cohort_data_folder)
@@ -646,10 +650,10 @@ def find_mat_file_path(
     relative_protocol_folder_path = Path(*parts[cohort_index + 2 :])
     mat_folder_path = data_dir_path / mat_cohort_folder / input_folder / relative_protocol_folder_path
     mat_file_paths = list(mat_folder_path.glob("*.mat"))
-    if len(mat_file_paths) != 1:
-        raise FileNotFoundError(
-            f"Expected one .mat file in {mat_folder_path}, found {len(mat_file_paths)}."
-        )
+    if not mat_file_paths:
+        return None
+    if len(mat_file_paths) > 1:
+        raise FileNotFoundError(f"Expected one .mat file in {mat_folder_path}, found {len(mat_file_paths)}.")
     return mat_file_paths[0]
 
 
@@ -838,7 +842,7 @@ def session_to_nwb(
     unknown_data_streams = set(data_streams) - set(session_config["data_streams"])
     if unknown_data_streams:
         raise ValueError(f"Unknown data streams {sorted(unknown_data_streams)}.")
-    processed_source = get_processed_source(data_streams=data_streams, cohort_config=cohort_config)
+    processed_source = get_processed_source(data_streams=data_streams)
     if processed_source == "recomputed" and stub_test:
         raise ValueError("Recomputed processed signals need whole blocks; they cannot be written with stub_test.")
     protocol_folder_path = Path(protocol_folder_path)
@@ -901,7 +905,8 @@ def session_to_nwb(
         source_data.update(RawFiberPhotometry=raw_source_data)
         conversion_options.update(RawFiberPhotometry=dict(stub_test=stub_test))
 
-    # Processed fiber photometry from the lab's .mat file
+    # Processed fiber photometry from the lab's .mat file, if the lab shared one for the session
+    mat_file_path = None
     if processed_source == "lab":
         mat_file_path = find_mat_file_path(
             protocol_folder_path=protocol_folder_path,
@@ -909,6 +914,7 @@ def session_to_nwb(
             mat_cohort_folder=mat_cohort_folder,
             mat_input_folder=cohort_config.get("mat_input_folder"),
         )
+    if mat_file_path is not None:
         target_area, mat_subject_id = get_target_area_for_subject(
             mat_file_path, subject_id
         )

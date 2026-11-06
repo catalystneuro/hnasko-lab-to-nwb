@@ -45,10 +45,11 @@ def check_session(
 
     The parameters are those of session_to_nwb. Errors are problems that make session_to_nwb fail: an unknown
     hemisphere, a TDT block whose raw stream or stimulation trains cannot be read, a recording date without LED
-    modulation frequencies, or, when the processed signals come from the lab's .mat file, a missing .mat file,
-    subject or segment.
+    modulation frequencies, or, when the processed signals come from the lab's .mat file, a subject or segment
+    missing from it.
     Warnings are cases the conversion handles: a varFreq_* folder whose name disagrees with the recorded train
-    duration (the conversion uses the recorded duration).
+    duration (the conversion uses the recorded duration), or a session without a lab .mat file (the conversion writes
+    no processed signals).
 
     Parameters
     ----------
@@ -117,7 +118,7 @@ def check_session(
         except Exception as error:
             add_finding("error", "LED modulation", error)
 
-        if get_processed_source(data_streams=data_streams, cohort_config=cohort_config) == "lab":
+        if get_processed_source(data_streams=data_streams) == "lab":
             subject_config = session_config["subjects"].get(subject_id, {})
             try:
                 mat_file_path = find_mat_file_path(
@@ -126,14 +127,17 @@ def check_session(
                     mat_cohort_folder=subject_config.get("mat_cohort_folder", cohort_config["data_folder"]),
                     mat_input_folder=cohort_config.get("mat_input_folder"),
                 )
-                target_area, mat_subject_id = get_target_area_for_subject(mat_file_path, subject_id)
-                match_mat_segments(
-                    mat_file_path=mat_file_path,
-                    target_area=target_area,
-                    mat_subject_id=mat_subject_id,
-                    folder_paths=tdt_folder_paths,
-                    epoc_names=epoc_names,
-                )
+                if mat_file_path is None:
+                    add_finding("warning", "processed data", "no lab .mat file; the processed signals are not written")
+                else:
+                    target_area, mat_subject_id = get_target_area_for_subject(mat_file_path, subject_id)
+                    match_mat_segments(
+                        mat_file_path=mat_file_path,
+                        target_area=target_area,
+                        mat_subject_id=mat_subject_id,
+                        folder_paths=tdt_folder_paths,
+                        epoc_names=epoc_names,
+                    )
             except Exception as error:
                 add_finding("error", "processed data", error)
     finally:
