@@ -63,8 +63,8 @@ def session_to_nwb(
     """Convert one shock session (one TDT block) to NWB.
 
     The file is written to output_dir_path / sub-<subject ID>_ses-<session ID>.nwb, or to the nwb_stub subfolder
-    for a stub test. It holds the raw Fi1r signal, the processed signals recomputed from it (hadjas_2025.recompute)
-    and the auditory cue intervals.
+    for a stub test. It holds the raw Fi1r signal, the processed signals recomputed from it
+    (hadjas_2025.analysis.processed_series) and the auditory cue intervals.
 
     Parameters
     ----------

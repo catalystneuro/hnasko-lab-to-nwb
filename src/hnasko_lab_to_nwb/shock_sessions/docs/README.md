@@ -46,7 +46,7 @@ Each session becomes `sub-<subject>_ses-shocks.nwb`, with:
 | Path in the file | Content |
 |---|---|
 | `acquisition/raw_signal_SNr` | raw photodetector signal |
-| `processing/ophys/...` | demodulated, 100 Hz and dF/F signals, recomputed from the raw signal by `hadjas_2025.processing` (see [Processing](../../hadjas_2025/docs/processing.md)) |
+| `processing/ophys/...` | demodulated, 100 Hz and dF/F signals, recomputed from the raw signal by `hadjas_2025.analysis.processing` (see [Processing](../../hadjas_2025/docs/processing.md)) |
 | `intervals/auditory_cue_intervals` | one row per cue: start and stop time, `cue_type` (CS+ or CS-) and `paired_with_shock` |
 | `general/fiber_photometry`, `general/devices`, `general/subject` | as in the Hadjas 2025 files |
 
