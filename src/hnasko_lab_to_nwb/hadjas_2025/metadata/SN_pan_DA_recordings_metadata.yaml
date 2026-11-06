@@ -78,7 +78,7 @@ FiberPhotometry:
   FiberPhotometryIndicators:
     GCaMP6f_SNc:
       name: GCaMP6f_SNc
-      description: GCaMP6f calcium sensor in SNc dopaminergic neurons
+      description: GCaMP6f calcium sensor in SNc dopaminergic neurons.
       manufacturer: Addgene
       label: GCaMP6f
       viral_vector_injection_metadata_key: viral_vector_injection_SNc

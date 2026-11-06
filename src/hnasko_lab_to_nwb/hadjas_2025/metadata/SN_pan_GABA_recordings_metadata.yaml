@@ -86,7 +86,7 @@ FiberPhotometry:
   FiberPhotometryIndicators:
     GCaMP6f_SNr:
       name: GCaMP6f_SNr
-      description: GCaMP6f calcium sensor in SNr GABAergic neurons
+      description: GCaMP6f calcium sensor in SNr GABAergic neurons.
       manufacturer: Addgene
       label: GCaMP6f
       viral_vector_injection_metadata_key: viral_vector_injection_SNr
