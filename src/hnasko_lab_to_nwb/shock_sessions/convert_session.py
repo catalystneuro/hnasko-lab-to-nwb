@@ -17,7 +17,6 @@ from hnasko_lab_to_nwb.hadjas_2025.convert_session import (
     get_session_start_time,
     load_cohort_metadata,
     load_external_resources_metadata,
-    load_rig_devices_metadata,
     normalize_hemisphere,
     update_coordinates_for_left_hemisphere,
 )
@@ -111,7 +110,7 @@ def session_to_nwb(
     if normalize_hemisphere(subject_metadata["Hemisphere"]) == "Left":
         editable_metadata = update_coordinates_for_left_hemisphere(editable_metadata)
     raw_stream_settings = get_raw_stream_settings(tdt_folder_path)
-    editable_metadata = dict_deep_update(editable_metadata, load_rig_devices_metadata(raw_stream_settings["rig_name"]))
+    editable_metadata = dict_deep_update(editable_metadata, raw_stream_settings["metadata"])
     session_start_time = get_session_start_time(read_tdt_start_timestamp(tdt_folder_path))
     led_modulation = get_led_modulation(session_start_time)
 
