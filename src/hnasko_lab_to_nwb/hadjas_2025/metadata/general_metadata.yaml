@@ -1,0 +1,94 @@
+# Metadata shared by all Hadjas 2025 cohorts. Cohort files add to or override these values; each cohort file
+# describes its own mouse lines, and the devices that differ between recording rigs are in the rigs section of
+# session_config.yaml.
+NWBFile:
+  related_publications: ['doi:10.1101/2025.06.03.657460']  # Hadjas et al. 2025, bioRxiv preprint
+  institution: UC San Diego School of Medicine
+  lab: Hnasko
+  experimenter: ['Hadjas, Lotfi', 'Hollon, Nick']
+Subject:
+  species: Mus musculus
+  age: P6W/  # older than 6 weeks at surgery (ISO 8601 interval with no upper bound)
+  strain: C57BL/6J
+DeviceModels:
+  excitation_source_model_calcium:
+    type: ExcitationSourceModel
+    name: excitation_source_model_calcium
+    source_type: LED
+    excitation_mode: one-photon
+    wavelength_range_in_nm: [460.0, 490.0]
+  excitation_source_model_isosbestic:
+    type: ExcitationSourceModel
+    name: excitation_source_model_isosbestic
+    source_type: LED
+    excitation_mode: one-photon
+  photodetector_model:
+    type: PhotodetectorModel
+    name: photodetector_model
+    detector_type: photodiode
+  emission_filter_model:
+    type: BandOpticalFilterModel
+    name: emission_filter_model
+    description: Part of the 5-port fluorescence mini cube (Doric Lenses) that filters and combines the excitation light and separates
+      the emitted fluorescence.
+    manufacturer: Doric Lenses
+    filter_type: Bandpass
+    center_wavelength_in_nm: 520.0
+    bandwidth_in_nm: 40.0
+  excitation_filter_model:
+    type: BandOpticalFilterModel
+    name: excitation_filter_model
+    description: Part of the 5-port fluorescence mini cube (Doric Lenses) that filters and combines the excitation light and separates
+      the emitted fluorescence.
+    manufacturer: Doric Lenses
+    filter_type: Bandpass
+    center_wavelength_in_nm: 445.0
+    bandwidth_in_nm: 90.0
+  dichroic_mirror_model:
+    type: DichroicMirrorModel
+    name: dichroic_mirror_model
+    description: Part of the 5-port fluorescence mini cube (Doric Lenses) that filters and combines the excitation light and separates
+      the emitted fluorescence.
+    manufacturer: Doric Lenses
+  optogenetic_excitation_source_model:
+    type: ExcitationSourceModel
+    name: optogenetic_excitation_source_model
+    description: 635 nm red laser used for optogenetic stimulation.
+    manufacturer: Shanghai Laser
+    model_number: RLM635TA-150FC
+    source_type: laser
+    excitation_mode: one-photon
+Devices:
+  excitation_source_calcium_signal:
+    type: ExcitationSource
+    name: excitation_source_calcium_signal
+    device_model_metadata_key: excitation_source_model_calcium
+  excitation_source_isosbestic_control:
+    type: ExcitationSource
+    name: excitation_source_isosbestic_control
+    device_model_metadata_key: excitation_source_model_isosbestic
+  photodetector:
+    type: Photodetector
+    name: photodetector
+    description: Photodetector that records the fluorescence collected by the fiber (raw Fi1r signal).
+    device_model_metadata_key: photodetector_model
+  emission_filter:
+    type: BandOpticalFilter
+    name: emission_filter
+    description: Emission filter of the fluorescence mini cube.
+    device_model_metadata_key: emission_filter_model
+  excitation_filter:
+    type: BandOpticalFilter
+    name: excitation_filter
+    description: Excitation filter of the fluorescence mini cube.
+    device_model_metadata_key: excitation_filter_model
+  dichroic_mirror:
+    type: DichroicMirror
+    name: dichroic_mirror
+    description: Dichroic mirror of the fluorescence mini cube.
+    device_model_metadata_key: dichroic_mirror_model
+  optogenetic_excitation_source:
+    type: ExcitationSource
+    name: optogenetic_excitation_source
+    description: Red laser that delivered the optogenetic stimulation trains.
+    device_model_metadata_key: optogenetic_excitation_source_model

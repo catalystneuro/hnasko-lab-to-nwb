@@ -10,32 +10,45 @@ readme = "README.md"
 authors = [{ name = "CatalystNeuro", email = "ben.dichter@catalystneuro.com" }]
 maintainers = [{ name = "CatalystNeuro", email = "ben.dichter@catalystneuro.com" }]
 license = { file = "LICENSE" }
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 dependencies = [
-  "neuroconv==0.8.2",
+  "neuroconv @ git+https://github.com/catalystneuro/neuroconv.git@0b1d6d4bd38f6fba982d89748bb5535731a3f921",
   "nwbinspector",
-  "ndx-fiber-photometry==0.2.2",
+  "ndx-fiber-photometry==0.2.4",
   "ndx-ophys-devices==0.3.1",
-  "ndx-optogenetics",
+  "ndx-optogenetics==0.4.1",
   "openpyxl",
   "opencv-python-headless",
   "tdt",
-  "dandi",
+  "dandi>=0.60",
   "remfile",
+  "h5py",
+  "numpy",
+  "pandas",
+  "pydantic",
+  "pytz",
+  "scipy",
+  "tqdm",
+]
+
+[project.scripts]
+hadjas-2025 = "hnasko_lab_to_nwb.hadjas_2025.cli:main"
+
+[project.optional-dependencies]
+analysis = [
   "ipykernel",
-  "remfile",
+  "matplotlib",
 ]
 
 [dependency-groups]
 dev = [
     "pre-commit",
-    "pytest",
     "ruff",
 ]
 
@@ -48,11 +61,23 @@ packages = ["src/hnasko_lab_to_nwb"]
 [tool.hatch.build.targets.sdist]
 include = ["src/"]
 
-[tool.black]
-line-length = 120
-
 [tool.ruff]
 line-length = 120
 
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+# Docstring rules apply to the hadjas_2025 modules only, not to its notebooks
+"!src/hnasko_lab_to_nwb/hadjas_2025/**" = ["D"]
+"*.ipynb" = ["D"]
+
 [project.urls]
 Repository="https://github.com/catalystneuro/hnasko-lab-to-nwb"
+
+[tool.codespell]
+ignore-regex = '"image/png": ".*"'
+
