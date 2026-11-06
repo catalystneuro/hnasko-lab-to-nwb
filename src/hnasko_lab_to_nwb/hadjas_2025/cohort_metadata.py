@@ -290,3 +290,132 @@ def build_fiber_photometry_metadata(
         **series,
     )
     return metadata
+
+
+CHRIMSONR_AAV5_VIRUS = dict(
+    name="viral_vector_ogen",
+    description=(
+        "pAAV-Syn-FLEX-rc[ChrimsonR-tdTomato] (AAV5) viral vector was used for optogenetic experiments. The titer was "
+        "4 to 8.5e12 vg/ml across mice; titer_in_vg_per_ml is the upper bound."
+    ),
+    manufacturer="Addgene (catalog number 62723)",
+    construct_name="pAAV-Syn-FLEX-rc[ChrimsonR-tdTomato] (AAV5)",
+    titer_in_vg_per_ml=8.5e12,
+)
+
+# Glutamatergic inputs to SN injected with ChrimsonR: injection name, coordinates (AP, ML, DV from bregma, in mm) and
+# how the surgery text gives them.
+CHRIMSONR_INPUTS = dict(
+    STN=dict(
+        name="Subthalamic Nucleus (STN)",
+        coordinates=(-2.0, 1.6, -4.5),
+        surgery_text="STN (AP -2.00, ML +/-1.6, DV -4.5)",
+    ),
+    PPN=dict(
+        name="Pedunculopontine Nucleus (PPN)",
+        coordinates=(-4.48, 1.1, -3.75),
+        surgery_text="PPN (AP -4.48, ML +/- 1.1, DV -3.75)",
+    ),
+)
+
+
+def build_chrimsonr_input(text_templates: dict, input_name: str, virus: dict, manufacturer: str) -> dict:
+    """Build the virus, injection and effector of a ChrimsonR-expressing input.
+
+    Parameters
+    ----------
+    text_templates : dict
+        The TextTemplates of general_metadata.yaml.
+    input_name : str
+        The input, a key of CHRIMSONR_INPUTS (e.g. "STN").
+    virus : dict
+        The metadata of the virus expressing ChrimsonR, with its key as "name".
+    manufacturer : str
+        Manufacturer of the effector.
+
+    Returns
+    -------
+    dict
+        The input for build_optogenetics_metadata.
+    """
+    chrimsonr_input = CHRIMSONR_INPUTS[input_name]
+    injection_key = f"viral_vector_injection_{input_name}"
+    return dict(
+        input=input_name,
+        virus=virus,
+        injection=build_virus_injection_metadata(
+            name=injection_key,
+            description=text_templates["chrimsonr_injection"].format(name=chrimsonr_input["name"]),
+            location=LOCATIONS[input_name],
+            coordinates=chrimsonr_input["coordinates"],
+            volume_in_uL=0.2,
+            virus_key=virus["name"],
+        ),
+        effector=dict(
+            name=f"chrimsonR_{input_name}",
+            description=text_templates["chrimsonr_effector"].format(input=input_name),
+            manufacturer=manufacturer,
+            label="ChrimsonR-tdTomato",
+            viral_vector_injection_metadata_key=injection_key,
+        ),
+    )
+
+
+def get_chrimsonr_surgery_text(text_templates: dict, input_names: list[str]) -> str:
+    """Get the surgery sentence of the AAV5 ChrimsonR injection in the given inputs.
+
+    Parameters
+    ----------
+    text_templates : dict
+        The TextTemplates of general_metadata.yaml.
+    input_names : list of str
+        The inputs, keys of CHRIMSONR_INPUTS; two inputs read "either <first> or <second>".
+
+    Returns
+    -------
+    str
+        The surgery sentence.
+    """
+    surgery_texts = [CHRIMSONR_INPUTS[input_name]["surgery_text"] for input_name in input_names]
+    inputs = surgery_texts[0] if len(surgery_texts) == 1 else f"either {surgery_texts[0]} or {surgery_texts[1]}"
+    return text_templates["surgery_chrimsonr"].format(inputs=inputs)
+
+
+def build_optogenetics_metadata(inputs: list[dict], stimulation_fiber: str) -> dict:
+    """Build the optogenetics metadata of a cohort from its stimulated inputs.
+
+    The shared optogenetics values (laser, pulse length, table names and descriptions) are in
+    general_metadata.yaml. The conversion keeps only the entries of the session's input
+    (convert_session.filter_optogenetics_metadata), so the names of injections, effectors and site rows contain the
+    input name.
+
+    Parameters
+    ----------
+    inputs : list of dict
+        One dict per stimulated input, with "input" (e.g. "STN"), "virus", "injection" and "effector" metadata, as
+        built by build_chrimsonr_input.
+    stimulation_fiber : str
+        Key of the fiber that delivered the light.
+
+    Returns
+    -------
+    dict
+        "Optogenetics" metadata.
+    """
+    return dict(
+        Optogenetics=dict(
+            OptogeneticViruses={item["virus"]["name"]: item["virus"] for item in inputs},
+            OptogeneticVirusInjections={item["injection"]["name"]: item["injection"] for item in inputs},
+            OptogeneticEffectors={item["effector"]["name"]: item["effector"] for item in inputs},
+            OptogeneticSitesTable=dict(
+                rows={
+                    item["input"]: dict(
+                        excitation_source_metadata_key="optogenetic_excitation_source",
+                        optical_fiber_metadata_key=stimulation_fiber,
+                        effector_metadata_key=item["effector"]["name"],
+                    )
+                    for item in inputs
+                }
+            ),
+        )
+    )

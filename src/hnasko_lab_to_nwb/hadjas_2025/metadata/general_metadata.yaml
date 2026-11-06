@@ -92,6 +92,20 @@ Devices:
     name: optogenetic_excitation_source
     description: Red laser that delivered the optogenetic stimulation trains.
     device_model_metadata_key: optogenetic_excitation_source_model
+Optogenetics:
+  stimulation_software: TDT Synapse
+  excitation_wavelength_in_nm: 635.0
+  power_in_mW: 5.0
+  pulse_length_in_ms: 10.0
+  OptogeneticSitesTable:
+    name: optogenetic_sites_table
+    description: Information about each optogenetic site, including the excitation source, the optical fiber that
+      delivered the light to the input's terminals in SN, and the targeted effector.
+  OptogeneticEpochsTable:
+    name: optogenetic_epochs_table
+    description: One row per optogenetic stimulation train, from the onset and offset of the TTL that AnyMaze sent to
+      TDT Synapse with each train. TDT does not record single pulses; pulse_length_in_ms is the 10 ms pulse width of
+      the protocol. Each row holds one train, so number_trains is 1 and intertrain_interval_in_ms is NaN.
 # Sentences shared by the cohorts, filled in by hadjas_2025/cohort_metadata.py and removed from the metadata before
 # conversion. Placeholders in braces: {label} is the sensor (e.g. GCaMP6f), {sensor_type} calcium or dopamine,
 # {site} the recording site (e.g. SNc), {location} its full name, {isosbestic} the isosbestic wavelength in nm.
@@ -126,3 +140,7 @@ TextTemplates:
   calcium_signal_region: The region of the FiberPhotometryTable corresponding to the calcium signal of {site}.
   isosbestic_control_region: The region of the FiberPhotometryTable corresponding to the isosbestic control of {site}.
   deltaF_over_F_region: The region of the FiberPhotometryTable corresponding to the deltaF/F signal of {site}.
+  # Optogenetics, one per stimulated input
+  chrimsonr_injection: Viral injection into the {name}. The injected volume was 150 to 200 nl across mice;
+    volume_in_uL is the upper bound.
+  chrimsonr_effector: ChrimsonR opsin used for optogenetic stimulation injected into the {input}.
