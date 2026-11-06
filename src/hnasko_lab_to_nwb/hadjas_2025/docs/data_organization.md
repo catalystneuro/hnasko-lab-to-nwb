@@ -64,7 +64,8 @@ metadata file named after it (see [Metadata](metadata.md)).
 Some cohorts share a data folder or a sheet tab:
 
 - The two Cell_type cohorts are told apart by the `Genotype` column and by their site subfolders (`Vglut2 SNc`,
-  `Anxa1 SNc`, `Anxa1 DLS`). Anxa1 mice recorded at two sites get one session per site.
+  `Anxa1 SNc`, `Anxa1 DLS`). Anxa1 mice recorded at two sites were recorded at each site in separate TDT blocks,
+  on different days or hours apart, each block with one fiber, so they get one session per site.
 - The three GRAB-DA cohorts are told apart by the input folder. The mCherry controls have no `.mat` file of their
   own: their processed signals are in the STN `.mat` files, under the sites `DLS_ctrl` and `TS_ctrl`.
 - The processed signals of six 2022 SN pan DA STN subjects (B8364, B8369, B8370, B8427, B8429, B8612) are in the
