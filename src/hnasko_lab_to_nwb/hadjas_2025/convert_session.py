@@ -133,6 +133,7 @@ def load_cohort_metadata(recording_type: str) -> dict:
         return METADATA_FOLDER_PATH / f"{cohort.replace(' ', '_')}_metadata.yaml"
 
     metadata = load_dict_from_file(METADATA_FOLDER_PATH / "general_metadata.yaml")
+    metadata.pop("TextTemplates")  # sentences filled in by hadjas_2025.cohort_metadata
     cohort_metadata = load_dict_from_file(get_cohort_file_path(recording_type))
     base_cohort = load_session_config()["cohorts"][recording_type].get("base_cohort")
     if base_cohort is not None:
