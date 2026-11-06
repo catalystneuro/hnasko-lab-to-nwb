@@ -10,7 +10,7 @@ NWBFile:
     moving mice in a plastic tub received trains of 635 nm laser pulses delivered to the input's terminals in SN while
     fluorescence was recorded. Each session follows one of two protocols, varying train durations or varying pulse
     frequencies, described in the session description.
-  surgery: Mice > 6 weeks old were anesthetized with isofluorane (4% for induction and 1-2% for maintenance), and provided
+  surgery: Mice > 6 weeks old were anesthetized with isoflurane (4% for induction and 1-2% for maintenance), and provided
     with pre- and post-surgical analgesic carprofen (5 mg/kg i.p). For recording from Anxa1+ neurons and terminals projecting
     to DLS, VGLUT2-PhiC x Anxa1-Cre mice were injected with 150-200 nl of AAVDJ-Ef1a-pSIO-ChrimsonR-tdTomato (1e13 vg/ml,
     Vectorbuilder) in STN or PPN at the same coordinates as above. And injected with 300 nl of AAV5-Syn-FLEX-GCaMP8f (1e13

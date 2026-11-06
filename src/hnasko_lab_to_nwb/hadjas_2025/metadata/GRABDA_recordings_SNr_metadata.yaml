@@ -11,7 +11,7 @@ NWBFile:
     separate fiber over SNc. Freely moving mice in a plastic tub received trains of laser pulses while fluorescence was
     recorded. Each session follows one of two protocols, varying train durations or varying pulse frequencies, described
     in the session description.
-  surgery: Mice > 6 weeks old were anesthetized with isoflurane (4% for induction; 1-2% for maintenance). For monitoring DA
+  surgery: Mice > 6 weeks old were anesthetized with isoflurane (4% for induction and 1-2% for maintenance), and provided with pre- and post-surgical analgesic carprofen (5 mg/kg i.p). For monitoring DA
     release in striatal subregions (DLS and TS) in VGAT-Cre mice were injected with 300 nl of AAV9-EF1a-GRABDA2m (2e12 vg/mL,
     Addgene 140553) in either DLS (AP +0.5, ML +/-2.25, DV -2.95) or TS (AP -1.25, ML +/-2.9, DV -3.45). A fiber (200-um core,
     0.39 NA, L = 6 mm, 1.25-mm white ceramic ferrule, RWD) was implanted over SNc (AP -3.2, ML +/-1.4, DV -4.1) for optogenetic

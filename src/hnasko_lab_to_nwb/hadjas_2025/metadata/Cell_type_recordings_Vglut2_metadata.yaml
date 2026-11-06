@@ -9,7 +9,7 @@ NWBFile:
     fiber. Freely moving mice in a plastic tub received trains of 635 nm laser pulses delivered to the input's
     terminals in SN while fluorescence was recorded. Each session follows one of two protocols, varying train durations or varying pulse
     frequencies, described in the session description.
-  surgery: Mice > 6 weeks old were anesthetized with isofluorane (4% for induction and 1-2% for maintenance), and provided
+  surgery: Mice > 6 weeks old were anesthetized with isoflurane (4% for induction and 1-2% for maintenance), and provided
     with pre- and post-surgical analgesic carprofen (5 mg/kg i.p). For recording from Vglut2+ DA neurons in SNc, VGLUT2-Cre
     x DAT-Flp animals were injected with 300 nl of AAV8-Ef1a-ConFon-GCaMP6f (2.3e12 vg/ml, Addgene 137122) in SNc (AP -3.20,
     ML +/-1.5, DV -4.20), and AAV5-Syn-FLEX-ChrimsonR-TdTomato was injected in STN or PPN as above. A fiber (400-um core,
