@@ -37,7 +37,7 @@ DeviceModels:
   optical_fiber_model_2:
     type: OpticalFiberModel
     name: optical_fiber_model_2
-    description: Chronically implantable optical fiber.
+    description: Chronically implantable optic fiber.
     manufacturer: RWD
     numerical_aperture: 0.39
     core_diameter_in_um: 400.0
