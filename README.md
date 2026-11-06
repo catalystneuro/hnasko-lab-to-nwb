@@ -58,7 +58,7 @@ The Hadjas 2025 conversion, in [hadjas_2025/docs/](src/hnasko_lab_to_nwb/hadjas_
 - [DANDI staging](src/hnasko_lab_to_nwb/hadjas_2025/docs/dandi_staging.md): organizing, validating and uploading the files.
 - [Troubleshooting](src/hnasko_lab_to_nwb/hadjas_2025/docs/troubleshooting.md): data check findings and conversion errors.
 
-The notebook `src/hnasko_lab_to_nwb/hadjas_2025/001528_demo/Lotfi_2025.ipynb` shows how to read the files on DANDI.
+The notebooks in `src/hnasko_lab_to_nwb/hadjas_2025/001528_demo/` read the files on DANDI.
 The notebooks in `src/hnasko_lab_to_nwb/hadjas_2025/analysis/` compare the recomputed processed signals with the lab's
 (`validate_processing.ipynb`) and add the processed signals and the paper's trial analysis to a raw-only file
 (`reproduce_paper_analysis.ipynb`).
