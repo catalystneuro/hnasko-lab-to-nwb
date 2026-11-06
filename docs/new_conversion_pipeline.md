@@ -45,6 +45,9 @@ merge them into the converter's metadata (see [Metadata](../src/hnasko_lab_to_nw
 ## Starting a new repository
 
 [cookiecutter-my-lab-to-nwb-template](https://github.com/catalystneuro/cookiecutter-my-lab-to-nwb-template) creates a
-conversion repository with the same layout as this one. For conversions without code,
+conversion repository with the same layout as this one. The
+[nwb-convert](https://github.com/catalystneuro/claude-skills/tree/main/nwb-convert) skill for Claude Code walks
+through the steps above in a conversation: it inspects the data, asks for the metadata, and writes a conversion
+repository on NeuroConv and PyNWB with an example notebook. For conversions without code,
 [NWB GUIDE](https://nwb-guide.readthedocs.io/) is a desktop application that walks through the same steps for the
 formats NeuroConv supports.
