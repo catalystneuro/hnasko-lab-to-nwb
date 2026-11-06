@@ -54,12 +54,14 @@ The Hadjas 2025 conversion, in [hadjas_2025/docs/](src/hnasko_lab_to_nwb/hadjas_
 - [Data streams](src/hnasko_lab_to_nwb/hadjas_2025/docs/data_streams.md): raw and processed signals, raw-only conversion, recomputed signals.
 - [Metadata](src/hnasko_lab_to_nwb/hadjas_2025/docs/metadata.md): editing the metadata files, adding a cohort, ontology terms.
 - [NWB file structure](src/hnasko_lab_to_nwb/hadjas_2025/docs/nwb_file_structure.md): what is stored where, and how to read a file.
-- [Processing](src/hnasko_lab_to_nwb/hadjas_2025/docs/processing.md): the Python port of the lab's processing and how it compares with the lab's.
+- [Processing](src/hnasko_lab_to_nwb/hadjas_2025/docs/processing.md): the Python port of the lab's processing and trial analysis, and how they compare with the lab's.
 - [DANDI staging](src/hnasko_lab_to_nwb/hadjas_2025/docs/dandi_staging.md): organizing, validating and uploading the files.
 - [Troubleshooting](src/hnasko_lab_to_nwb/hadjas_2025/docs/troubleshooting.md): data check findings and conversion errors.
 
-Notebooks in `src/hnasko_lab_to_nwb/hadjas_2025/tutorials/` show how to read the files and how to add processed
-signals to a raw-only file.
+The notebook `src/hnasko_lab_to_nwb/hadjas_2025/tutorials/Lotfi_2025.ipynb` shows how to read the files on DANDI.
+The notebooks in `src/hnasko_lab_to_nwb/hadjas_2025/analysis/` compare the recomputed processed signals with the lab's
+(`validate_processing.ipynb`) and add the processed signals and the paper's trial analysis to a raw-only file
+(`reproduce_paper_analysis.ipynb`).
 
 ## Repository layout
 
@@ -71,13 +73,12 @@ src/hnasko_lab_to_nwb/hadjas_2025/
 ├── data_check.py             checks before converting
 ├── nwbconverter.py           NWBConverter of the dataset
 ├── interfaces/               data interfaces (raw, processed, optogenetic stimulation)
-├── processing.py             Python port of the lab's processing
-├── recompute.py              processed signals recomputed from the raw signal
+├── analysis/                 Python port of the lab's processing and trial analysis, and their notebooks
 ├── inspection.py             NWB Inspector reports and conversion summary
 ├── upload_to_DANDI.py        organizing and uploading to DANDI
 ├── metadata/                 metadata files and session config
 ├── docs/                     documentation of this conversion
-└── tutorials/                notebooks
+└── tutorials/                notebook that reads the files on DANDI
 ```
 
 ## Citation

@@ -20,7 +20,9 @@ first TDT block (`session_start_time`, in the lab's time zone).
 | `general/subject` | subject ID, sex, age, strain, genotype, description |
 
 The processed series are present when the conversion wrote them (see [Data streams](data_streams.md)). Their
-descriptions say whether they come from the lab's `.mat` file or were recomputed by this package.
+descriptions say whether they come from the lab's `.mat` file or were recomputed by this package. A file processed
+with the trial analysis notebook also has a `processing/trial_analysis` module (see
+[Processing](processing.md#trial-analysis)).
 
 ## Fiber photometry series
 

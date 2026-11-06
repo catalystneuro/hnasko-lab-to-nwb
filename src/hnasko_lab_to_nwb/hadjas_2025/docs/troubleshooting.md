@@ -12,7 +12,8 @@ This page lists its findings and the errors of the conversion, with what to do. 
 | raw stream | error | the `Fi1r` store of a block cannot be read, or its rate matches no rig | check the block; for a new rig, add it to `rigs` in the session config |
 | stimulation trains | error | a block has none of the protocol's stimulation epocs, or a train duration outside 250 ms, 1 s, 4 s and 16 s | check the block; for a new epoc name, add it to `epoc_name_to_frequency_in_hz` of the protocol |
 | LED modulation | error | no `led_modulation` entry covers the recording date | add an entry to `led_modulation` |
-| processed data | error | the lab `.mat` file is missing, has no group for the subject, or has no segment with as many samples as a block | ask the lab for the `.mat` file of these blocks, or convert with `--processed recomputed` or `--processed none` (see [Data streams](data_streams.md)) |
+| processed data | error | the lab `.mat` file has no group for the subject, or has no segment with as many samples as a block | ask the lab for the `.mat` file of these blocks, or convert with `--processed recomputed` or `--processed none` (see [Data streams](data_streams.md)) |
+| processed data | warning | the protocol folder has no lab `.mat` file, so the session is converted without processed signals | nothing, or convert with `--processed recomputed` to compute them from the raw signal |
 | train duration | warning | a block's recorded train duration disagrees with its `varFreq_*` folder | nothing; the conversion uses the recorded duration. Tell the lab |
 | unconverted block | warning | no row of the sheet and no cohort of the session config converts this block | add the subject to the sheet, or the input to its cohort in the session config |
 
@@ -22,8 +23,7 @@ This page lists its findings and the errors of the conversion, with what to do. 
   the others in the protocol folder.
 - "No TDT block for ...": the sheet lists the subject, but its protocol folder has no block named after it. Check the
   folder name and the `Animal ID` cell.
-- "Expected one .mat file in ...": the protocol folder has no `.mat` file or several. Keep one, or convert without the
-  lab's processed signals.
+- "Expected one .mat file in ...": the protocol folder has several `.mat` files. Keep one.
 - "Recomputed processed signals need whole blocks": recomputed signals cannot be combined with `stub_test=True`.
 - "No bi-exponential fit of the isosbestic signal gives a baseline above zero": recomputing dF/F failed for a block,
   usually one with a large drop or jump in the signal. Look at the raw signal of the block.

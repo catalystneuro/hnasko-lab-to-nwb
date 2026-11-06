@@ -23,15 +23,14 @@ written.
 `processed` sets where the demodulated, resampled and dF/F signals come from:
 
 - `lab`: read from the lab's `.mat` file of the protocol folder. The `.mat` file must have a segment for every block
-  of the session.
-- `recomputed`: computed from the raw signal by `hadjas_2025.processing`, the Python port of the lab's MATLAB steps.
+  of the session. A session whose protocol folder has no `.mat` file (the GRAB-DA SNr-input mice) is converted
+  without processed signals, and the data check reports it as a warning.
+- `recomputed`: computed from the raw signal by `hadjas_2025.analysis.processing`, the Python port of the lab's
+  MATLAB steps, for every session.
   This needs `raw: true` and whole blocks (it cannot be combined with a stub test). The series have the same names
   and units as the lab's, and their descriptions say that they were recomputed and with which package version. See
   [Processing](processing.md) for how they compare with the lab's.
 - `false`: no processed signals. The conversion then needs only the TDT blocks.
-
-A cohort can set its own `processed` value in its `cohorts` entry, for example `recomputed` for a cohort without a
-lab `.mat` file (the GRAB-DA SNr-input mice). It applies unless `processed` is `false` at the top.
 
 To change the source for one run without editing the file, use `--processed` on the command line:
 
@@ -48,9 +47,10 @@ To convert sessions before the lab's `.mat` files exist, set `processed: false` 
 files hold the raw signal, the stimulation epochs, the trials and all metadata.
 
 Processed signals can be added later to such a file without converting it again.
-`hadjas_2025.recompute.add_recomputed_processed_series` opens the raw series of the file, splits it into its blocks,
-and writes the recomputed series to the `ophys` processing module. The notebook
-`src/hnasko_lab_to_nwb/hadjas_2025/tutorials/recompute_processed_signals.ipynb` shows the steps on one session.
+`hadjas_2025.analysis.processed_series.add_recomputed_processed_series` opens the raw series of the file, splits it
+into its blocks, and writes the recomputed series to the `ophys` processing module. The notebook
+`src/hnasko_lab_to_nwb/hadjas_2025/analysis/reproduce_paper_analysis.ipynb` does this on a copy of one raw-only file,
+adds the paper's trial analysis (see [Processing](processing.md#trial-analysis)) and plots the results.
 
 ## Behavioral video
 

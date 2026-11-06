@@ -28,8 +28,9 @@ expects, so that new recordings can be added and converted without changing the 
   either case (`C4708` or `c4708`).
 - A block folder must not hold another block folder. Move nested blocks out before converting; the conversion
   stops with an error if it finds one.
-- Each protocol folder (or site subfolder) holds one lab `.mat` file with the processed signals of all its subjects.
-  It is needed only when the processed signals come from the lab (see [Data streams](data_streams.md)).
+- Each protocol folder (or site subfolder) holds one lab `.mat` file with the processed signals of all its subjects,
+  except the GRAB-DA SNr input, for which the lab has not shared one. It is read only when the processed signals
+  come from the lab (see [Data streams](data_streams.md)).
 
 ## Overview sheet
 
