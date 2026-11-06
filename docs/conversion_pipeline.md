@@ -27,7 +27,7 @@ A conversion project is a folder under `src/hnasko_lab_to_nwb/`, named after the
 | session conversion (`convert_session.py`) | Finds the files of one session, builds its metadata and runs the converter. |
 | batch conversion (`convert_all_sessions.py`) | Lists every session of the data folder and converts them one by one. |
 | checks and staging | Checks of the data before converting, NWB Inspector reports after, and the upload to DANDI. |
-| `docs/` and `tutorials/` | How to run the conversion, and notebooks that read the files. |
+| `docs/` and `001528_demo/` | How to run the conversion, and notebooks that read the files. |
 
 ## From recordings to DANDI
 
