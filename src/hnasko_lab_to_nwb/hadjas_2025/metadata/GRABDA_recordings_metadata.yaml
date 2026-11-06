@@ -45,7 +45,7 @@ DeviceModels:
     ferrule_diameter_in_mm: 1.25
     ferrule_name: black ceramic ferrule
   excitation_source_model_calcium:
-    description: excitation source for the GRABDA2m sensor.
+    description: excitation source for the GRABDA2m sensor's fluorescence signal.
   excitation_source_model_isosbestic:
     description: excitation source for the GRABDA2m sensor's isosbestic control.
     wavelength_range_in_nm: [410.0, 420.0]

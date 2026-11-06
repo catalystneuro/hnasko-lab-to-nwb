@@ -42,9 +42,9 @@ DeviceModels:
     ferrule_diameter_in_mm: 1.25
     ferrule_name: black ceramic ferrule
   excitation_source_model_calcium:
-    description: excitation source for GCaMP6f sensor.
+    description: excitation source for the GCaMP6f sensor's fluorescence signal.
   excitation_source_model_isosbestic:
-    description: excitation source for GCaMP6f sensor's isosbestic control.
+    description: excitation source for the GCaMP6f sensor's isosbestic control.
     wavelength_range_in_nm: [400.0, 410.0]
 Devices:
   optical_fiber_SNr:
@@ -59,9 +59,9 @@ Devices:
       hemisphere: right
     device_model_metadata_key: optical_fiber_model_1
   excitation_source_calcium_signal:
-    description: excitation source for the sensor's fluorescence signal (465nm).
+    description: excitation source for the GCaMP6f sensor's fluorescence signal (465nm).
   excitation_source_isosbestic_control:
-    description: excitation source for the sensor's isosbestic control (405nm).
+    description: excitation source for the GCaMP6f sensor's isosbestic control (405nm).
 FiberPhotometry:
   FiberPhotometryViruses:
     viral_vector_gcamp6f:
