@@ -37,73 +37,15 @@ All MATLAB scripts follow a consistent processing pipeline with minor variations
 - Varying Duration sessions: `sms_`, `s1s_`, `s4s_` (250ms, 1s, 4s stimuli)
 - Varying Frequency sessions: `H05_`, `H10_`, `H20_`, `H40_` (5, 10, 20, 40 Hz)
 
-### 2. Signal Demodulation
+### 2 to 4. Demodulation, Downsampling and dF/F
 
-**Purpose:** Extract calcium (465nm) and isosbestic (405nm) signals from raw modulated photodetector trace
+Each TDT block is processed separately:
 
-**Driver Frequencies:**
-- Calcium channel (465nm): 330 Hz
-- Isosbestic channel (405nm): 210 Hz
+- **Demodulation:** the raw signal is demodulated at the modulation frequency of each LED, giving `Gc_raw` (465 nm) and `af_raw` (405 nm) at the rate of the raw signal. The modulation frequencies depend on the recording date (`led_modulation` in `metadata/session_config.yaml`): 210 Hz for 465 nm and 330 Hz for 405 nm from 2022, swapped from 2024.
+- **Downsampling:** both signals are resampled to 100 Hz (`Gc`, `af`).
+- **dF/F:** a bi-exponential fit of `af`, leaving out the first second, is scaled to `Gc` by robust linear regression; dF/F (`dF`) is 100 * (`Gc` - baseline) / baseline. A negative scaling slope gives a warning.
 
-**Demodulation Steps:**
-
-For each driver frequency:
-1. Multiply the raw signal by a sine and a cosine at the driver frequency
-2. Lowpass filter both products (2nd-order Butterworth, 6 Hz cutoff)
-3. Square the filtered components
-4. Sum the squared components
-5. Take the square root to get the demodulated signal
-
-**Filter Design:**
-- Type: 2nd-order Butterworth lowpass
-- Cutoff: 6 Hz
-- Implementation: `filtfilt()` for zero-phase filtering
-
-**Output Signals:**
-- `Gc_raw`: Raw demodulated 465nm signal (6103.5156 Hz)
-- `af_raw`: Raw demodulated 405nm signal (6103.5156 Hz)
-
-### 3. Downsampling
-
-**Original Sampling Rate:** 6103.5156 Hz
-**Target Sampling Rate:** 100 Hz
-**Method:** Gridded interpolation (`griddedInterpolant`)
-
-**Rationale:**
-- Reduces computational load
-- 100 Hz is sufficient for capturing calcium dynamics
-- Performed before baseline fitting to improve robustness
-
-**Output Signals:**
-- `Gc`: Downsampled 465nm signal (100 Hz)
-- `af`: Downsampled 405nm signal (100 Hz)
-
-### 4. Baseline Correction and dF/F Calculation
-
-**Two-Step Fitting Process:**
-
-**Step 1: Exponential Fit to Isosbestic (405nm) Signal**
-
-The downsampled 405nm signal is fit with a bi-exponential model, excluding the first 101 samples (about 1 s).
-- Model: `f(x) = a*exp(b*x) + c*exp(d*x)`
-- Excludes first 1s to avoid artifacts
-- Captures slow photobleaching dynamics
-
-**Step 2: Linear Regression to Match 465nm Signal**
-
-A robust linear regression of the 465nm signal on the fitted 405nm curve gives a slope and an intercept. The baseline is the fitted 405nm curve scaled by that slope plus the intercept.
-
-**dF/F Calculation:**
-
-dF/F is the 465nm signal minus the baseline, divided by the baseline, times 100.
-- Units: Percentage (%)
-- Baseline: Fitted 405nm signal scaled to match 465nm
-- Corrects for motion artifacts and photobleaching
-
-**Quality Checks:**
-- Warn if 405→465 regression coefficient is negative
-- Check for length mismatches between 405 and 465 signals
-- Handle special cases (e.g., animals unplugged before session end)
+The `processing` module ports these steps to Python. Its docstring gives the details of each step (filter, padding, interpolation grid, fit) and how the port differs from the lab's MATLAB code, as measured with `hadjas-2025 compare-processing`.
 
 ### 5. Trial Extraction and Alignment
 
@@ -283,7 +225,7 @@ Results are stored in nested structures indexed by recording site, subject and l
 ## Critical Parameters
 
 ### Signal Processing
-- **Demodulation frequencies:** 330 Hz (465nm), 210 Hz (405nm)
+- **Demodulation frequencies:** depend on the recording date (see steps 2 to 4)
 - **Lowpass filter:** 2nd-order Butterworth, 6 Hz cutoff
 - **Downsampling rate:** 100 Hz
 - **Baseline fit exclusion:** First 1 second of recording
@@ -312,24 +254,15 @@ Results are stored in nested structures indexed by recording site, subject and l
 
 ## Reproducibility Considerations
 
-**For Python Implementation:**
-1. Demodulation can be replicated using scipy signal processing
-2. Fitting requires scipy.optimize and scipy.interpolate
-3. All calculations use standard mathematical operations
-4. No proprietary algorithms beyond TDT data loading
-
 **Data Available in NWB:**
-- Raw modulated signal (Fi1r) ✓
-- Demodulated signals (465nm, 405nm) ✓
-- Downsampled signals (100 Hz) ✓
-- Optogenetic stimulation timestamps ✓
-- Session metadata ✓
+- Raw modulated signal (Fi1r)
+- Demodulated signals (465nm, 405nm), downsampled signals (100 Hz) and dF/F, from the lab's .mat files or recomputed from the raw signal (`processed` in `metadata/session_config.yaml`)
+- Optogenetic stimulation trains, with their duration and frequency
+- Session metadata
 
-**Not in NWB (needs to be recalculated):**
-- dF/F traces
+**Not in NWB (computed by `trial_analysis`):**
 - Trial-aligned data
 - Summary statistics
-- But all can be derived from available data following this pipeline
 
 ## Summary
 

@@ -52,10 +52,10 @@ def get_video_aligned_starting_time(
 if __name__ == "__main__":
     # Example usage
     video_metadata_file = Path(
-        r"D:\Hnasko-CN-data-share\SN pan GABA recordings\PPN\AnyMaze videos_slk\converted_video\Varying durations\video_metadata.xlsx"
+        r"D:\Hnasko-CN-data-share\SN pan GABA recordings\PPN\AnyMaze videos_mp4\Varying durations\video_metadata.xlsx"
     )
     video_file = Path(
-        r"D:\Hnasko-CN-data-share\SN pan GABA recordings\PPN\AnyMaze videos_slk\converted_video\Varying durations\C4550.mp4"
+        r"D:\Hnasko-CN-data-share\SN pan GABA recordings\PPN\AnyMaze videos_mp4\Varying durations\C4550.mp4"
     )
     session_start_time = datetime(2024, 1, 18, 7, 0, 0)
 
