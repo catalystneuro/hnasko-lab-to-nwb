@@ -176,14 +176,14 @@ FiberPhotometry:
       carries the GCaMP8f fluorescence excited by the 465 nm and 405 nm LEDs, each modulated at its own frequency (see
       the excitation sources); the processed series in the ophys module are demodulated from it.
     fiber_photometry_table_region: [SNc_465]
-    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal of SNc.
   Fi1r_DLS:
     name: raw_signal_DLS
     description: Raw photodetector signal of the dorsolateral striatum (DLS) fiber (TDT Fi1r store). It carries the
       GCaMP8f fluorescence excited by the 465 nm and 405 nm LEDs, each modulated at its own frequency (see the
       excitation sources); the processed series in the ophys module are demodulated from it.
     fiber_photometry_table_region: [DLS_465]
-    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal in DLS.
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal of DLS.
   Gc_raw_SNc:
     name: demodulated_calcium_signal_SNc
     description: GCaMP8f fluorescence in the substantia nigra pars compacta (SNc) excited at 465 nm (the sensor), computed

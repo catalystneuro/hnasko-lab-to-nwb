@@ -115,7 +115,7 @@ FiberPhotometry:
       carries the GCaMP6f fluorescence excited by the 465 nm and 405 nm LEDs, each modulated at its own frequency (see
       the excitation sources); the processed series in the ophys module are demodulated from it.
     fiber_photometry_table_region: [SNc_465]
-    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal.
+    fiber_photometry_table_region_description: The region of the FiberPhotometryTable corresponding to the raw signal of SNc.
   Gc_raw_SNc:
     name: demodulated_calcium_signal_SNc
     description: GCaMP6f fluorescence in the substantia nigra pars compacta (SNc) excited at 465 nm (the sensor), computed
